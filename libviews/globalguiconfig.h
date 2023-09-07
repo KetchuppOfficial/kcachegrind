@@ -74,6 +74,7 @@ public:
 
     // color for visualization of an object
     static QColor functionColor(ProfileContext::Type gt, TraceFunction*);
+    static QColor basicBlockColor(ProfileContext::Type gt, TraceBasicBlock* bb);
     static QColor groupColor(CostItem*);
     static QColor eventTypeColor(EventType*);
     static ConfigColorSetting* groupColorSetting(CostItem*);

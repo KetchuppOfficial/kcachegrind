@@ -39,7 +39,8 @@ public:
         PartFile, File, FileCycle,
         PartObject, Object, ObjectCycle,
         Part, Data,
-        MaxType };
+        BasicBlock,
+        MaxType};
 
     explicit ProfileContext(ProfileContext::Type = InvalidType);
 

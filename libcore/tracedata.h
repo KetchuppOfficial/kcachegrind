@@ -15,9 +15,17 @@
 #ifndef TRACEDATA_H
 #define TRACEDATA_H
 
+#include <type_traits>
+#include <stdexcept>
+#include <cassert>
+#include <algorithm>
+#include <vector>
+
 #include <qstring.h>
 #include <qstringlist.h>
 #include <qmap.h>
+#include <QProcess>
+#include <QDebug>
 
 #include "costitem.h"
 #include "subcost.h"
@@ -867,6 +875,7 @@ private:
     FixCallCost* _firstFixCost;
 };
 
+class TraceBasicBlock;
 
 /**
  * A code instruction address of the program.
@@ -893,6 +902,8 @@ public:
 
     Addr addr() const { return _addr; }
     TraceFunction* function() const { return _function; }
+    TraceBasicBlock* basicBlock() { return _bb; }
+    const TraceBasicBlock* basicBlock() const { return _bb; }
     TraceLine* line() const { return _line; }
     const TraceInstrJumpList& instrJumps() const { return _instrJumps; }
     const TraceInstrCallList& instrCalls() const { return _instrCalls; }
@@ -901,6 +912,7 @@ public:
     // only to be called after default constructor
     void setAddr(const Addr addr) { _addr = addr; }
     void setFunction(TraceFunction* f) { _function = f; }
+    void setBasicBlock(TraceBasicBlock* bb) { _bb = bb; }
     void setLine(TraceLine* l) { _line = l; }
 
 protected:
@@ -909,6 +921,7 @@ protected:
 private:
     Addr _addr;
     TraceFunction* _function;
+    TraceBasicBlock* _bb = nullptr;
     TraceLine* _line;
 
     TraceInstrJumpList _instrJumps;
@@ -1099,6 +1112,69 @@ protected:
     bool _valid;
 };
 
+class TraceBasicBlock : public TraceCostItem
+{
+public:
+
+    using size_type = typename std::vector<TraceInstr*>::size_type;
+
+    using iterator = typename std::vector<TraceInstr*>::iterator;
+    using const_iterator = typename std::vector<TraceInstr*>::const_iterator;
+
+    TraceBasicBlock(typename TraceInstrMap::iterator first,
+                    typename TraceInstrMap::iterator last);
+
+    ~TraceBasicBlock() override = default;
+
+    QString prettyName() const override;
+    QString formattedName() const override;
+
+    void update() override;
+
+    bool isExitBlock() const;
+
+    size_type instrNumber() const { return _instructions.size(); }
+
+    TraceInstr* firstInstr();
+    const TraceInstr* firstInstr() const;
+
+    TraceInstr* lastInstr();
+    const TraceInstr* lastInstr() const;
+
+    Addr firstAddr() const;
+    Addr lastAddr() const;
+
+    TraceFunction* function() { return _func; }
+    const TraceFunction* function() const { return _func; }
+
+    TraceBasicBlock* trueBranch() { return _trueBranch; }
+    const TraceBasicBlock* trueBranch() const { return _trueBranch; }
+    void setTrueBranch(TraceBasicBlock* br) { _trueBranch = br; }
+
+    TraceBasicBlock* falseBranch() { return _falseBranch; }
+    const TraceBasicBlock* falseBranch() const { return _falseBranch; }
+    void setFalseBranch(TraceBasicBlock* br) { _falseBranch = br; }
+
+    TraceInstrJump* jump() { return _jump; }
+    const TraceInstrJump* jump() const { return _jump; }
+
+    iterator begin() { return _instructions.begin(); }
+    const_iterator begin() const { return _instructions.begin(); }
+    const_iterator cbegin() const { return begin(); }
+
+    iterator end() { return _instructions.end(); }
+    const_iterator end() const { return _instructions.end(); }
+    const_iterator cend() const { return end(); }
+
+private:
+    std::vector<TraceInstr*> _instructions;
+
+    TraceFunction* _func;
+    TraceInstrJump* _jump;
+    TraceBasicBlock* _trueBranch = nullptr;
+    TraceBasicBlock* _falseBranch = nullptr;
+};
+
 typedef QList<TraceAssociation*> TraceAssociationList;
 
 /**
@@ -1162,6 +1238,7 @@ public:
     Addr firstAddress() const;
     Addr lastAddress() const;
     TraceInstrMap* instrMap();
+    std::vector<TraceBasicBlock*>& basicBlocks();
 
     // cost metrics
     SubCost calledCount();
@@ -1200,6 +1277,7 @@ protected:
 private:
     bool isUniquePrefix(const QString&) const;
     //TraceFunctionMap::Iterator _myMapIterator;
+    void constructBasicBlocks();
 
     TraceClass* _cls;
     TraceObject* _object;
@@ -1208,7 +1286,7 @@ private:
     TraceFunctionSourceList _sourceFiles; // we are owner
     TraceInstrMap* _instrMap; // we are owner
     bool _instrMapFilled;
-
+    std::vector<TraceBasicBlock*> _basicBlocks;
     // see TraceAssociation
     TraceAssociationList _associations;
 
