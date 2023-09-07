@@ -30,6 +30,10 @@ EventType::EventType(const QString& name, const QString& longName,
     _parsed = false;
     _inParsing = false;
 
+    // Suggestion: use std::array instead of built-in array for _coefficient and:
+    // std::fill (_coefficient.begin(), _coefficient.end(), 0);
+    // or at least:
+    // std::fill (std::begin(_coefficient), std::end(_coefficient), 0);
     for (int i=0; i<ProfileCostArray::MaxRealIndex;i++)
         _coefficient[i] = 0;
 }
@@ -78,6 +82,7 @@ bool EventType::parseFormula()
 
     _inParsing = true;
 
+    // Suggestion: std::fill (std::begin(_coefficient), std::end(_coefficient), 0);
     for (int i=0; i<ProfileCostArray::MaxRealIndex;i++)
         _coefficient[i] = 0;
     _parsedFormula = QString();
@@ -155,6 +160,7 @@ QString EventType::parsedFormula()
     return _parsedFormula;
 }
 
+// HINT: never used
 QString EventType::parsedRealFormula()
 {
     QString res;
@@ -235,6 +241,9 @@ bool EventType::hasKnownDerivedType(const QString& n)
 {
     if (!_knownTypes) return false;
 
+    // Suggestion:
+    // return std::any_of(_knownTypes->begin(), _knownTypes->end(),
+    //                   [&n](EventType *t){ return !t->isReal() && t->name() == n; });
     foreach (EventType* t, *_knownTypes)
         if (!t->isReal() && (t->name() == n))
             return true;
@@ -243,8 +252,13 @@ bool EventType::hasKnownDerivedType(const QString& n)
 }
 
 EventType* EventType::cloneKnownRealType(const QString& n)
-{
+{   
     if (!_knownTypes) return nullptr;
+
+    // Suggestion:
+    // auto it = std::find_if(_knownTypes->begin(), _knownTypes->end(),
+    //                       [&n](EventType *t){ return t->isReal() && t->name() == n; });
+    // return (it != _knownTypes->end()) ? new EventType(**it) : nullptr;
 
     foreach (EventType* t, *_knownTypes)
         if (t->isReal() && (t->name() == n)) {
@@ -335,15 +349,19 @@ EventTypeSet::EventTypeSet()
 {
     _realCount = 0;
     _derivedCount = 0;
+
+    // Suggestion: use std::fill for Gods sake
     for (int i=0;i<ProfileCostArray::MaxRealIndex;i++) _real[i] = nullptr;
     for (int i=0;i<ProfileCostArray::MaxRealIndex;i++) _derived[i] = nullptr;
 }
 
 EventTypeSet::~EventTypeSet()
 {
+    // Suggestion: qDeleteAll
     for (int i=0;i<ProfileCostArray::MaxRealIndex;i++)
         delete _real[i];
 
+    // Suggestion: qDeleteAll
     for (int i=0;i<ProfileCostArray::MaxRealIndex;i++)
         delete _derived[i];
 }
@@ -354,8 +372,21 @@ EventTypeMapping* EventTypeSet::createMapping(const QString& types)
     int newCount = 0;
     int pos = 0, pos2, len = types.length();
 
+    // Suggestion: implement parsing part of these loops as a separate function
+    /* Suggestion:
+     * for (int pos = 0, pos2; ; pos = pos2)
+     * {
+     *      parse (types, pos, pos2);
+     *      if (pos2 == pos)
+     *          break; 
+     *
+     *      if (realIndex(types.mid(pos,pos2-pos)) == ProfileCostArray::InvalidIndex)
+     *          newCount++;
+     * }
+     */
     while (1) {
         // skip space
+        // Suggestion: pos2 = types.indexOf (QRegularExpression("[\s]"))
         while((pos<len) && types[pos].isSpace()) pos++;
 
         pos2 = pos;
@@ -496,10 +527,12 @@ EventType* EventTypeSet::type(int t)
 
 EventType* EventTypeSet::type(const QString& name)
 {
+    // Suggestion: use std::find_if
     for (int i=0;i<_realCount;i++)
         if (_real[i] && (_real[i]->name() == name))
             return _real[i];
 
+    // Suggestion: use std::find_if
     for (int i=0;i<_derivedCount;i++)
         if (_derived[i] && (_derived[i]->name() == name))
             return _derived[i];
@@ -509,10 +542,12 @@ EventType* EventTypeSet::type(const QString& name)
 
 EventType* EventTypeSet::typeForLong(const QString& name)
 {
+    // Suggestion: use std::find_if
     for (int i=0;i<_realCount;i++)
         if (_real[i] && (_real[i]->longName() == name))
             return _real[i];
 
+    // Suggestion: use std::find_if
     for (int i=0;i<_derivedCount;i++)
         if (_derived[i] && (_derived[i]->longName() == name))
             return _derived[i];
@@ -523,6 +558,7 @@ EventType* EventTypeSet::typeForLong(const QString& name)
 
 int EventTypeSet::realIndex(const QString& name)
 {
+    // Suggestion: use std::find_if
     for (int i=0;i<_realCount;i++)
         if (_real[i] && (_real[i]->name() == name))
             return i;
@@ -532,6 +568,7 @@ int EventTypeSet::realIndex(const QString& name)
 
 int EventTypeSet::index(const QString& name)
 {
+    // Suggestion: reuse realIndex()
     for (int i=0;i<_realCount;i++)
         if (_real[i] && (_real[i]->name() == name))
             return i;
@@ -546,6 +583,7 @@ int EventTypeSet::index(const QString& name)
 int EventTypeSet::addKnownDerivedTypes()
 {
     int addCount = 0;
+    // Suggestion: relocate addDiff inside while(1) loop and i inside for-loop
     int addDiff, i;
     int knownCount = EventType::knownTypeCount();
 

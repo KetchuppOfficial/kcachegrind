@@ -216,6 +216,37 @@ QColor GlobalGUIConfig::functionColor(ProfileContext::Type gt,
     return groupColor(group);
 }
 
+QColor GlobalGUIConfig::basicBlockColor(ProfileContext::Type gt, TraceBasicBlock* bb)
+{
+    ProfileCostArray* group;
+    switch(gt)
+    {
+        case ProfileContext::Object:
+            group = bb->function()->object();
+            break;
+        case ProfileContext::Class:
+            group = bb->function()->cls();
+            break;
+        case ProfileContext::File:
+            group = bb->function()->file();
+            break;
+        default:
+            group = bb;
+    }
+
+    if (group != bb)
+    {
+        auto name = ProfileContext::typeName(group->type()) + '-' + group->name()
+                                                            + '-' + bb->prettyName();
+
+        auto cs = colorSetting(name, false);
+        if (cs)
+            return cs->color();
+    }
+
+    return groupColor(group);
+}
+
 ConfigColorSetting* GlobalGUIConfig::colorSetting(const QString& n,
                                                   bool createNew)
 {

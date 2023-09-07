@@ -84,6 +84,7 @@ InstrItem::InstrItem(InstrView* iv, QTreeWidget* parent,
     setFont(5, font); // mnenomic
     setFont(6, font); // instruction args
 
+    // Suggestion: remove updateGroup from here as it does nothing
     updateGroup();
     updateCost();
 }

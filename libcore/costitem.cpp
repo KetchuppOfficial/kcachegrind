@@ -139,6 +139,7 @@ ProfileCostArray::ProfileCostArray()
 
 ProfileCostArray::~ProfileCostArray()
 {
+    // Suggestion: checking if _cost == nullptr is redundant
     if (_cost) delete[] _cost;
 }
 

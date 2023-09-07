@@ -154,6 +154,7 @@ bool TraceItemView::isViewVisible()
     if (w)
         return w->isVisible();
     return false;
+    // Suggest: return (w) ? w->isVisible() : false;
 }
 
 void TraceItemView::setData(TraceData* d)

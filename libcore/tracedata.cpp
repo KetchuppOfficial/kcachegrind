@@ -1808,6 +1808,8 @@ TraceFunction::~TraceFunction()
     qDeleteAll(_callings);
     qDeleteAll(_sourceFiles);
 
+    qDeleteAll(_basicBlocks);
+
     delete _instrMap;
 }
 
@@ -2623,7 +2625,73 @@ TraceInstrMap* TraceFunction::instrMap()
     return _instrMap;
 }
 
+std::vector<TraceBasicBlock*>& TraceFunction::basicBlocks()
+{
+    if (_basicBlocks.empty())
+        constructBasicBlocks();
 
+    return _basicBlocks;
+}
+
+void TraceFunction::constructBasicBlocks()
+{
+    auto instructions = instrMap();
+    if (!instructions || instructions->empty())
+        return;
+
+    for (auto from = instructions->begin(), ite = instructions->end(); from != ite; )
+    {
+        auto to = std::find_if(from, ite, [](TraceInstr &i){ return i.instrJumps().size() == 1; });
+
+        if (to != ite)
+            ++to;
+
+        auto bb = new TraceBasicBlock{from, to};
+        _basicBlocks.push_back(bb);
+
+        from = to;
+    }
+
+    for (auto it = _basicBlocks.begin(), ite = _basicBlocks.end(); it != ite; ++it)
+    {
+        TraceBasicBlock* bbPtr = *it;
+        TraceInstrJump* jump = bbPtr->jump();
+
+        if (jump)
+        {
+            TraceInstr* instrTo = jump->instrTo();
+            assert(instrTo);
+
+            auto addrInside = [addrTo = instrTo->addr()](TraceBasicBlock *bb)
+                              { return bb->firstAddr() <= addrTo && addrTo <= bb->lastAddr(); };
+            auto toIt = std::find_if(_basicBlocks.begin(), _basicBlocks.end(), addrInside);
+            assert(toIt != _basicBlocks.end());
+
+            bbPtr->setTrueBranch(*toIt);
+
+            if (jump->isCondJump())
+            {
+                auto nextBBIt = std::next(it);
+                if (nextBBIt != ite)
+                    bbPtr->setFalseBranch(*nextBBIt);
+            }
+        }
+    }
+
+    assert (std::all_of(_basicBlocks.begin(), _basicBlocks.end(),
+                        [](TraceBasicBlock* bb){ return bb->instrNumber() > 0; }));
+
+    #if 0
+    auto i = 0;
+    for (auto bbPtr : _basicBlocks)
+    {
+        qDebug() << "BASIC BLOCK " << i;
+        bbPtr->debugPrint();
+        qDebug() << '\n';
+        i++;
+    }
+    #endif
+}
 
 //---------------------------------------------------
 // TraceFunctionCycle
@@ -3129,11 +3197,19 @@ int TraceData::load(QStringList files)
         QString prefix = finfo.fileName();
         QDir dir = finfo.dir();
         if (finfo.isDir()) {
+            // Suggestion: prefix = std::move (QStringLiteral("callgrind.out"));
             prefix = QStringLiteral("callgrind.out");
             _traceName += QLatin1String("/callgrind.out");
         }
 
+        // Suggestion: files = std::move (....);
         files = dir.entryList(QStringList() << prefix + '*', QDir::Files);
+
+        /*
+         * Suggestion:
+         * std::transform (files.begin(), files.end(),
+         *                 files.begin(), [&dir](QString &str){ return dir.path() + '/' + str; });
+         */
         QStringList::Iterator it = files.begin();
         for (; it != files.end(); ++it ) {
             *it = dir.path() + '/' + *it;
@@ -3145,6 +3221,12 @@ int TraceData::load(QStringList files)
         return 0;
     }
 
+    /*
+     * Suggestion:
+     * int partsLoaded = std::accumulate (files.begin(), files.end(), 0,
+     *                                    [](int val, const QString &str)
+     *                                    { QFile file{str}; return internalLoad(&file, str); });
+     */
     QStringList::const_iterator it;
     int partsLoaded = 0;
     for (it = files.constBegin(); it != files.constEnd(); ++it ) {
@@ -3153,6 +3235,7 @@ int TraceData::load(QStringList files)
     }
     if (partsLoaded == 0) return 0;
 
+    // Suggestion: using lambda will increase performance
     std::sort(_parts.begin(), _parts.end(), partLessThan);
     invalidateDynamicCost();
     updateFunctionCycles();
@@ -3740,3 +3823,84 @@ void TraceData::updateFileCycles()
 {
 }
 
+// ======================================================================================
+
+//
+// TraceBasicBlock
+//
+
+TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
+                                 typename TraceInstrMap::iterator last)
+    : TraceCostItem{ProfileContext::context(ProfileContext::BasicBlock)},
+      _instructions(std::distance(first, last)),
+      _func{first->function()}
+{
+    assert(std::all_of(first, last, [f = _func](TraceInstr& i){ return i.function() == f; }) &&
+           "TraceFunction is not the same for all instruction in the range");
+
+    std::transform(first, last, _instructions.begin(),
+                   [](TraceInstr &i){ return std::addressof(i); });
+
+    assert(lastInstr());
+    auto &jumps = lastInstr()->instrJumps();
+    _jump = jumps.empty() ? nullptr : jumps.front();
+
+    for (; first != last; ++first)
+        first->setBasicBlock(this);
+}
+
+QString TraceBasicBlock::prettyName() const
+{
+    return firstAddr().toString();
+}
+
+QString TraceBasicBlock::formattedName() const
+{
+    return QString{};
+}
+
+bool TraceBasicBlock::isExitBlock() const
+{
+    return !_trueBranch && !_falseBranch;
+}
+
+void TraceBasicBlock::update()
+{}
+
+const TraceInstr* TraceBasicBlock::firstInstr() const
+{
+    assert(!_instructions.empty());
+    return _instructions.front();
+}
+
+TraceInstr* TraceBasicBlock::firstInstr()
+{
+    assert(!_instructions.empty());
+    return _instructions.front();
+}
+
+const TraceInstr* TraceBasicBlock::lastInstr() const
+{
+    assert(!_instructions.empty());
+    return _instructions.back();
+}
+
+TraceInstr* TraceBasicBlock::lastInstr()
+{
+    assert(!_instructions.empty());
+    return _instructions.back();
+}
+
+Addr TraceBasicBlock::firstAddr() const
+{
+    assert(firstInstr());
+    return firstInstr()->addr();
+}
+
+Addr TraceBasicBlock::lastAddr() const
+{
+    assert(lastInstr());
+    return lastInstr()->addr();
+}
+
+// ======================================================================================
