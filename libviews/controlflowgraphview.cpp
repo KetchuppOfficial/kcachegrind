@@ -1331,7 +1331,7 @@ void CFGExporter::dumpNodes(QTextStream &ts)
         else
         {
             for (auto it = node.begin(); it != jumpIt; ++it)
-                ts << *instr << " |\n";
+                ts << *it << " |\n";
         }
 
         ts << "<from>" << *jumpIt << "}\"]";
