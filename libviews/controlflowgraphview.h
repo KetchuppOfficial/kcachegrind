@@ -268,7 +268,6 @@ private:
     EventType* _eventType = nullptr;
     ProfileContext::Type _groupType = ProfileContext::InvalidType;
 
-    bool _useBox = false; // flag to set shape=box in dot
     bool _graphCreated = false;
     Layout _layout = Layout::TopDown;
     DetailLevel _detailLevel = avgDetails;

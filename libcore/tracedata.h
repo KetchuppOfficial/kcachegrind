@@ -1158,6 +1158,8 @@ public:
     TraceInstrJump* jump() { return _jump; }
     const TraceInstrJump* jump() const { return _jump; }
 
+    bool isCycle () const { _trueBranch == this; };
+
     iterator begin() { return _instructions.begin(); }
     const_iterator begin() const { return _instructions.begin(); }
     const_iterator cbegin() const { return begin(); }
