@@ -1321,17 +1321,17 @@ void CFGExporter::dumpNodes(QTextStream &ts)
             auto cycleIt = std::next(node.begin(), toDist);
 
             for (auto it = node.begin(); it != cycleIt; ++it)
-                ts << *it << " |\n";
+                ts << *it << " | ";
 
-            ts << "<to>" << *cycleIt << " |\n";
+            ts << "<to>" << *cycleIt << " | ";
 
             for (auto it = std::next(cycleIt); it != jumpIt; ++it)
-                ts << *it << " |\n";
+                ts << *it << " | ";
         }
         else
         {
             for (auto it = node.begin(); it != jumpIt; ++it)
-                ts << *it << " |\n";
+                ts << *it << " | ";
         }
 
         ts << "<from>" << *jumpIt << "}\"]";
