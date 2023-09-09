@@ -540,7 +540,6 @@ CFGExporter::CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Typ
         _tmpFile->setAutoRemove(false);
         _tmpFile->open();
         _dotName = _tmpFile->fileName();
-        _useBox = true;
     }
     else
     {
@@ -646,19 +645,16 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
             _tmpFile->setAutoRemove(false);
             _tmpFile->open();
             _dotName = _tmpFile->fileName();
-            _useBox = true;
         }
         else
         {
             _tmpFile = nullptr;
             _dotName = filename;
-            _useBox = false;
         }
     }
     else
     {
         _item = nullptr;
-        _useBox = false;
         _dotName.clear();
     }
 }
@@ -1306,26 +1302,44 @@ void CFGExporter::dumpNodes(QTextStream &ts)
     qDebug() << "\033[1;31m" << "CFGExporter::dumpNodes()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    for (auto &node : _nodeMap)
+    for (auto& node : _nodeMap)
     {
-        auto bb = node.basicBlock();
+        TraceBasicBlock* bb = node.basicBlock();
 
-        auto abr = GlobalConfig::shortenSymbol(bb->prettyName());
-        abr.replace("\"", "\\\"");
+        ts << QStringLiteral("  B%1 [shape=record, label=\"{")
+                            .arg(reinterpret_cast<std::ptrdiff_t>(bb), 0, 16);
 
-        ts << QStringLiteral("  B%1 [").arg(reinterpret_cast<std::ptrdiff_t>(bb), 0, 16);
-
-        if (_useBox)
+        auto jumpIt = std::prev(node.end());
+        if (bb->isCycle())
         {
-            if (abr.length() < 8)
-                abr += QString(8 - abr.length(), '_');
+            assert (bb->jump());
+            assert (bb->jump()->instrTo());
 
-            ts << QStringLiteral("shape=box,label=\"** %1 **\\n**\\n%2\"];\n")
-                                .arg(abr).arg(SubCost{node.incl}.pretty());
+            TraceInstr* jmpTo = bb->jump()->instrTo();
+            auto toDist = std::distance (bb->begin(),
+                                         std::find(bb->begin(), bb->end(), jmpTo));
+            auto cycleIt = std::next(node.begin(), toDist);
+
+            for (auto it = node.begin(); it != cycleIt; ++it)
+                ts << *it << " |\n";
+
+            ts << "<to>" << *cycleIt << " |\n";
+
+            for (auto it = std::next(cycleIt); it != jumpIt; ++it)
+                ts << *it << " |\n";
         }
         else
-            ts << QStringLiteral("label=\"%1\\n%2\"];\n")
-                                .arg(abr).arg(SubCost{node.incl}.pretty());
+        {
+            for (auto it = node.begin(); it != jumpIt; ++it)
+                ts << *instr << " |\n";
+        }
+
+        ts << "<from>" << *jumpIt << "}\"]";
+
+        #if 0
+        ts << QStringLiteral("\"** %1 **\\n**\\n%2\"];\n")
+                            .arg(abr).arg(SubCost{node.incl}.pretty());
+        #endif
     }
 }
 
