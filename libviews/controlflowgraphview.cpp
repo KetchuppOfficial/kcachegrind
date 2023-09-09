@@ -2137,7 +2137,7 @@ std::pair<CFGNode*, CFGEdge*> ControlFlowGraphView::parseDot()
 namespace
 {
 
-double getNodeHeight(QTextStream &ts)
+double getMaxNodeHeight(QTextStream &ts)
 {
     #ifdef DEBUG
     qDebug() << "\033[1;31m" << "namespace::getNodeHeight" << "\033[0m";
@@ -2145,7 +2145,7 @@ double getNodeHeight(QTextStream &ts)
 
     QString cmd;
 
-    double nodeHeight = 0.0;
+    double maxNodeHeight = 0.0;
     while (true)
     {
         QString line = ts.readLine();
@@ -2162,13 +2162,13 @@ double getNodeHeight(QTextStream &ts)
                 QString h; // first 4 values are overriden
                 lineStream >> h /* name */ >> h /* x */ >> h /* y */
                                            >> h /* width */ >> h /* height */;
-                nodeHeight = std::max(nodeHeight, h.toDouble());
+                maxNodeHeight = std::max(maxNodeHeight, h.toDouble());
             }
         }
     }
     ts.seek(0);
 
-    return nodeHeight;
+    return maxNodeHeight;
 }
 
 } // unnamed namespace
@@ -2179,13 +2179,13 @@ std::pair<double, double> ControlFlowGraphView::calculateScales(QTextStream &ts)
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::calculateScales" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    auto nodeHeight = getNodeHeight(ts);
+    auto maxNodeHeight = getMaxNodeHeight(ts);
 
     double scaleX, scaleY;
-    if (nodeHeight > 0.0)
+    if (maxNodeHeight > 0.0)
     {
         scaleX = 80.0;
-        scaleY = (8 + (1 + 2 * _exporter.detailLevel()) * fontMetrics().height()) / nodeHeight;
+        scaleY = (8 + (1 + 2 * _exporter.detailLevel()) * fontMetrics().height()) / maxNodeHeight;
     }
     else
         scaleX = scaleY = 1.0;
