@@ -802,8 +802,8 @@ CFGNode *CFGExporter::buildNode(TraceBasicBlock* bb)
     if (!node.basicBlock())
     {
         node.setBasicBlock(bb);
-        buildEdge(std::addressof(node), bb, bb->trueBranch());
-        buildEdge(std::addressof(node), bb, bb->falseBranch());
+        buildEdge(std::addressof(node), bb, bb->trueBranch().toBB());
+        buildEdge(std::addressof(node), bb, bb->falseBranch().toBB());
     }
 
     return std::addressof(node);
@@ -1310,12 +1310,9 @@ void CFGExporter::dumpNodes(QTextStream &ts)
                             .arg(reinterpret_cast<std::ptrdiff_t>(bb), 0, 16);
 
         auto jumpIt = std::prev(node.end());
-        if (bb->isCycle())
+        if (bb->trueBranch().isCycle())
         {
-            assert(bb->jump());
-            assert(bb->jump()->instrTo());
-
-            TraceInstr* jmpTo = bb->jump()->instrTo();
+            TraceInstr* jmpTo = bb->trueBranch().toInstr();
             auto toDist = std::distance(bb->begin(),
                                         std::find(bb->begin(), bb->end(), jmpTo));
             auto cycleIt = std::next(node.begin(), toDist);
@@ -1352,11 +1349,6 @@ void CFGExporter::dumpEdges(QTextStream &ts)
 
     for (auto &edge : _edgeMap)
     {
-        #if 0
-        auto &fromNode = _nodeMap[edge.from()];
-        auto &toNode = _nodeMap[edge.to()];
-        #endif
-
         ts << QStringLiteral("  B%1 -> B%2 [weight=%3")
                             .arg(reinterpret_cast<std::ptrdiff_t>(edge.from()), 0, 16)
                             .arg(reinterpret_cast<std::ptrdiff_t>(edge.to()), 0, 16)
