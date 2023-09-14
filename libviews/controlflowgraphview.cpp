@@ -731,6 +731,7 @@ bool CFGExporter::writeDot(QIODevice* device)
         *stream << "}\n";
     }
 
+
     if (!device)
     {
         if (_tmpFile)
@@ -1340,7 +1341,7 @@ void CFGExporter::dumpNodes(QTextStream &ts)
                 ts << *it << " | ";
         }
 
-        ts << "<from>" << *jumpIt << "}\"]";
+        ts << "<from>" << *jumpIt << "}\"]\n";
 
         #if 0
         ts << QStringLiteral("\"** %1 **\\n**\\n%2\"];\n")
