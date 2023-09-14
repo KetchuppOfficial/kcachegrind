@@ -278,7 +278,7 @@ private:
     Layout _layout = Layout::TopDown;
     DetailLevel _detailLevel = avgDetails;
 
-    QMap<TraceBasicBlock*, CFGNode> _nodeMap;
+    QMap<std::pair<Addr, Addr>, CFGNode> _nodeMap;
     QMap<std::pair<TraceBasicBlock*, TraceBasicBlock*>, CFGEdge> _edgeMap;
 };
 
