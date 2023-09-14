@@ -848,92 +848,161 @@ void CFGExporter::buildEdge(CFGNode* fromNode, TraceBranch* branch)
 namespace
 {
 
-struct LineBuffer final
+class LineBuffer final
 {
+public:
+    LineBuffer() = default;
+
+    std::size_t capacity() const { return _bufSize; }
+
+    std::size_t getPos() const { return _pos; }
+    void setPos(std::size_t pos) { _pos = pos; }
+
+    char elem(std::size_t offset = 0) const { return _buf[_pos + offset]; }
+    void setElem(std::size_t pos, char c) { _buf[pos] = c; }
+
+    // relatively to _pos
+    char* relData(std::size_t offset = 0) { return _buf + _pos + offset; }
+    const char* relData(std::size_t offset = 0) const { return _buf + _pos + offset; }
+
+    // relatively to the beginning of _buf
+    char* absData(std::size_t offset = 0) { return _buf + offset; }
+    const char* absData(std::size_t offset = 0) const { return _buf + offset; }
+
+    void advance(std::size_t offset) { _pos += offset; }
+
+    void skipWhitespaces()
+    {
+        while (_buf[_pos] == ' ' || _buf[_pos] == '\t')
+            _pos++;
+    }
+
+private:
     static constexpr std::size_t _bufSize = 256;
     char _buf[_bufSize];
     std::size_t _pos = 0;
 };
 
-void skipWhitespaces(LineBuffer &line)
+struct ObjdumpParser final
 {
-    while (line._buf[line._pos] == ' ' || line._buf[line._pos] == '\t')
-        line._pos++;
-}
-
-Addr parseAddress(LineBuffer& line)
-{
-    skipWhitespaces(line);
-
-    Addr addr;
-    auto digits = addr.set(line._buf + line._pos);
-    line._pos += digits;
-
-    return (digits == 0 || line._buf[line._pos] != ':') ? Addr{0} : addr;
-}
-
-bool isHexDigit(char c)
-{
-    return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f');
-}
-
-QString parseEncoding(LineBuffer& line)
-{
-    skipWhitespaces(line);
-    auto start = line._pos;
-
-    while (true)
+    ObjdumpParser(Addr from, Addr to, bool isArm)
+                 : _dumpStartAddr{from}, _dumpEndAddr{to}, _isArm{isArm}
     {
-        if (!isHexDigit(line._buf[line._pos]) || !isHexDigit(line._buf[line._pos + 1]))
-            break;
-        else if (line._buf[line._pos + 2] == ' ')
-            line._pos += 3;
-        else if (!isHexDigit(line._buf[line._pos + 2]) || !isHexDigit(line._buf[line._pos + 3]))
-            break;
-        else if (line._buf[line._pos + 4] == ' ')
-            line._pos += 5;
-        else if (!isHexDigit(line._buf[line._pos + 4]) ||
-                 !isHexDigit(line._buf[line._pos + 5]) ||
-                 !isHexDigit(line._buf[line._pos + 6]) ||
-                 !isHexDigit(line._buf[line._pos + 7]) ||
-                 line._buf[line._pos + 8] != ' ')
-            break;
-        else
-            line._pos += 9;
+        auto [objFile, objdumpCmd] = runObjdump(func, _objdump, isArm);
+        if (objFile.isNull())
+            return false;
     }
 
-    if (line._pos > start)
-        return QString::fromLatin1(line._buf + start, line._pos - start - 1);
-    else
-        return QString{};
-}
+    static isHexDigit(char c)
+    {
+        return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f');
+    }
 
-QString parseMnemonic(LineBuffer& line)
-{
-    skipWhitespaces(line);
-    auto start = line._pos;
+    Addr parseAddress()
+    {
+        _line.skipWhitespaces();
 
-    while (line._buf[line._pos] && line._buf[line._pos] != ' ' && line._buf[line._pos] != '\t')
-        line._pos++;
+        Addr addr;
+        auto digits = addr.set(_line.relData());
+        _line.advance(digits);
 
-    return QString::fromLatin1(line._buf + start, line._pos - start);
-}
+        return (digits == 0 || _line.elem() != ':') ? Addr{0} : addr;
+    }
 
-QString parseOperands(LineBuffer& line)
-{
-    skipWhitespaces(line);
+    QString parseEncoding()
+    {
+        _line.skipWhitespaces();
+        auto start = _line.getPos();
 
-    auto operandsPos = line._buf + line._pos;
-    auto operandsLen = std::min<std::size_t>(std::strlen(operandsPos),
-                                             std::strchr(operandsPos, '#') - operandsPos);
-    if (operandsLen > 0 && line._buf[line._pos + operandsLen - 1] == '\n')
-        operandsLen--;
+        while (true)
+        {
+            if (!isHexDigit(_line.elem()) || !isHexDigit(_line.elem(1)))
+                break;
+            else if (_line.elem(2) == ' ')
+                _line.advance(3);
+            else if (!isHexDigit(_line.elem(2)) || !isHexDigit(_line.elem(3)))
+                break;
+            else if (_line.elem(4) == ' ')
+                _line.advance(5);
+            else if (!isHexDigit(_line.elem(4)) ||
+                    !isHexDigit(_line.elem(5)) ||
+                    !isHexDigit(_line.elem(6)) ||
+                    !isHexDigit(_line.elem(7)) ||
+                    _line.elem(8) != ' ')
+                break;
+            else
+                _line.advance(9);
+        }
 
-    if (operandsLen > 50)
-        return QString::fromLatin1(operandsPos, 47) + QStringLiteral("...");
-    else
-        return QString::fromLatin1(operandsPos, operandsLen);
-}
+        if (_line.getPos() > start)
+            return QString::fromLatin1(_line.absData(start), _line.getPos() - start - 1);
+        else
+            return QString{};
+    }
+
+    QString parseMnemonic()
+    {
+        _line.skipWhitespaces();
+        auto start = _line.getPos();
+
+        while (_line.elem() && _line.elem() != ' ' && _line.elem() != '\t')
+            _line.advance(1);
+
+        return QString::fromLatin1(_line.absData(start), _line.getPos() - start);
+    }
+
+    QString parseOperands()
+    {
+        _line.skipWhitespaces();
+
+        auto operandsPos = _line.relData();
+        auto operandsLen = std::min<std::size_t>(std::strlen(operandsPos),
+                                                std::strchr(operandsPos, '#') - operandsPos);
+        if (operandsLen > 0 && _line.elem(operandsLen - 1) == '\n')
+            operandsLen--;
+
+        if (operandsLen > 50)
+            return QString::fromLatin1(operandsPos, 47) + QStringLiteral("...");
+        else
+            return QString::fromLatin1(operandsPos, operandsLen);
+    }
+
+    Addr getNextObjAddr(Addr objAddr)
+    {
+        parser._needObjAddr = false;
+        while (true)
+        {
+            auto readBytes = objdump.readLine(_line.absData(), _line.capacity());
+            if (readBytes <= 0)
+                return Addr{0};
+            else
+            {
+                objdumpLineno++;
+                if (readBytes == _line.capacity())
+                    qDebug("ERROR: Line %d is too long\n", objdumpLineno);
+                else if (_line.absData()[readBytes - 1] == '\n')
+                    _line.setElem(readBytes - 1, '\0');
+
+                objAddr = parseAddress(_line);
+                parser._line.setPos(0);
+                if (dumpStartAddr <= objAddr && objAddr <= dumpEndAddr)
+                    break;
+            }
+        }
+    }
+
+    LineBuffer _line;
+    QProcess _objdump;
+
+    const Addr _dumpStartAddr;
+    const Addr _dumpEndAddr;
+
+    bool _needObjAddr = true;
+    bool _needCostAddr = true;
+    bool _skipLineWritten = true;
+    bool _isArm;
+    int noAssLines = 0;
+};
 
 QProcessEnvironment env;
 
@@ -1034,37 +1103,24 @@ bool CFGExporter::fillInstrStrings(TraceFunction *func)
     if (isArm)
         nextCostAddr = nextCostAddr.alignedDown(2);
 
-    QProcess objdump;
-    auto [objFile, objdumpCmd] = runObjdump(func, objdump, isArm);
-    if (objFile.isNull())
-        return false;
-
-    LineBuffer line;
+    ObjdumpParser parser{nextCostAddr, func->lastAddress() + 1};
 
     TraceInstr* currInstr;
     typename TraceInstrMap::iterator costIt;
 
     Addr objAddr;
     Addr costAddr;
-    const Addr dumpStartAddr = nextCostAddr;
-    const Addr dumpEndAddr = func->lastAddress() + 1;
-
-    bool needObjAddr = true;
-    bool needCostAddr = true;
-    bool skipLineWritten = true;
-
-    auto noAssLines = 0;
 
     QMap<Addr, QString> instrStrings;
 
-    for (auto objdumpLineno = 0; ; line._pos = 0)
+    for (auto objdumpLineno = 0; ; parser._line.setPos(0))
     {
-        if (needObjAddr)
+        if (parser._needObjAddr)
         {
-            needObjAddr = false;
+            parser._needObjAddr = false;
             while (true)
             {
-                auto readBytes = objdump.readLine(line._buf, line._bufSize);
+                auto readBytes = objdump.readLine(parser._line.absData(), parser_.line.capacity());
                 if (readBytes <= 0)
                 {
                     objAddr = 0;
@@ -1073,22 +1129,22 @@ bool CFGExporter::fillInstrStrings(TraceFunction *func)
                 else
                 {
                     objdumpLineno++;
-                    if (readBytes == line._bufSize)
+                    if (readBytes == parser._line.capacity())
                         qDebug("ERROR: Line %d is too long\n", objdumpLineno);
-                    else if (line._buf[readBytes - 1] == '\n')
-                        line._buf[readBytes - 1] = '\0';
+                    else if (parser._line.absData()[readBytes - 1] == '\n')
+                        parser._line.setElem(readBytes - 1, '\0');
 
-                    objAddr = parseAddress(line);
-                    line._pos = 0;
+                    objAddr = parseAddress(parser._line);
+                    parser._line.setPos(0);
                     if (dumpStartAddr <= objAddr && objAddr <= dumpEndAddr)
                         break;
                 }
             }
         }
 
-        if (needCostAddr && Addr{0} < nextCostAddr && (objAddr == Addr{0} || nextCostAddr <= objAddr))
+        if (parser._needCostAddr && Addr{0} < nextCostAddr && (objAddr == Addr{0} || nextCostAddr <= objAddr))
         {
-            needCostAddr = false;
+            parser._needCostAddr = false;
 
             costIt = it++;
 
@@ -1111,41 +1167,41 @@ bool CFGExporter::fillInstrStrings(TraceFunction *func)
         QString mnemonic, operands;
         if (nextCostAddr == 0 || costAddr == 0 || objAddr < nextCostAddr)
         {
-            addr = parseAddress(line);
+            addr = parser.parseAddress();
             assert (addr == objAddr);
 
-            line._pos++;
+            parser._line.advance(1);
 
-            needObjAddr = true;
+            parser._needObjAddr = true;
 
             if ((costAddr == 0 || costAddr + 3 * GlobalConfig::context() < objAddr) &&
                 (nextCostAddr == 0 || objAddr < nextCostAddr - 3 * GlobalConfig::context()))
             {
-                if (skipLineWritten || (it == itEnd && itEnd == instrMap_->end()))
+                if (parser._skipLineWritten || (it == itEnd && itEnd == instrMap_->end()))
                     continue;
                 else
                 {
                     encoding = mnemonic = QString{};
                     operands = QStringLiteral("...");
 
-                    skipLineWritten = true;
+                    parser._skipLineWritten = true;
                 }
             }
             else
             {
-                encoding = parseEncoding(line);
+                encoding = parser.parseEncoding();
                 assert (!encoding.isNull());
 
-                mnemonic = parseMnemonic(line);
-                operands = parseOperands(line);
+                mnemonic = parser.parseMnemonic();
+                operands = parser.parseOperands();
 
-                skipLineWritten = false;
+                parser._skipLineWritten = false;
             }
 
             if (costAddr == objAddr)
             {
                 currInstr = std::addressof(*costIt);
-                needCostAddr = true;
+                parser._needCostAddr = true;
             }
             else
                 currInstr = nullptr;
@@ -1156,11 +1212,10 @@ bool CFGExporter::fillInstrStrings(TraceFunction *func)
             operands = QObject::tr("(No Instruction)");
 
             currInstr = std::addressof(*costIt);
-            needCostAddr = true;
 
-            skipLineWritten = false;
-
-            noAssLines++;
+            parser._needCostAddr = true;
+            parser._skipLineWritten = false;
+            parser._noAssLines++;
         }
 
         if (!mnemonic.isEmpty() && currInstr)
@@ -1171,9 +1226,9 @@ bool CFGExporter::fillInstrStrings(TraceFunction *func)
         }
     }
 
-    if (noAssLines > 1)
+    if (parser._noAssLines > 1)
     {
-        qDebug() << QObject::tr("There are %n cost line(s) without machine code.", "", noAssLines)
+        qDebug() << QObject::tr("There are %n cost line(s) without machine code.", "", parser._noAssLines)
                  << QObject::tr("This happens because the code of")
                  << QStringLiteral("    %1").arg(objFile)
                  << QObject::tr("does not seem to match the profile data file.")
