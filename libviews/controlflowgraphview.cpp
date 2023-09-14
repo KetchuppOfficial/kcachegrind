@@ -1319,6 +1319,7 @@ void CFGExporter::dumpNodes(QTextStream &ts)
             auto toDist = std::distance (bb->begin(),
                                          std::find(bb->begin(), bb->end(), jmpTo));
             auto cycleIt = std::next(node.begin(), toDist);
+            assert(cycleIt != node.end());
 
             for (auto it = node.begin(); it != cycleIt; ++it)
                 ts << *it << " | ";
