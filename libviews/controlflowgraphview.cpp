@@ -913,7 +913,7 @@ QString parseMnemonic(LineBuffer& line)
     skipWhitespaces(line);
     auto start = line._pos;
 
-    while(line._buf[line._pos] && line._buf[line._pos] != ' ' && line._buf[line._pos] != '\t')
+    while (line._buf[line._pos] && line._buf[line._pos] != ' ' && line._buf[line._pos] != '\t')
         line._pos++;
 
     return QString::fromLatin1(line._buf + start, line._pos - start);
