@@ -1009,7 +1009,7 @@ bool searchFile(QString& dir, TraceObject* o, TraceData* data)
     }
 }
 
-} // namespace
+} // unnamed namespace
 
 bool CFGExporter::fillInstrStrings(TraceFunction *func)
 {
