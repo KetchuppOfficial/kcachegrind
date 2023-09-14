@@ -2655,42 +2655,18 @@ void TraceFunction::constructBasicBlocks()
     for (auto it = _basicBlocks.begin(), ite = _basicBlocks.end(); it != ite; ++it)
     {
         TraceBasicBlock* bbPtr = *it;
-        TraceInstrJump* jump = bbPtr->jump();
+        TraceBranch& trueBr = bbPtr->trueBranch();
 
-        if (jump)
+        if (trueBr.type() == TraceBranch::Type::true_)
         {
-            TraceInstr* instrTo = jump->instrTo();
-            assert(instrTo);
-
-            auto addrInside = [addrTo = instrTo->addr()](TraceBasicBlock *bb)
-                              { return bb->firstAddr() <= addrTo && addrTo <= bb->lastAddr(); };
-            auto toIt = std::find_if(_basicBlocks.begin(), _basicBlocks.end(), addrInside);
-            assert(toIt != _basicBlocks.end());
-
-            bbPtr->setTrueBranch(*toIt);
-
-            if (jump->isCondJump())
-            {
-                auto nextBBIt = std::next(it);
-                if (nextBBIt != ite)
-                    bbPtr->setFalseBranch(*nextBBIt);
-            }
+            auto nextBBIt = std::next(it);
+            if (nextBBIt != ite)
+                bbPtr->falseBranch().setToInstr((*nextBBIt)->firstInstr());
         }
     }
 
     assert (std::all_of(_basicBlocks.begin(), _basicBlocks.end(),
                         [](TraceBasicBlock* bb){ return bb->instrNumber() > 0; }));
-
-    #if 0
-    auto i = 0;
-    for (auto bbPtr : _basicBlocks)
-    {
-        qDebug() << "BASIC BLOCK " << i;
-        bbPtr->debugPrint();
-        qDebug() << '\n';
-        i++;
-    }
-    #endif
 }
 
 //---------------------------------------------------
@@ -3843,7 +3819,18 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
 
     assert(lastInstr());
     auto &jumps = lastInstr()->instrJumps();
-    _jump = jumps.empty() ? nullptr : jumps.front();
+
+    if (!jumps.empty())
+    {
+        TraceInstrJump* _jump = jumps.front();
+        TraceInstr* from = _jump->instrFrom();
+
+        _falseBranch.setFromInstr(from);
+        _trueBranch.setFromInstr(from);
+        _trueBranch.setToInstr(_jump->instrTo());
+        _trueBranch.setType(_jump->isCondJump() ? TraceBranch::Type::true_
+                                                : TraceBranch::Type::unconditional);
+    }
 
     for (; first != last; ++first)
         first->setBasicBlock(this);
@@ -3861,7 +3848,7 @@ QString TraceBasicBlock::formattedName() const
 
 bool TraceBasicBlock::isExitBlock() const
 {
-    return !_trueBranch && !_falseBranch;
+    return !_trueBranch.toBB() && !_falseBranch.toBB();
 }
 
 void TraceBasicBlock::update()
@@ -3904,3 +3891,32 @@ Addr TraceBasicBlock::lastAddr() const
 }
 
 // ======================================================================================
+
+//
+// TraceBranch
+//
+
+TraceBasicBlock* TraceBranch::fromBB()
+{
+    return _from ? _from->basicBlock() : nullptr;
+}
+
+const TraceBasicBlock* TraceBranch::fromBB() const
+{
+    return _from ? _from->basicBlock() : nullptr;
+}
+
+TraceBasicBlock* TraceBranch::toBB()
+{
+    return _to ? _to->basicBlock() : nullptr;
+}
+
+const TraceBasicBlock* TraceBranch::toBB() const
+{
+    return _to ? _to->basicBlock() : nullptr;
+}
+
+bool TraceBranch::isCycle() const
+{
+    return (_type == Type::true_) && (fromBB() == toBB());
+}

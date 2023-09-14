@@ -1112,6 +1112,41 @@ protected:
     bool _valid;
 };
 
+class TraceBranch final
+{
+public:
+    enum class Type {invalid, unconditional, true_, false_};
+
+    TraceBranch() = default;
+    ~TraceBranch() = default;
+
+    Type type() const { return _type; }
+    void setType(Type type) { _type = type; }
+
+    TraceInstr* fromInstr() { return _from; }
+    const TraceInstr* fromInstr() const { return _from; }
+    void setFromInstr(TraceInstr* from) { _from = from; }
+
+    TraceBasicBlock* fromBB();
+    const TraceBasicBlock* fromBB() const;
+
+    TraceInstr* toInstr() { return _to; }
+    const TraceInstr* toInstr() const { return _to; }
+    void setToInstr(TraceInstr* to) { _to = to; }
+
+    TraceBasicBlock* toBB();
+    const TraceBasicBlock* toBB() const;
+
+    bool isCycle() const;
+
+private:
+
+    TraceInstr* _from = nullptr;
+    TraceInstr* _to = nullptr;
+
+    Type _type = Type::invalid;
+};
+
 class TraceBasicBlock : public TraceCostItem
 {
 public:
@@ -1147,18 +1182,11 @@ public:
     TraceFunction* function() { return _func; }
     const TraceFunction* function() const { return _func; }
 
-    TraceBasicBlock* trueBranch() { return _trueBranch; }
-    const TraceBasicBlock* trueBranch() const { return _trueBranch; }
-    void setTrueBranch(TraceBasicBlock* br) { _trueBranch = br; }
+    TraceBranch& trueBranch() { return _trueBranch; }
+    const TraceBranch& trueBranch() const { return _trueBranch; }
 
-    TraceBasicBlock* falseBranch() { return _falseBranch; }
-    const TraceBasicBlock* falseBranch() const { return _falseBranch; }
-    void setFalseBranch(TraceBasicBlock* br) { _falseBranch = br; }
-
-    TraceInstrJump* jump() { return _jump; }
-    const TraceInstrJump* jump() const { return _jump; }
-
-    bool isCycle () const { return _trueBranch == this; };
+    TraceBranch& falseBranch() { return _falseBranch; }
+    const TraceBranch& falseBranch() const { return _falseBranch; }
 
     iterator begin() { return _instructions.begin(); }
     const_iterator begin() const { return _instructions.begin(); }
@@ -1172,9 +1200,8 @@ private:
     std::vector<TraceInstr*> _instructions;
 
     TraceFunction* _func;
-    TraceInstrJump* _jump;
-    TraceBasicBlock* _trueBranch = nullptr;
-    TraceBasicBlock* _falseBranch = nullptr;
+    TraceBranch _trueBranch;
+    TraceBranch _falseBranch;
 };
 
 typedef QList<TraceAssociation*> TraceAssociationList;
