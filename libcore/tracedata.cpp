@@ -2661,7 +2661,11 @@ void TraceFunction::constructBasicBlocks()
         {
             auto nextBBIt = std::next(it);
             if (nextBBIt != ite)
-                bbPtr->falseBranch().setToInstr((*nextBBIt)->firstInstr());
+            {
+                auto& falseBr = bbPtr->falseBranch();
+                falseBr.setToInstr((*nextBBIt)->firstInstr());
+                falseBr.setType(TraceBranch::Type::false_);
+            }
         }
     }
 
