@@ -167,6 +167,10 @@ public:
     bool isVisible() const { return _visible; }
     void setVisible(bool v) { _visible = v; }
 
+    TraceBranch* branch() { return _branch; }
+    const TraceBranch* branch() const { return _branch; }
+    void setBranch(TraceBranch* branch) { _branch = branch; }
+
     CFGNode* fromNode() { return _fromNode; }
     const CFGNode* fromNode() const { return _fromNode; }
     CFGNode* cachedFromNode();
@@ -194,6 +198,8 @@ public:
     double count = 0.0;
 
 private:
+    TraceBranch *_branch = nullptr;
+
     CFGNode* _fromNode = nullptr;
     CFGNode* _toNode = nullptr;
 
@@ -252,7 +258,7 @@ public:
 private:
     bool createGraph();
     CFGNode* buildNode(TraceBasicBlock* bb);
-    void buildEdge(CFGNode* fromNode, TraceBasicBlock* from, TraceBasicBlock* to);
+    void buildEdge(CFGNode* fromNode, TraceBranch* branch);
 
     bool fillInstrStrings(TraceFunction* func);
     std::pair<QString, QString> runObjdump(TraceFunction* func, QProcess &objdump, bool isArm);
