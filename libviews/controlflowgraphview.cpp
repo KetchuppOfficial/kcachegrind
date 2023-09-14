@@ -798,29 +798,33 @@ CFGNode *CFGExporter::buildNode(TraceBasicBlock* bb)
     assert(bb);
 
     auto &node = _nodeMap[bb];
+    auto nodePtr = std::addressof(node);
 
     if (!node.basicBlock())
     {
         node.setBasicBlock(bb);
-        buildEdge(std::addressof(node), bb, bb->trueBranch().toBB());
-        buildEdge(std::addressof(node), bb, bb->falseBranch().toBB());
+        buildEdge(nodePtr, std::addressof(bb->trueBranch()));
+        buildEdge(nodePtr, std::addressof(bb->falseBranch()));
     }
 
-    return std::addressof(node);
+    return nodePtr;
 }
 
-void CFGExporter::buildEdge(CFGNode* fromNode, TraceBasicBlock* from, TraceBasicBlock* to)
+void CFGExporter::buildEdge(CFGNode* fromNode, TraceBranch* branch)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::buildEdge()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    assert(from);
     assert(fromNode);
 
+    TraceBasicBlock* to = branch->toBB();
     if (to)
     {
+        TraceBasicBlock* from = branch->fromBB();
         auto &edge = _edgeMap[std::make_pair(from, to)];
+
+        edge.setBranch(branch);
 
         if (!edge.fromNode())
             edge.setPredecessorNode(fromNode);
