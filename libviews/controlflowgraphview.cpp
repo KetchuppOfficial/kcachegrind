@@ -1312,12 +1312,12 @@ void CFGExporter::dumpNodes(QTextStream &ts)
         auto jumpIt = std::prev(node.end());
         if (bb->isCycle())
         {
-            assert (bb->jump());
-            assert (bb->jump()->instrTo());
+            assert(bb->jump());
+            assert(bb->jump()->instrTo());
 
             TraceInstr* jmpTo = bb->jump()->instrTo();
-            auto toDist = std::distance (bb->begin(),
-                                         std::find(bb->begin(), bb->end(), jmpTo));
+            auto toDist = std::distance(bb->begin(),
+                                        std::find(bb->begin(), bb->end(), jmpTo));
             auto cycleIt = std::next(node.begin(), toDist);
             assert(cycleIt != node.end());
 
