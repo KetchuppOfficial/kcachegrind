@@ -1138,6 +1138,7 @@ public:
     const TraceBasicBlock* toBB() const;
 
     bool isCycle() const;
+    bool isBranchInside() const;
 
 private:
 
