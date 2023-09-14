@@ -703,6 +703,11 @@ bool CFGExporter::writeDot(QIODevice* device)
     if (!_graphCreated)
         ok = createGraph();
 
+    delete stream;
+    QFile dotFile{"graph.dot"};
+    dotFile.open(QFile::WriteOnly);
+    stream = new QTextStream{&dotFile};
+
     if (ok)
     {
         *stream << "digraph \"control-flow graph\" {\n";
@@ -864,13 +869,7 @@ Addr parseAddress(LineBuffer& line)
     auto digits = addr.set(line._buf + line._pos);
     line._pos += digits;
 
-    if (digits == 0 || line._buf[line._pos] != ':')
-        return Addr{0};
-    else
-    {
-        line._pos++;
-        return addr;
-    }
+    return (digits == 0 || line._buf[line._pos] != ':') ? Addr{0} : addr;
 }
 
 bool isHexDigit(char c)
@@ -1114,6 +1113,8 @@ bool CFGExporter::fillInstrStrings(TraceFunction *func)
         {
             addr = parseAddress(line);
             assert (addr == objAddr);
+
+            line._pos++;
 
             needObjAddr = true;
 
