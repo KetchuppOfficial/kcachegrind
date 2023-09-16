@@ -703,10 +703,13 @@ bool CFGExporter::writeDot(QIODevice* device)
     if (!_graphCreated)
         ok = createGraph();
 
+    // Following block is for debug purposes
+    // ---------------------------------- //
     delete stream;
     QFile dotFile{"graph.dot"};
     dotFile.open(QFile::WriteOnly);
     stream = new QTextStream{&dotFile};
+    // ---------------------------------- //
 
     if (ok)
     {
@@ -885,155 +888,147 @@ private:
     pos_type _pos = 0;
 };
 
-struct ObjdumpParser final
+class ObjdumpParser final
 {
-    ObjdumpParser(Addr from, Addr to, bool isArm)
-                 : _dumpStartAddr{from}, _dumpEndAddr{to}, _isArm{isArm}
-    {
-        auto [objFile, objdumpCmd] = runObjdump(func, _objdump, isArm);
-        if (objFile.isNull())
-            return false;
-    }
+public:
+    ObjdumpParser(TraceFunction* func);
+    ~ObjdumpParser() = default;
 
-    static isHexDigit(char c)
-    {
-        return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f');
-    }
+    QMap<Addr, QString> getInstrStrings();
 
-    Addr parseAddress()
-    {
-        _line.skipWhitespaces();
+private:
+    using instr_iterator = typename TraceInstrMap::iterator;
 
-        Addr addr;
-        auto digits = addr.set(_line.relData());
-        _line.advance(digits);
+    bool runObjdump(TraceFunction* func);
+    bool searchFile(QString& dir, TraceObject* o, TraceData* data);
+    QString getObjDump();
+    QString getObjDumpFormat();
+    QString getSysRoot();
 
-        return (digits == 0 || _line.elem() != ':') ? Addr{0} : addr;
-    }
+    static bool isHexDigit(char c);
 
-    QString parseEncoding()
-    {
-        _line.skipWhitespaces();
-        auto start = _line.getPos();
+    Addr parseAddress();
+    QString parseEncoding();
+    QString parseMnemonic();
+    QString parseOperands();
 
-        while (true)
-        {
-            if (!isHexDigit(_line.elem()) || !isHexDigit(_line.elem(1)))
-                break;
-            else if (_line.elem(2) == ' ')
-                _line.advance(3);
-            else if (!isHexDigit(_line.elem(2)) || !isHexDigit(_line.elem(3)))
-                break;
-            else if (_line.elem(4) == ' ')
-                _line.advance(5);
-            else if (!isHexDigit(_line.elem(4)) ||
-                    !isHexDigit(_line.elem(5)) ||
-                    !isHexDigit(_line.elem(6)) ||
-                    !isHexDigit(_line.elem(7)) ||
-                    _line.elem(8) != ' ')
-                break;
-            else
-                _line.advance(9);
-        }
+    void getObjAddr();
+    void getCostAddr();
 
-        if (_line.getPos() > start)
-            return QString::fromLatin1(_line.absData(start), _line.getPos() - start - 1);
-        else
-            return QString{};
-    }
+    QProcess _objdump;
+    QProcessEnvironment _env;
 
-    QString parseMnemonic()
-    {
-        _line.skipWhitespaces();
-        auto start = _line.getPos();
-
-        while (_line.elem() && _line.elem() != ' ' && _line.elem() != '\t')
-            _line.advance(1);
-
-        return QString::fromLatin1(_line.absData(start), _line.getPos() - start);
-    }
-
-    QString parseOperands()
-    {
-        _line.skipWhitespaces();
-
-        auto operandsPos = _line.relData();
-        auto operandsLen = std::min<std::size_t>(std::strlen(operandsPos),
-                                                std::strchr(operandsPos, '#') - operandsPos);
-        if (operandsLen > 0 && _line.elem(operandsLen - 1) == '\n')
-            operandsLen--;
-
-        if (operandsLen > 50)
-            return QString::fromLatin1(operandsPos, 47) + QStringLiteral("...");
-        else
-            return QString::fromLatin1(operandsPos, operandsLen);
-    }
-
-    Addr getNextObjAddr(Addr objAddr)
-    {
-        parser._needObjAddr = false;
-        while (true)
-        {
-            auto readBytes = objdump.readLine(_line.absData(), _line.capacity());
-            if (readBytes <= 0)
-                return Addr{0};
-            else
-            {
-                objdumpLineno++;
-                if (readBytes == _line.capacity())
-                    qDebug("ERROR: Line %d is too long\n", objdumpLineno);
-                else if (_line.absData()[readBytes - 1] == '\n')
-                    _line.setElem(readBytes - 1, '\0');
-
-                objAddr = parseAddress(_line);
-                parser._line.setPos(0);
-                if (dumpStartAddr <= objAddr && objAddr <= dumpEndAddr)
-                    break;
-            }
-        }
-    }
+    QString _objFile;
+    QString _objdumpCmd;
 
     LineBuffer _line;
-    QProcess _objdump;
 
-    const Addr _dumpStartAddr;
-    const Addr _dumpEndAddr;
+    instr_iterator _it;
+    instr_iterator _ite;
+    instr_iterator _costIt;
+
+    Addr _objAddr;
+    Addr _costAddr;
+    Addr _nextCostAddr;
+    Addr _dumpStartAddr;
+    Addr _dumpEndAddr;
 
     bool _needObjAddr = true;
     bool _needCostAddr = true;
     bool _skipLineWritten = true;
     bool _isArm;
-    int noAssLines = 0;
+
+    int _noAssLines = 0;
+    int _objdumpLineno = 0;
+
+    TraceInstr* _currInstr;
 };
 
-QProcessEnvironment env;
-
-QString getObjDump()
+ObjdumpParser::ObjdumpParser(TraceFunction* func)
+    : _isArm{func->data()->architecture() == TraceData::ArchARM}
 {
-    if (env.isEmpty())
-        env = QProcessEnvironment::systemEnvironment();
+    #ifdef OBJDUMP_PARSER_DEBUG
+    qDebug() << "\033[1;31m" << "ObjdumpParser::ObjdumpParser()" << "\033[0m";
+    #endif // OBJDUMP_PARSER_DEBUG
 
-    return env.value(QStringLiteral("OBJDUMP"), QStringLiteral("objdump"));
+    auto instrMap = func->instrMap();
+    assert (!instrMap->empty());
+
+    _it = instrMap->begin();
+    _ite = instrMap->end();
+
+    _nextCostAddr = _it->addr();
+    if (_isArm)
+        _nextCostAddr = _nextCostAddr.alignedDown(2);
+
+    _dumpStartAddr = _nextCostAddr;
+    _dumpEndAddr = func->lastAddress() + 2;
+
+    if (!runObjdump(func))
+        throw std::runtime_error{"Error while running objdump"};
 }
 
-QString getObjDumpFormat()
+bool ObjdumpParser::runObjdump(TraceFunction* func)
 {
-    if (env.isEmpty())
-        env = QProcessEnvironment::systemEnvironment();
+    #ifdef OBJDUMP_PARSER_DEBUG
+    qDebug() << "\033[1;31m" << "ObjdumpParser::runObjdump()" << "\033[0m";
+    #endif // OBJDUMP_PARSER_DEBUG
 
-    return env.value(QStringLiteral("OBJDUMP_FORMAT"));
+    TraceObject* objectFile = func->object();
+    QString dir = objectFile->directory();
+
+    if (!searchFile(dir, objectFile, func->data()))
+    {
+        // Should be implemented in a different manner
+        qDebug() << QObject::tr("For annotated machine code, the following object file is needed");
+        qDebug() << QStringLiteral("    \'%1\'").arg(objectFile->name());
+        qDebug() << QObject::tr("This file cannot be found.");
+        if (_isArm)
+            qDebug() <<  QObject::tr("If cross-compiled, set SYSROOT variable.");
+
+        return false;
+    }
+    else
+    {
+        objectFile->setDirectory(dir);
+
+        _objFile = dir + '/' + objectFile->shortName();
+
+        QString objdumpFormat = getObjDumpFormat();
+        if (objdumpFormat.isEmpty())
+            objdumpFormat = getObjDump();
+
+        auto args = QStringLiteral(" -C -d --start-address=0x%1 --stop-address=0x%2 %3")
+                                  .arg(_dumpStartAddr.toString())
+                                  .arg(_dumpEndAddr.toString())
+                                  .arg(_objFile);
+
+        _objdumpCmd = objdumpFormat + args;
+
+        qDebug("Running \'%s\'...", qPrintable(_objdumpCmd));
+
+        _objdump.start(_objdumpCmd);
+        if (!_objdump.waitForStarted() || !_objdump.waitForFinished())
+        {
+            // Should be implemented in a different manner
+            qDebug() <<  QObject::tr("There is an error trying to execute the command");
+            qDebug() << QStringLiteral("    \'%1\'").arg(_objdumpCmd);
+            qDebug() << QObject::tr("Check that you have installed \'objdump\'.");
+            qDebug() << QObject::tr("This utility can be found in the \'binutils\' package");
+
+            return false;
+        }
+        else
+            return true;
+    }
 }
 
-QString getSysRoot()
+bool ObjdumpParser::searchFile(QString& dir, TraceObject* o, TraceData* data)
 {
-    if (env.isEmpty())
-        env = QProcessEnvironment::systemEnvironment();
+    #ifdef OBJDUMP_PARSER_DEBUG
+    qDebug() << "\033[1;31m" << "ObjdumpParser::searchFile()" << "\033[0m";
+    #endif // OBJDUMP_PARSER_DEBUG
 
-    return env.value(QStringLiteral("SYSROOT"));
-}
-
-bool searchFile(QString& dir, TraceObject* o, TraceData* data)
-{
     QString filename = o->shortName();
 
     if (QDir::isAbsolutePath(dir))
@@ -1080,6 +1075,290 @@ bool searchFile(QString& dir, TraceObject* o, TraceData* data)
     }
 }
 
+QString ObjdumpParser::getObjDump()
+{
+    #ifdef OBJDUMP_PARSER_DEBUG
+    qDebug() << "\033[1;31m" << "ObjdumpParser::getObjDump()" << "\033[0m";
+    #endif // OBJDUMP_PARSER_DEBUG
+
+    if (_env.isEmpty())
+        _env = QProcessEnvironment::systemEnvironment();
+
+    return _env.value(QStringLiteral("OBJDUMP"), QStringLiteral("objdump"));
+}
+
+QString ObjdumpParser::getObjDumpFormat()
+{
+    #ifdef OBJDUMP_PARSER_DEBUG
+    qDebug() << "\033[1;31m" << "ObjdumpParser::getObjDumpFormat()" << "\033[0m";
+    #endif // OBJDUMP_PARSER_DEBUG
+
+    if (_env.isEmpty())
+        _env = QProcessEnvironment::systemEnvironment();
+
+    return _env.value(QStringLiteral("OBJDUMP_FORMAT"));
+}
+
+QString ObjdumpParser::getSysRoot()
+{
+    #ifdef OBJDUMP_PARSER_DEBUG
+    qDebug() << "\033[1;31m" << "ObjdumpParser::getSysRoot()" << "\033[0m";
+    #endif // OBJDUMP_PARSER_DEBUG
+
+    if (_env.isEmpty())
+        _env = QProcessEnvironment::systemEnvironment();
+
+    return _env.value(QStringLiteral("SYSROOT"));
+}
+
+QMap<Addr, QString> ObjdumpParser::getInstrStrings()
+{
+    #ifdef OBJDUMP_PARSER_DEBUG
+    qDebug() << "\033[1;31m" << "ObjdumpParser::getInstrStrings()" << "\033[0m";
+    #endif // OBJDUMP_PARSER_DEBUG
+
+    QMap<Addr, QString> instrStrings;
+
+    for (; ; _line.setPos(0))
+    {
+        if (_needObjAddr)
+            getObjAddr();
+
+        if (_needCostAddr && Addr{0} < _nextCostAddr && (_objAddr == 0 || _nextCostAddr <= _objAddr))
+            getCostAddr();
+
+        if (_objAddr == Addr{0})
+            break;
+
+        Addr addr;
+        [[maybe_unused]] QString encoding;
+        QString mnemonic, operands;
+        if (_nextCostAddr == 0 || _costAddr == 0 || _objAddr < _nextCostAddr)
+        {
+            addr = parseAddress();
+            assert (addr == _objAddr);
+
+            _line.advance(1);
+
+            _needObjAddr = true;
+
+            if ((_costAddr == 0 || _costAddr + 3 * GlobalConfig::context() < _objAddr) &&
+                (_nextCostAddr == 0 || _objAddr < _nextCostAddr - 3 * GlobalConfig::context()))
+            {
+                if (_skipLineWritten || _it == _ite)
+                    continue;
+                else
+                {
+                    encoding = mnemonic = QString{};
+                    operands = QStringLiteral("...");
+
+                    _skipLineWritten = true;
+                }
+            }
+            else
+            {
+                encoding = parseEncoding();
+                assert (!encoding.isNull());
+
+                mnemonic = parseMnemonic();
+                operands = parseOperands();
+
+                _skipLineWritten = false;
+            }
+
+            if (_costAddr == _objAddr)
+            {
+                _currInstr = std::addressof(*_costIt);
+                _needCostAddr = true;
+            }
+            else
+                _currInstr = nullptr;
+        }
+        else
+        {
+            addr = _costAddr;
+            operands = QObject::tr("(No Instruction)");
+
+            _currInstr = std::addressof(*_costIt);
+
+            _needCostAddr = true;
+            _skipLineWritten = false;
+            _noAssLines++;
+        }
+
+        if (!mnemonic.isEmpty() && _currInstr)
+        {
+            operands.replace('<', '[');
+            operands.replace('>', ']');
+            instrStrings.insert(_objAddr, mnemonic + " " + operands);
+        }
+    }
+
+    if (_noAssLines > 1)
+    {
+        qDebug() << QObject::tr("There are %n cost line(s) without machine code.", "", _noAssLines)
+                 << QObject::tr("This happens because the code of")
+                 << QStringLiteral("    %1").arg(_objFile)
+                 << QObject::tr("does not seem to match the profile data file.")
+                 << QObject::tr("Are you using an old profile data file or is the above mentioned")
+                 << QObject::tr("ELF object from an updated installation/another machine?");
+
+        return {};
+    }
+    else if (instrStrings.empty())
+    {
+        qDebug() << QObject::tr("There seems to be an error trying to execute the command")
+                 << QStringLiteral("    '%1'").arg(_objdumpCmd)
+                 << QObject::tr("Check that the ELF object used in the command exists.")
+                 << QObject::tr("Check that you have installed 'objdump'.")
+                 << QObject::tr("This utility can be found in the 'binutils' package.");
+
+        return {};
+    }
+
+    return instrStrings;
+}
+
+void ObjdumpParser::getObjAddr()
+{
+    #ifdef OBJDUMP_PARSER_DEBUG
+    qDebug() << "\033[1;31m" << "ObjdumpParser::getObjAddr()" << "\033[0m";
+    #endif // OBJDUMP_PARSER_DEBUG
+
+    _needObjAddr = false;
+    while (true)
+    {
+        auto readBytes = _objdump.readLine(_line.absData(), _line.capacity());
+        if (readBytes <= 0)
+        {
+            _objAddr = Addr{0};
+            break;
+        }
+        else
+        {
+            _objdumpLineno++;
+            if (readBytes == _line.capacity())
+                qDebug("ERROR: Line %d is too long\n", _objdumpLineno);
+            else if (_line.absData()[readBytes - 1] == '\n')
+                _line.setElem(readBytes - 1, '\0');
+
+            _objAddr = parseAddress();
+            qDebug() << "\033[1;31m" << _objAddr.toString() << "\033[0m";
+            _line.setPos(0);
+            if (_dumpStartAddr <= _objAddr && _objAddr <= _dumpEndAddr)
+                break;
+        }
+    }
+}
+
+void ObjdumpParser::getCostAddr()
+{
+    #ifdef OBJDUMP_PARSER_DEBUG
+    qDebug() << "\033[1;31m" << "ObjdumpParser::getCostAddr()" << "\033[0m";
+    #endif // OBJDUMP_PARSER_DEBUG
+
+    _needCostAddr = false;
+    _costIt = _it++;
+
+    _costAddr = std::exchange(_nextCostAddr, (_it == _ite) ? Addr{0} : _it->addr());
+    if (_isArm)
+        _nextCostAddr = _nextCostAddr.alignedDown(2);
+}
+
+bool ObjdumpParser::isHexDigit(char c)
+{
+    #ifdef OBJDUMP_PARSER_DEBUG
+    qDebug() << "\033[1;31m" << "ObjdumpParser::ishexDigit()" << "\033[0m";
+    #endif // OBJDUMP_PARSER_DEBUG
+
+    return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f');
+}
+
+Addr ObjdumpParser::parseAddress()
+{
+    #ifdef OBJDUMP_PARSER_DEBUG
+    qDebug() << "\033[1;31m" << "ObjdumpParser::parserAddress()" << "\033[0m";
+    #endif // OBJDUMP_PARSER_DEBUG
+
+    _line.skipWhitespaces();
+
+    Addr addr;
+    auto digits = addr.set(_line.relData());
+    _line.advance(digits);
+
+    return (digits == 0 || _line.elem() != ':') ? Addr{0} : addr;
+}
+
+QString ObjdumpParser::parseEncoding()
+{
+    #ifdef OBJDUMP_PARSER_DEBUG
+    qDebug() << "\033[1;31m" << "ObjdumpParser::parseEncoding()" << "\033[0m";
+    #endif // OBJDUMP_PARSER_DEBUG
+
+    _line.skipWhitespaces();
+    auto start = _line.getPos();
+
+    while (true)
+    {
+        if (!isHexDigit(_line.elem()) || !isHexDigit(_line.elem(1)))
+            break;
+        else if (_line.elem(2) == ' ')
+            _line.advance(3);
+        else if (!isHexDigit(_line.elem(2)) || !isHexDigit(_line.elem(3)))
+            break;
+        else if (_line.elem(4) == ' ')
+            _line.advance(5);
+        else if (!isHexDigit(_line.elem(4)) ||
+                !isHexDigit(_line.elem(5)) ||
+                !isHexDigit(_line.elem(6)) ||
+                !isHexDigit(_line.elem(7)) ||
+                _line.elem(8) != ' ')
+            break;
+        else
+            _line.advance(9);
+    }
+
+    if (_line.getPos() > start)
+        return QString::fromLatin1(_line.absData(start), _line.getPos() - start - 1);
+    else
+        return QString{};
+}
+
+QString ObjdumpParser::parseMnemonic()
+{
+    #ifdef OBJDUMP_PARSER_DEBUG
+    qDebug() << "\033[1;31m" << "ObjdumpParser::parseMnemonic()" << "\033[0m";
+    #endif // OBJDUMP_PARSER_DEBUG
+
+    _line.skipWhitespaces();
+    auto start = _line.getPos();
+
+    while (_line.elem() && _line.elem() != ' ' && _line.elem() != '\t')
+        _line.advance(1);
+
+    return QString::fromLatin1(_line.absData(start), _line.getPos() - start);
+}
+
+QString ObjdumpParser::parseOperands()
+{
+    #ifdef OBJDUMP_PARSER_DEBUG
+    qDebug() << "\033[1;31m" << "ObjdumpParser::parseOperands()" << "\033[0m";
+    #endif // OBJDUMP_PARSER_DEBUG
+
+    _line.skipWhitespaces();
+
+    auto operandsPos = _line.relData();
+    auto operandsLen = std::min<std::size_t>(std::strlen(operandsPos),
+                                             std::strchr(operandsPos, '#') - operandsPos);
+    if (operandsLen > 0 && _line.elem(operandsLen - 1) == '\n')
+        operandsLen--;
+
+    if (operandsLen > 50)
+        return QString::fromLatin1(operandsPos, 47) + QStringLiteral("...");
+    else
+        return QString::fromLatin1(operandsPos, operandsLen);
+}
+
 } // unnamed namespace
 
 bool CFGExporter::fillInstrStrings(TraceFunction *func)
@@ -1093,164 +1372,14 @@ bool CFGExporter::fillInstrStrings(TraceFunction *func)
     if (_nodeMap.empty())
         return false;
 
-    auto instrMap_ = func->instrMap();
-    assert (!instrMap_->empty());
-
-    auto it = instrMap_->begin();
-    auto itEnd = instrMap_->end();
-
-    bool isArm = (func->data()->architecture() == TraceData::ArchARM);
-
-    Addr nextCostAddr = it->addr();
-    if (isArm)
-        nextCostAddr = nextCostAddr.alignedDown(2);
-
-    ObjdumpParser parser{nextCostAddr, func->lastAddress() + 1};
-
-    TraceInstr* currInstr;
-    typename TraceInstrMap::iterator costIt;
-
-    Addr objAddr;
-    Addr costAddr;
-
-    QMap<Addr, QString> instrStrings;
-
-    for (auto objdumpLineno = 0; ; parser._line.setPos(0))
-    {
-        if (parser._needObjAddr)
-        {
-            parser._needObjAddr = false;
-            while (true)
-            {
-                auto readBytes = objdump.readLine(parser._line.absData(), parser_.line.capacity());
-                if (readBytes <= 0)
-                {
-                    objAddr = 0;
-                    break;
-                }
-                else
-                {
-                    objdumpLineno++;
-                    if (readBytes == parser._line.capacity())
-                        qDebug("ERROR: Line %d is too long\n", objdumpLineno);
-                    else if (parser._line.absData()[readBytes - 1] == '\n')
-                        parser._line.setElem(readBytes - 1, '\0');
-
-                    objAddr = parseAddress(parser._line);
-                    parser._line.setPos(0);
-                    if (dumpStartAddr <= objAddr && objAddr <= dumpEndAddr)
-                        break;
-                }
-            }
-        }
-
-        if (parser._needCostAddr && Addr{0} < nextCostAddr && (objAddr == Addr{0} || nextCostAddr <= objAddr))
-        {
-            parser._needCostAddr = false;
-
-            costIt = it++;
-
-            #if 0
-            it = std::find_if(it, itEnd, [eventType, eventType2](const TranceInstr &i)
-                                         { return i.hasCost(eventType) ||
-                                                  (eventType2 && i.hasCost(eventType2)); });
-            #endif
-
-            costAddr = std::exchange(nextCostAddr, (it == itEnd) ? Addr{0} : it->addr());
-            if (isArm)
-                nextCostAddr = nextCostAddr.alignedDown(2);
-        }
-
-        if (objAddr == Addr{0})
-            break;
-
-        Addr addr;
-        [[maybe_unused]] QString encoding;
-        QString mnemonic, operands;
-        if (nextCostAddr == 0 || costAddr == 0 || objAddr < nextCostAddr)
-        {
-            addr = parser.parseAddress();
-            assert (addr == objAddr);
-
-            parser._line.advance(1);
-
-            parser._needObjAddr = true;
-
-            if ((costAddr == 0 || costAddr + 3 * GlobalConfig::context() < objAddr) &&
-                (nextCostAddr == 0 || objAddr < nextCostAddr - 3 * GlobalConfig::context()))
-            {
-                if (parser._skipLineWritten || (it == itEnd && itEnd == instrMap_->end()))
-                    continue;
-                else
-                {
-                    encoding = mnemonic = QString{};
-                    operands = QStringLiteral("...");
-
-                    parser._skipLineWritten = true;
-                }
-            }
-            else
-            {
-                encoding = parser.parseEncoding();
-                assert (!encoding.isNull());
-
-                mnemonic = parser.parseMnemonic();
-                operands = parser.parseOperands();
-
-                parser._skipLineWritten = false;
-            }
-
-            if (costAddr == objAddr)
-            {
-                currInstr = std::addressof(*costIt);
-                parser._needCostAddr = true;
-            }
-            else
-                currInstr = nullptr;
-        }
-        else
-        {
-            addr = costAddr;
-            operands = QObject::tr("(No Instruction)");
-
-            currInstr = std::addressof(*costIt);
-
-            parser._needCostAddr = true;
-            parser._skipLineWritten = false;
-            parser._noAssLines++;
-        }
-
-        if (!mnemonic.isEmpty() && currInstr)
-        {
-            operands.replace('<', '[');
-            operands.replace('>', ']');
-            instrStrings.insert(objAddr, mnemonic + " " + operands);
-        }
-    }
-
-    if (parser._noAssLines > 1)
-    {
-        qDebug() << QObject::tr("There are %n cost line(s) without machine code.", "", parser._noAssLines)
-                 << QObject::tr("This happens because the code of")
-                 << QStringLiteral("    %1").arg(objFile)
-                 << QObject::tr("does not seem to match the profile data file.")
-                 << QObject::tr("Are you using an old profile data file or is the above mentioned")
-                 << QObject::tr("ELF object from an updated installation/another machine?");
+    ObjdumpParser parser{func};
+    auto instrStrings = parser.getInstrStrings();
+    if (instrStrings.empty())
         return false;
-    }
-    else if (instrStrings.empty())
-    {
-        qDebug() << QObject::tr("There seems to be an error trying to execute the command")
-                 << QStringLiteral("    '%1'").arg(objdumpCmd)
-                 << QObject::tr("Check that the ELF object used in the command exists.")
-                 << QObject::tr("Check that you have installed 'objdump'.")
-                 << QObject::tr("This utility can be found in the 'binutils' package.");
-        return false;
-    }
 
     for (auto it = _nodeMap.begin(), ite = _nodeMap.end(); it != ite; ++it)
     {
-        auto& [firstAddr, lastAddr] = it.key();
+        auto [firstAddr, lastAddr] = it.key();
         CFGNode& node = it.value();
 
         auto lastIt = instrStrings.find(lastAddr);
@@ -1260,63 +1389,6 @@ bool CFGExporter::fillInstrStrings(TraceFunction *func)
     }
 
     return true;
-}
-
-std::pair<QString, QString> CFGExporter::runObjdump(TraceFunction* func, QProcess &objdump,
-                                                    bool isArm)
-{
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::runObjdump()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
-    auto objectFile = func->object();
-    QString dir = objectFile->directory();
-
-    if (!searchFile(dir, objectFile, func->data()))
-    {
-        // Should be implemented in a different manner
-        qDebug() << QObject::tr("For annotated machine code, the following object file is needed");
-        qDebug() << QStringLiteral("    \'%1\'").arg(objectFile->name());
-        qDebug() << QObject::tr("This file cannot be found.");
-        if (isArm)
-            qDebug() <<  QObject::tr("If cross-compiled, set SYSROOT variable.");
-
-        return std::pair<QString, QString>{};
-    }
-    else
-    {
-        objectFile->setDirectory(dir);
-
-        auto objFile = dir + '/' + objectFile->shortName();
-
-        auto objdumpFormat = getObjDumpFormat();
-        if (objdumpFormat.isEmpty())
-            objdumpFormat = getObjDump();
-
-        Addr dumpEndAddr = func->lastAddress() + 1;
-        QString args = QStringLiteral(" -C -d --start-address=0x%1 --stop-address=0x%2 %3")
-                                     .arg(func->firstAddress().toString())
-                                     .arg(dumpEndAddr.toString())
-                                     .arg(objFile);
-
-        auto objdumpCmd = objdumpFormat + args;
-
-        qDebug("Running \'%s\'...", qPrintable(objdumpCmd));
-
-        objdump.start(objdumpCmd);
-        if (!objdump.waitForStarted() || !objdump.waitForFinished())
-        {
-            // Should be implemented in a different manner
-            qDebug() <<  QObject::tr("There is an error trying to execute the command");
-            qDebug() << QStringLiteral("    \'%1\'").arg(objdumpCmd);
-            qDebug() << QObject::tr("Check that you have installed \'objdump\'.");
-            qDebug() << QObject::tr("This utility can be found in the \'binutils\' package");
-
-            return std::pair<QString, QString>{};
-        }
-        else
-            return std::pair{objFile, objdumpCmd};
-    }
 }
 
 void CFGExporter::dumpLayoutSettings(QTextStream &ts)

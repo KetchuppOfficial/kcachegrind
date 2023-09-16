@@ -261,7 +261,6 @@ private:
     void buildEdge(CFGNode* fromNode, TraceBranch* branch);
 
     bool fillInstrStrings(TraceFunction* func);
-    std::pair<QString, QString> runObjdump(TraceFunction* func, QProcess &objdump, bool isArm);
 
     void dumpLayoutSettings(QTextStream &ts);
     void dumpNodes(QTextStream &ts);
