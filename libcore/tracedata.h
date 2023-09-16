@@ -1197,8 +1197,12 @@ public:
     const_iterator end() const { return _instructions.end(); }
     const_iterator cend() const { return end(); }
 
+    void addBranchInside(TraceBasicBlock* fromBB);
+    bool existsJumpToInstr(TraceInstr *instr) const;
+
 private:
     std::vector<TraceInstr*> _instructions;
+    std::unordered_map<TraceInstr*, std::vector<TraceBasicBlock*>> _instrToBB;
 
     TraceFunction* _func;
     TraceBranch _trueBranch;

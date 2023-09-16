@@ -2667,6 +2667,10 @@ void TraceFunction::constructBasicBlocks()
                 falseBr.setType(TraceBranch::Type::false_);
             }
         }
+
+        TraceBasicBlock* toBB = trueBr.toBB();
+        if (toBB)
+            toBB->addBranchInside(bbPtr);
     }
 
     assert (std::all_of(_basicBlocks.begin(), _basicBlocks.end(),
@@ -3813,6 +3817,7 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
                                  typename TraceInstrMap::iterator last)
     : TraceCostItem{ProfileContext::context(ProfileContext::BasicBlock)},
       _instructions(std::distance(first, last)),
+      _instrToBB(_instructions.capacity()),
       _func{first->function()}
 {
     assert(std::all_of(first, last, [f = _func](TraceInstr& i){ return i.function() == f; }) &&
@@ -3892,6 +3897,24 @@ Addr TraceBasicBlock::lastAddr() const
 {
     assert(lastInstr());
     return lastInstr()->addr();
+}
+
+void TraceBasicBlock::addBranchInside(TraceBasicBlock* fromBB)
+{
+    if (!fromBB)
+        return;
+
+    TraceInstr* to = fromBB->trueBranch().toInstr();
+    assert(to);
+    assert(std::find(_instructions.begin(), _instructions.end(), to) != _instructions.end());
+
+    _instrToBB[to].push_back(fromBB);
+}
+
+bool TraceBasicBlock::existsJumpToInstr(TraceInstr* instr) const
+{
+    auto it = _instrToBB.find(instr);
+    return it != _instrToBB.end() && !it->second.empty();
 }
 
 // ======================================================================================
