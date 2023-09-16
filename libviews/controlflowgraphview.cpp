@@ -1243,7 +1243,6 @@ void ObjdumpParser::getObjAddr()
                 _line.setElem(readBytes - 1, '\0');
 
             _objAddr = parseAddress();
-            qDebug() << "\033[1;31m" << _objAddr.toString() << "\033[0m";
             _line.setPos(0);
             if (_dumpStartAddr <= _objAddr && _objAddr <= _dumpEndAddr)
                 break;
