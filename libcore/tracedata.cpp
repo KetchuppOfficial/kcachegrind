@@ -3945,7 +3945,7 @@ const TraceBasicBlock* TraceBranch::toBB() const
 
 bool TraceBranch::isCycle() const
 {
-    return (_type == Type::true_) && (fromBB() == toBB());
+    return (_type == Type::true_ || _type == Type::unconditional) && (fromBB() == toBB());
 }
 
 bool TraceBranch::isBranchInside() const
