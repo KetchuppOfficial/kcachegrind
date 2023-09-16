@@ -679,7 +679,7 @@ bool CFGExporter::writeDot(QIODevice* device)
         return false;
 
     // copy-constructors of QFile and QTextStream are deleted
-    // so we have to allocate them with on heap
+    // so we have to allocate them on heap
     QFile *file = nullptr;
     QTextStream* stream = nullptr;
 
