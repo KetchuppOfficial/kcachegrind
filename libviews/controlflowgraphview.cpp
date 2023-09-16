@@ -1477,37 +1477,27 @@ void CFGExporter::dumpEdges(QTextStream &ts)
 
         switch (br->type())
         {
-            case TraceBranch::Type::unconditional:
-                ts << QStringLiteral("  B%1:I%2 -> B%3")
-                                    .arg(br->fromBB()->firstAddr().toString())
-                                    .arg(portFrom)
-                                    .arg(br->toBB()->firstAddr().toString());
-
-                if (br->isBranchInside())
-                    ts << QStringLiteral(":I%1").arg(br->toInstr()->addr().toString());
-                else
-                    ts << ":n";
-
-                ts << " [color=black]\n";
-                break;
-
             case TraceBranch::Type::true_:
+            case TraceBranch::Type::unconditional:
+            {
+                const char *color = (br->type() == TraceBranch::Type::true_) ? "blue" : "black";
+
                 ts << QStringLiteral("  B%1:I%2:w -> B%3")
                                     .arg(br->fromBB()->firstAddr().toString())
                                     .arg(portFrom)
                                     .arg(br->toBB()->firstAddr().toString());
 
-
                 if (br->isCycle())
-                    ts << QStringLiteral(":I%1:w [constraint=false, color=blue]\n")
-                                        .arg(br->toInstr()->addr().toString());
+                    ts << QStringLiteral(":I%1:w [constraint=false, color=%2]\n")
+                                        .arg(br->toInstr()->addr().toString()).arg(color);
                 else if (br->isBranchInside())
-                    ts << QStringLiteral(":I%1 [color=blue]\n")
-                                        .arg(br->toInstr()->addr().toString());
+                    ts << QStringLiteral(":I%1 [color=%2]\n")
+                                        .arg(br->toInstr()->addr().toString()).arg(color);
                 else
-                    ts << ":n [color=blue]\n";
+                    ts << QStringLiteral(":n [color=%1]\n").arg(color);
 
                 break;
+            }
 
             case TraceBranch::Type::false_:
                 ts << QStringLiteral("  B%1:I%2:e -> B%3:n [color=red]\n")
