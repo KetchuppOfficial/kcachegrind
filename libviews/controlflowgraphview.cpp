@@ -1447,35 +1447,20 @@ void CFGExporter::dumpNodes(QTextStream &ts)
         ts << QStringLiteral("  B%1 [shape=record, label=\"{")
                             .arg(bb->firstAddr().toString());
 
-        auto jumpIt = std::prev(node.end());
-        if (bb->trueBranch().isCycle())
+        auto lastInstrIt = std::prev(bb->end());
+
+        auto i = 0;
+        for (auto it = bb->begin(); it != lastInstrIt; ++it, ++i)
         {
-            TraceInstr* jmpTo = bb->trueBranch().toInstr();
-            auto toDist = std::distance(bb->begin(),
-                                        std::find(bb->begin(), bb->end(), jmpTo));
-            auto cycleIt = std::next(node.begin(), toDist);
-            assert(cycleIt != node.end());
+            TraceInstr* instr = *it;
+            if (bb->existsJumpToInstr(instr))
+                ts << QStringLiteral("<I%1>").arg(instr->addr().toString());
 
-            for (auto it = node.begin(); it != cycleIt; ++it)
-                ts << *it << " | ";
-
-            ts << "<to>" << *cycleIt << " | ";
-
-            for (auto it = std::next(cycleIt); it != jumpIt; ++it)
-                ts << *it << " | ";
-        }
-        else
-        {
-            for (auto it = node.begin(); it != jumpIt; ++it)
-                ts << *it << " | ";
+            ts << *std::next(node.begin(), i) << " | ";
         }
 
-        ts << "<from>" << *jumpIt << "}\"]\n";
-
-        #if 0
-        ts << QStringLiteral("\"** %1 **\\n**\\n%2\"];\n")
-                            .arg(abr).arg(SubCost{node.incl}.pretty());
-        #endif
+        ts << QStringLiteral("<I%1>").arg((*lastInstrIt)->addr().toString())
+           << *std::prev(node.end()) << "}\"]\n";
     }
 }
 
@@ -1488,37 +1473,46 @@ void CFGExporter::dumpEdges(QTextStream &ts)
     for (auto &edge : _edgeMap)
     {
         TraceBranch* br = edge.branch();
+        auto portFrom = br->fromBB()->lastInstr()->addr().toString();
 
         switch (br->type())
         {
             case TraceBranch::Type::unconditional:
-                ts << QStringLiteral("  B%1:from -> B%2")
+                ts << QStringLiteral("  B%1:I%2 -> B%3")
                                     .arg(br->fromBB()->firstAddr().toString())
+                                    .arg(portFrom)
                                     .arg(br->toBB()->firstAddr().toString());
 
                 if (br->isBranchInside())
-                    ts << ":to";
+                    ts << QStringLiteral(":I%1").arg(br->toInstr()->addr().toString());
+                else
+                    ts << ":n";
 
                 ts << " [color=black]\n";
                 break;
 
             case TraceBranch::Type::true_:
-                ts << QStringLiteral("  B%1:from:w -> B%2")
+                ts << QStringLiteral("  B%1:I%2:w -> B%3")
                                     .arg(br->fromBB()->firstAddr().toString())
+                                    .arg(portFrom)
                                     .arg(br->toBB()->firstAddr().toString());
 
+
                 if (br->isCycle())
-                    ts << ":to:w [constraint=false, color=blue]\n";
+                    ts << QStringLiteral(":I%1:w [constraint=false, color=blue]\n")
+                                        .arg(br->toInstr()->addr().toString());
                 else if (br->isBranchInside())
-                    ts << ":to [color=blue]\n";
+                    ts << QStringLiteral(":I%1 [color=blue]\n")
+                                        .arg(br->toInstr()->addr().toString());
                 else
-                    ts << " [color=blue]\n";
+                    ts << ":n [color=blue]\n";
 
                 break;
 
             case TraceBranch::Type::false_:
-                ts << QStringLiteral("  B%1:from:e -> B%2 [color=red]\n")
+                ts << QStringLiteral("  B%1:I%2:e -> B%3:n [color=red]\n")
                                     .arg(br->fromBB()->firstAddr().toString())
+                                    .arg(portFrom)
                                     .arg(br->toBB()->firstAddr().toString());
                 break;
 
@@ -2445,6 +2439,7 @@ CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream &ts, d
     }
     else
     {
+        // THIS IS UB: nodeName no longer represents TraceBasicBlock* but Addr
         CFGNode* node = _exporter.findNode(_exporter.toBasicBlock(nodeName));
         if (node)
         {
@@ -2500,6 +2495,7 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream &ts, d
     int nPoints;
     ts >> nPoints;
 
+    // THIS IS UB: node1Name and node2Name no longer represent TraceBasicBlock* but Addr
     CFGEdge* edge = _exporter.findEdge(_exporter.toBasicBlock(node1Name),
                                        _exporter.toBasicBlock(node2Name));
     if (!edge)
