@@ -851,25 +851,27 @@ namespace
 class LineBuffer final
 {
 public:
+    using pos_type = std::size_t;
+
     LineBuffer() = default;
 
-    std::size_t capacity() const { return _bufSize; }
+    pos_type capacity() const { return _bufSize; }
 
-    std::size_t getPos() const { return _pos; }
-    void setPos(std::size_t pos) { _pos = pos; }
+    pos_type getPos() const { return _pos; }
+    void setPos(pos_type pos) { _pos = pos; }
 
-    char elem(std::size_t offset = 0) const { return _buf[_pos + offset]; }
-    void setElem(std::size_t pos, char c) { _buf[pos] = c; }
+    char elem(pos_type offset = 0) const { return _buf[_pos + offset]; }
+    void setElem(pos_type pos, char c) { _buf[pos] = c; }
 
     // relatively to _pos
-    char* relData(std::size_t offset = 0) { return _buf + _pos + offset; }
-    const char* relData(std::size_t offset = 0) const { return _buf + _pos + offset; }
+    char* relData(pos_type offset = 0) { return _buf + _pos + offset; }
+    const char* relData(pos_type offset = 0) const { return _buf + _pos + offset; }
 
     // relatively to the beginning of _buf
-    char* absData(std::size_t offset = 0) { return _buf + offset; }
-    const char* absData(std::size_t offset = 0) const { return _buf + offset; }
+    char* absData(pos_type offset = 0) { return _buf + offset; }
+    const char* absData(pos_type offset = 0) const { return _buf + offset; }
 
-    void advance(std::size_t offset) { _pos += offset; }
+    void advance(pos_type offset) { _pos += offset; }
 
     void skipWhitespaces()
     {
@@ -878,9 +880,9 @@ public:
     }
 
 private:
-    static constexpr std::size_t _bufSize = 256;
+    static constexpr pos_type _bufSize = 256;
     char _buf[_bufSize];
-    std::size_t _pos = 0;
+    pos_type _pos = 0;
 };
 
 struct ObjdumpParser final
