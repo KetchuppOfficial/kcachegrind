@@ -3831,14 +3831,14 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
 
     if (!jumps.empty())
     {
-        TraceInstrJump* _jump = jumps.front();
-        TraceInstr* from = _jump->instrFrom();
+        TraceInstrJump* jump = jumps.front();
+        TraceInstr* from = jump->instrFrom();
 
         _falseBranch.setFromInstr(from);
         _trueBranch.setFromInstr(from);
-        _trueBranch.setToInstr(_jump->instrTo());
-        _trueBranch.setType(_jump->isCondJump() ? TraceBranch::Type::true_
-                                                : TraceBranch::Type::unconditional);
+        _trueBranch.setToInstr(jump->instrTo());
+        _trueBranch.setType(jump->isCondJump() ? TraceBranch::Type::true_
+                                               : TraceBranch::Type::unconditional);
     }
 
     for (; first != last; ++first)
