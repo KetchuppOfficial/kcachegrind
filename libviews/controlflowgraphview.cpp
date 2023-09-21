@@ -2509,9 +2509,6 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream &ts, d
     QString node1Name, node2Name;
     ts >> node1Name >> node2Name;
 
-    int nPoints;
-    ts >> nPoints;
-
     CFGNode* predecessor = _exporter.toCFGNode(node1Name);
     CFGNode* successor = _exporter.toCFGNode(node2Name);
 
@@ -2540,6 +2537,8 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream &ts, d
 
     edge->setVisible(true);
 
+    int nPoints;
+    ts >> nPoints;
     QPolygon poly(nPoints);
 
     for (auto i = 0; i != nPoints; ++i)
