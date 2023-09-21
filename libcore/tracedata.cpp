@@ -3832,6 +3832,7 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
     if (!jumps.empty())
     {
         TraceInstrJump* jump = jumps.front();
+        assert(jump);
         TraceInstr* from = jump->instrFrom();
 
         _falseBranch.setFromInstr(from);
