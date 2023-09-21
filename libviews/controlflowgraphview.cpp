@@ -1762,6 +1762,7 @@ void CanvasCFGNode::setSelected(bool s)
 
 void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
+    #if 0
     auto nInstructions = _node->instrNumber();
     p->setPen(Qt::black);
 
@@ -1791,6 +1792,7 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
         p->drawLine(rectangle.x(), bottomRightCorner,
                     rectangle.x() + rectangle.width(), bottomRightCorner);
     }
+    #endif
 }
 
 // ======================================================================================
