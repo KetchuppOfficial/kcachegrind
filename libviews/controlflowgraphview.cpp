@@ -737,9 +737,6 @@ bool CFGExporter::writeDot(QIODevice* device)
         }
         #endif
 
-        for (auto &n : _nodeMap)
-            n.clearEdges();
-
         *stream << "}\n";
     }
 
@@ -2522,12 +2519,12 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream &ts, d
     if (predecessor && successor)
     {
         auto te = predecessor->trueEdge();
-        if (te->toNode() == successor)
+        if (te && te->toNode() == successor)
             edge = te;
         else
         {
             auto fe = predecessor->falseEdge();
-            edge = (fe->toNode() == successor) ? fe : nullptr;
+            edge = (fe && fe->toNode() == successor) ? fe : nullptr;
         }
     }
     else
