@@ -1451,8 +1451,9 @@ void CFGExporter::dumpNodes(QTextStream &ts)
     {
         TraceBasicBlock* bb = node.basicBlock();
 
-        ts << QStringLiteral("  B%1 [shape=record, label=\"{")
-                            .arg(bb->firstAddr().toString());
+        ts << QStringLiteral("  b%1b%2 [shape=record, label=\"{")
+                            .arg(bb->firstAddr().toString())
+                            .arg(bb->lastAddr().toString());
 
         auto lastInstrIt = std::prev(bb->end());
 
@@ -1480,16 +1481,19 @@ void CFGExporter::dumpEdges(QTextStream &ts)
     for (auto &edge : _edgeMap)
     {
         TraceBranch* br = edge.branch();
-
         assert(br);
+
         TraceBasicBlock* fromBB = br->fromBB();
-
         assert(fromBB);
-        auto bbFromAddr = fromBB->firstAddr().toString();
-        auto instrFromAddr = fromBB->lastAddr().toString();
 
-        assert(br->toBB());
-        auto bbToAddr = br->toBB()->firstAddr().toString();
+        auto bbFromFirstAddr = fromBB->firstAddr().toString();
+        auto bbFromLastAddr = fromBB->lastAddr().toString();
+
+        TraceBasicBlock* toBB = br->toBB();
+        assert(toBB);
+
+        auto bbToFirstAddr = toBB->firstAddr().toString();
+        auto bbToLastAddr = toBB->lastAddr().toString();
 
         switch (br->type())
         {
@@ -1498,8 +1502,9 @@ void CFGExporter::dumpEdges(QTextStream &ts)
             {
                 const char *color = (br->type() == TraceBranch::Type::true_) ? "blue" : "black";
 
-                ts << QStringLiteral("  B%1:I%2:w -> B%3")
-                                    .arg(bbFromAddr).arg(instrFromAddr).arg(bbToAddr);
+                ts << QStringLiteral("  b%1b%2:I%3:w -> b%4b%5")
+                                    .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
+                                    .arg(bbToFirstAddr).arg(bbToLastAddr);
 
                 if (br->isCycle())
                     ts << QStringLiteral(":I%1:w [constraint=false, color=%2]\n")
@@ -1514,8 +1519,9 @@ void CFGExporter::dumpEdges(QTextStream &ts)
             }
 
             case TraceBranch::Type::false_:
-                ts << QStringLiteral("  B%1:I%2:e -> B%3:n [color=red]\n")
-                                    .arg(bbFromAddr).arg(instrFromAddr).arg(bbToAddr);
+                ts << QStringLiteral("  b%1b%2:I%3:e -> b%4b%5:n [color=red]\n")
+                                    .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
+                                    .arg(bbToFirstAddr).arg(bbToLastAddr);
                 break;
 
             default:
@@ -1549,9 +1555,9 @@ CFGNode* CFGExporter::toCFGNode(QString s)
     qDebug() << "\033[1;31m" << "CFGExporter::toBasicBlock()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    if (s[0] == 'B')
+    if (s[0] == 'b')
     {
-        auto i = s.indexOf('B', 1);
+        auto i = s.indexOf('b', 1);
         if (i != -1)
         {
             bool ok;
