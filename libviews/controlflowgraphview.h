@@ -40,11 +40,10 @@ public:
     using const_iterator = typename QStringList::const_iterator;
     using size_type = typename QStringList::size_type;
 
-    CFGNode() = default;
+    CFGNode(TraceBasicBlock* bb);
 
     TraceBasicBlock* basicBlock() { return _bb; }
     const TraceBasicBlock* basicBlock() const { return _bb; }
-    void setBasicBlock(TraceBasicBlock* bb) { _bb = bb; }
 
     CanvasCFGNode* canvasNode() { return _cn; }
     const CanvasCFGNode* canvasNode() const { return _cn; }
@@ -132,7 +131,7 @@ public:
 
 private:
 
-    TraceBasicBlock* _bb = nullptr;
+    TraceBasicBlock* _bb;
 
     CFGEdge* _trueEdge = nullptr;
     CFGEdge* _falseEdge = nullptr;
@@ -158,7 +157,7 @@ class CanvasCFGEdge;
 class CFGEdge final
 {
 public:
-    CFGEdge() = default;
+    CFGEdge(TraceBranch* branch);
 
     CanvasCFGEdge* canvasEdge() { return _ce; }
     const CanvasCFGEdge* canvasEdge() const { return _ce; }
@@ -169,7 +168,6 @@ public:
 
     TraceBranch* branch() { return _branch; }
     const TraceBranch* branch() const { return _branch; }
-    void setBranch(TraceBranch* branch) { _branch = branch; }
 
     CFGNode* fromNode() { return _fromNode; }
     const CFGNode* fromNode() const { return _fromNode; }
@@ -198,7 +196,7 @@ public:
     double count = 0.0;
 
 private:
-    TraceBranch *_branch = nullptr;
+    TraceBranch *_branch;
 
     CFGNode* _fromNode = nullptr;
     CFGNode* _toNode = nullptr;
@@ -258,7 +256,7 @@ public:
 private:
     bool createGraph();
     CFGNode* buildNode(TraceBasicBlock* bb);
-    void buildEdge(CFGNode* fromNode, TraceBranch* branch);
+    CFGEdge* buildEdge(CFGNode* fromNode, TraceBranch* branch);
 
     bool fillInstrStrings(TraceFunction* func);
 
