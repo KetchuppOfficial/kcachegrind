@@ -1124,11 +1124,11 @@ QMap<Addr, QString> ObjdumpParser::getInstrStrings()
         if (_needObjAddr)
             getObjAddr();
 
-        if (_needCostAddr && Addr{0} < _nextCostAddr && (_objAddr == 0 || _nextCostAddr <= _objAddr))
-            getCostAddr();
-
         if (_objAddr == Addr{0} || _objAddr > _dumpEndAddr)
             break;
+
+        if (_needCostAddr && Addr{0} < _nextCostAddr && _nextCostAddr <= _objAddr)
+            getCostAddr();
 
         Addr addr;
         [[maybe_unused]] QString encoding;
