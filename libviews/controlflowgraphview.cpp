@@ -1429,8 +1429,7 @@ void CFGExporter::dumpLayoutSettings(QTextStream &ts)
         }
 
         if (bb)
-            ts << QStringLiteral("  center=B%1;\n")
-                                .arg(reinterpret_cast<std::ptrdiff_t>(bb), 0, 16);
+            ts << QStringLiteral("  center=B%1;\n").arg(bb->firstAddr().toString());
 
         ts << QStringLiteral("  overlap=false\n  splines=true;\n");
     }
