@@ -1124,7 +1124,7 @@ QMap<Addr, QString> ObjdumpParser::getInstrStrings()
         if (_needObjAddr)
             getObjAddr();
 
-        if (_objAddr == Addr{0} || _objAddr > _dumpEndAddr)
+        if (_objAddr == 0 || _objAddr > _dumpEndAddr)
             break;
 
         if (_needCostAddr && Addr{0} < _nextCostAddr && _nextCostAddr <= _objAddr)
