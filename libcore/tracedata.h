@@ -1167,8 +1167,6 @@ public:
 
     void update() override;
 
-    bool isExitBlock() const;
-
     size_type instrNumber() const { return _instructions.size(); }
 
     TraceInstr* firstInstr();
