@@ -3855,11 +3855,6 @@ QString TraceBasicBlock::formattedName() const
     return QString{};
 }
 
-bool TraceBasicBlock::isExitBlock() const
-{
-    return !_trueBranch.toBB() && !_falseBranch.toBB();
-}
-
 void TraceBasicBlock::update()
 {}
 
