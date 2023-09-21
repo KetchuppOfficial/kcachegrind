@@ -998,9 +998,10 @@ bool ObjdumpParser::runObjdump(TraceFunction* func)
         if (objdumpFormat.isEmpty())
             objdumpFormat = getObjDump();
 
+        auto margin = _isArm ? 4 : 20;
         auto args = QStringLiteral(" -C -d --start-address=0x%1 --stop-address=0x%2 %3")
                                   .arg(_dumpStartAddr.toString())
-                                  .arg((_dumpEndAddr + 20).toString())
+                                  .arg((_dumpEndAddr + margin).toString())
                                   .arg(_objFile);
 
         _objdumpCmd = objdumpFormat + args;
