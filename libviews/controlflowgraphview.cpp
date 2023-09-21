@@ -39,6 +39,8 @@
 // CFGNode
 //
 
+CFGNode::CFGNode(TraceBasicBlock* bb) : _bb{bb} {}
+
 void CFGNode::clearEdges()
 {
     #ifdef CFGNODE_DEBUG
@@ -387,6 +389,8 @@ CFGEdge* CFGNode::priorVisiblePredecessorEdge(CFGEdge* edge)
 //
 // CFGEdge
 //
+
+CFGEdge::CFGEdge(TraceBranch* branch) : _branch{branch} {}
 
 CFGNode* CFGEdge::cachedFromNode()
 {
@@ -806,20 +810,22 @@ CFGNode *CFGExporter::buildNode(TraceBasicBlock* bb)
 
     assert(bb);
 
-    auto &node = _nodeMap[std::make_pair(bb->firstAddr(), bb->lastAddr())];
-    auto nodePtr = std::addressof(node);
+    std::pair key{bb->firstAddr(), bb->lastAddr()};
+    auto nodeIt = _nodeMap.find(key);
 
-    if (!node.basicBlock())
+    if (nodeIt == _nodeMap.end())
     {
-        node.setBasicBlock(bb);
-        buildEdge(nodePtr, std::addressof(bb->trueBranch()));
-        buildEdge(nodePtr, std::addressof(bb->falseBranch()));
+        nodeIt = _nodeMap.insert(key, CFGNode{bb});
+        auto nodePtr = std::addressof(*nodeIt);
+
+        nodeIt->setTrueEdge(buildEdge(nodePtr, std::addressof(bb->trueBranch())));
+        nodeIt->setFalseEdge(buildEdge(nodePtr, std::addressof(bb->falseBranch())));
     }
 
-    return nodePtr;
+    return std::addressof(*nodeIt);
 }
 
-void CFGExporter::buildEdge(CFGNode* fromNode, TraceBranch* branch)
+CFGEdge* CFGExporter::buildEdge(CFGNode* fromNode, TraceBranch* branch)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::buildEdge()" << "\033[0m";
@@ -832,22 +838,21 @@ void CFGExporter::buildEdge(CFGNode* fromNode, TraceBranch* branch)
     if (to)
     {
         TraceBasicBlock* from = branch->fromBB();
-        auto &edge = _edgeMap[std::make_pair(from, to)];
 
-        if (!edge.branch())
-            edge.setBranch(branch);
+        std::pair key{from, to};
+        auto edgeIt = _edgeMap.find(key);
 
-        if (!edge.fromNode())
-            edge.setPredecessorNode(fromNode);
-
-        if (!edge.toNode())
+        if (edgeIt == _edgeMap.end())
         {
-            if (to == from)
-                edge.setSuccessorNode(fromNode);
-            else
-                edge.setSuccessorNode(buildNode(to));
+            edgeIt = _edgeMap.insert(key, CFGEdge{branch});
+            edgeIt->setPredecessorNode(fromNode);
+            edgeIt->setSuccessorNode((to == from) ? fromNode : buildNode(to));
         }
+
+        return std::addressof(*edgeIt);
     }
+    else
+        return nullptr;
 }
 
 namespace
