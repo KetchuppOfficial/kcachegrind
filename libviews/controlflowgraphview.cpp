@@ -826,6 +826,7 @@ void CFGExporter::buildEdge(CFGNode* fromNode, TraceBranch* branch)
     #endif // CFGEXPORTER_DEBUG
 
     assert(fromNode);
+    assert(branch);
 
     TraceBasicBlock* to = branch->toBB();
     if (to)
@@ -1474,7 +1475,16 @@ void CFGExporter::dumpEdges(QTextStream &ts)
     for (auto &edge : _edgeMap)
     {
         TraceBranch* br = edge.branch();
-        auto portFrom = br->fromBB()->lastInstr()->addr().toString();
+
+        assert(br);
+        TraceBasicBlock* fromBB = br->fromBB();
+
+        assert(fromBB);
+        auto bbFromAddr = fromBB->firstAddr().toString();
+        auto instrFromAddr = fromBB->lastAddr().toString();
+
+        assert(br->toBB());
+        auto bbToAddr = br->toBB()->firstAddr().toString();
 
         switch (br->type())
         {
@@ -1484,9 +1494,7 @@ void CFGExporter::dumpEdges(QTextStream &ts)
                 const char *color = (br->type() == TraceBranch::Type::true_) ? "blue" : "black";
 
                 ts << QStringLiteral("  B%1:I%2:w -> B%3")
-                                    .arg(br->fromBB()->firstAddr().toString())
-                                    .arg(portFrom)
-                                    .arg(br->toBB()->firstAddr().toString());
+                                    .arg(bbFromAddr).arg(instrFromAddr).arg(bbToAddr);
 
                 if (br->isCycle())
                     ts << QStringLiteral(":I%1:w [constraint=false, color=%2]\n")
@@ -1502,12 +1510,11 @@ void CFGExporter::dumpEdges(QTextStream &ts)
 
             case TraceBranch::Type::false_:
                 ts << QStringLiteral("  B%1:I%2:e -> B%3:n [color=red]\n")
-                                    .arg(br->fromBB()->firstAddr().toString())
-                                    .arg(portFrom)
-                                    .arg(br->toBB()->firstAddr().toString());
+                                    .arg(bbFromAddr).arg(instrFromAddr).arg(bbToAddr);
                 break;
 
             default:
+                assert(false);
                 break;
         }
 
