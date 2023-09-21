@@ -233,8 +233,8 @@ public:
 
     void sortEdges();
 
-    // translates string "B<address>" into TraceBasicBlock* with value <address>
-    static TraceBasicBlock* toBasicBlock(QString s);
+    // translates string "B<firstAddr>B<lastAddr>" into appropriate CFGNode*
+    CFGNode* toCFGNode(QString s);
 
     static bool savePrompt(QWidget *parent, TraceFunction *func,
                            EventType *eventType, ProfileContext::Type groupType);
