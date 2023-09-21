@@ -1543,19 +1543,32 @@ void CFGExporter::dumpEdges(QTextStream &ts)
     }
 }
 
-TraceBasicBlock* CFGExporter::toBasicBlock(QString s)
+CFGNode* CFGExporter::toCFGNode(QString s)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::toBasicBlock()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    if (s[0] != 'B')
-        return nullptr;
+    if (s[0] == 'B')
+    {
+        auto i = s.indexOf('B', 1);
+        if (i != -1)
+        {
+            bool ok;
+            auto from = s.mid(1, i - 1).toULongLong(&ok, 16);
+            if (ok)
+            {
+                auto to = s.mid(i + 1).toULongLong(&ok, 16);
+                if (ok)
+                {
+                    auto it = _nodeMap.find(std::make_pair(Addr{from}, Addr{to}));
+                    return (it == _nodeMap.end()) ? nullptr : std::addressof(*it);
+                }
+            }
+        }
+    }
 
-    bool ok;
-    auto bb = reinterpret_cast<TraceBasicBlock*>(s.mid(1).toULongLong(&ok, 16));
-
-    return ok ? bb : nullptr;
+    return nullptr;
 }
 
 bool CFGExporter::savePrompt(QWidget *parent, TraceFunction *func,
@@ -2444,8 +2457,7 @@ CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream &ts, d
     }
     else
     {
-        // THIS IS UB: nodeName no longer represents TraceBasicBlock* but Addr
-        CFGNode* node = _exporter.findNode(_exporter.toBasicBlock(nodeName));
+        CFGNode* node = _exporter.toCFGNode(nodeName);
         if (node)
         {
             assert(node->instrNumber() > 0);
@@ -2500,9 +2512,24 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream &ts, d
     int nPoints;
     ts >> nPoints;
 
-    // THIS IS UB: node1Name and node2Name no longer represent TraceBasicBlock* but Addr
-    CFGEdge* edge = _exporter.findEdge(_exporter.toBasicBlock(node1Name),
-                                       _exporter.toBasicBlock(node2Name));
+    CFGNode* predecessor = _exporter.toCFGNode(node1Name);
+    CFGNode* successor = _exporter.toCFGNode(node2Name);
+
+    CFGEdge* edge;
+    if (predecessor && successor)
+    {
+        auto te = predecessor->trueEdge();
+        if (te->toNode() == successor)
+            edge = te;
+        else
+        {
+            auto fe = predecessor->falseEdge();
+            edge = (fe->toNode() == successor) ? fe : nullptr;
+        }
+    }
+    else
+        edge = nullptr;
+
     if (!edge)
     {
         qDebug() << "Unknown edge \'" << node1Name << "\'-\'" << node2Name << "\' from dot ("
@@ -2527,9 +2554,6 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream &ts, d
         auto [xx, yy] = calculateSizes(ts, scaleX, scaleY, dotHeight);
         poly.setPoint(i, xx, yy);
     }
-
-    [[maybe_unused]] CFGNode* predecessor = edge->fromNode();
-    [[maybe_unused]] CFGNode* successor = edge->toNode();
 
     QColor arrowColor = Qt::black;
 
@@ -2557,7 +2581,7 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream &ts, d
     QPoint arrowDir;
     int indexHead = -1;
 
-    CanvasCFGNode* fromNode = edge->fromNode() ? edge->fromNode()->canvasNode() : nullptr;
+    CanvasCFGNode* fromNode = predecessor->canvasNode();
     if (fromNode)
     {
         QPointF toCenter = fromNode->rect().center();
