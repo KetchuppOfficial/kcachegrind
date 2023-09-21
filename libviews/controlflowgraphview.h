@@ -98,18 +98,6 @@ public:
 
         _instructions.reserve(std::distance(first, last));
         std::copy(first, last, std::back_inserter(_instructions));
-
-        auto it = std::max_element(begin(), end(), [](QString& str1, QString& str2)
-                                                   { return str1.length() < str2.length(); });
-
-        _maxLength = it->length();
-        _longestInstrIndex = std::distance(begin(), it);
-    }
-
-    const QString& longestInstr() const
-    {
-        assert (0 <= _longestInstrIndex && _longestInstrIndex < _instructions.size());
-        return _instructions[_longestInstrIndex];
     }
 
     size_type instrNumber() const
@@ -146,8 +134,6 @@ private:
     CanvasCFGNode* _cn = nullptr;
 
     QStringList _instructions;
-    int _maxLength;
-    int _longestInstrIndex;
 };
 
 
