@@ -834,7 +834,8 @@ void CFGExporter::buildEdge(CFGNode* fromNode, TraceBranch* branch)
         TraceBasicBlock* from = branch->fromBB();
         auto &edge = _edgeMap[std::make_pair(from, to)];
 
-        edge.setBranch(branch);
+        if (!edge.branch())
+            edge.setBranch(branch);
 
         if (!edge.fromNode())
             edge.setPredecessorNode(fromNode);
