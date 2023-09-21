@@ -2664,7 +2664,6 @@ void TraceFunction::constructBasicBlocks()
             {
                 auto& falseBr = bbPtr->falseBranch();
                 falseBr.setToInstr((*nextBBIt)->firstInstr());
-                falseBr.setType(TraceBranch::Type::false_);
             }
         }
 
@@ -3836,6 +3835,8 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
         TraceInstr* from = jump->instrFrom();
 
         _falseBranch.setFromInstr(from);
+        _falseBranch.setType(TraceBranch::Type::false_);
+
         _trueBranch.setFromInstr(from);
         _trueBranch.setToInstr(jump->instrTo());
         _trueBranch.setType(jump->isCondJump() ? TraceBranch::Type::true_
