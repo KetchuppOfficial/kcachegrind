@@ -2554,7 +2554,23 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream &ts, d
         poly.setPoint(i, xx, yy);
     }
 
-    QColor arrowColor = Qt::black;
+    assert(edge->branch());
+
+    QColor arrowColor;
+    switch(edge->branch()->type())
+    {
+        case TraceBranch::Type::unconditional:
+            arrowColor = Qt::black;
+            break;
+        case TraceBranch::Type::true_:
+            arrowColor = Qt::blue;
+            break;
+        case TraceBranch::Type::false_:
+            arrowColor = Qt::red;
+            break;
+        default:
+            assert(false);
+    }
 
     auto sItem = new CanvasCFGEdge{edge};
     _scene->addItem(sItem);
