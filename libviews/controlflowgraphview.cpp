@@ -1000,7 +1000,7 @@ bool ObjdumpParser::runObjdump(TraceFunction* func)
 
         auto args = QStringLiteral(" -C -d --start-address=0x%1 --stop-address=0x%2 %3")
                                   .arg(_dumpStartAddr.toString())
-                                  .arg(_dumpEndAddr.toString())
+                                  .arg((_dumpEndAddr + 20).toString())
                                   .arg(_objFile);
 
         _objdumpCmd = objdumpFormat + args;
@@ -1127,7 +1127,7 @@ QMap<Addr, QString> ObjdumpParser::getInstrStrings()
         if (_needCostAddr && Addr{0} < _nextCostAddr && (_objAddr == 0 || _nextCostAddr <= _objAddr))
             getCostAddr();
 
-        if (_objAddr == Addr{0})
+        if (_objAddr == Addr{0} || _objAddr > _dumpEndAddr)
             break;
 
         Addr addr;
