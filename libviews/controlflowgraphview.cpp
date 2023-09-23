@@ -2444,6 +2444,32 @@ QColor getArrowColor(CFGEdge* edge)
     return arrowColor;
 }
 
+CanvasCFGEdgeArrow* createArrow(CanvasCFGEdge* sItem, const QPolygon& poly, QColor arrowColor)
+{
+    QPoint headPoint{poly.point(poly.size() - 1)};
+    QPoint arrowDir{headPoint - poly.point(poly.size() - 2)};
+    assert(!arrowDir.isNull());
+
+    auto length = static_cast<qreal>(arrowDir.x() * arrowDir.x() +
+                                     arrowDir.y() * arrowDir.y());
+    arrowDir *= 10.0 / std::sqrt(length);
+
+    QPolygon arrow;
+    arrow << QPoint{headPoint + arrowDir};
+    arrow << QPoint{headPoint + QPoint{arrowDir.y() / 2, -arrowDir.x() / 2}};
+    arrow << QPoint{headPoint + QPoint{-arrowDir.y() / 2, arrowDir.x() / 2}};
+
+    auto aItem = new CanvasCFGEdgeArrow{sItem};
+    aItem->setPolygon(arrow);
+    aItem->setBrush(arrowColor);
+    aItem->setZValue(1.5);
+    aItem->show();
+
+    sItem->setArrow(aItem);
+
+    return aItem;
+}
+
 } // unnamed namespace
 
 CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineStream, int lineno)
@@ -2509,27 +2535,7 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
         activeEdge = edge;
     #endif
 
-    QPoint headPoint{poly.point(nPoints - 1)};
-    QPoint arrowDir{headPoint - poly.point(nPoints - 2)};
-    assert(!arrowDir.isNull());
-
-    auto length = static_cast<qreal>(arrowDir.x() * arrowDir.x() +
-                                     arrowDir.y() * arrowDir.y());
-    arrowDir *= 10.0 / std::sqrt(length);
-
-    QPolygon arrow;
-    arrow << QPoint{headPoint + arrowDir};
-    arrow << QPoint{headPoint + QPoint{arrowDir.y() / 2, -arrowDir.x() / 2}};
-    arrow << QPoint{headPoint + QPoint{-arrowDir.y() / 2, arrowDir.x() / 2}};
-
-    auto aItem = new CanvasCFGEdgeArrow(sItem);
-    _scene->addItem(aItem);
-    aItem->setPolygon(arrow);
-    aItem->setBrush(arrowColor);
-    aItem->setZValue(1.5);
-    aItem->show();
-
-    sItem->setArrow(aItem);
+    _scene->addItem(createArrow(sItem, poly, arrowColor));
 
     if (!lineStream.atEnd())
     {
