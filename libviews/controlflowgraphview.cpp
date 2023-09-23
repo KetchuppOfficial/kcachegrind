@@ -2444,6 +2444,19 @@ QColor getArrowColor(CFGEdge* edge)
     return arrowColor;
 }
 
+CanvasCFGEdge* createEdge(CFGEdge* edge, const QPolygon& poly, QColor arrowColor)
+{
+    auto sItem = new CanvasCFGEdge{edge};
+    sItem->setControlPoints(poly);
+    sItem->setPen(QPen{arrowColor});
+    sItem->setZValue(0.5);
+    sItem->show();
+
+    edge->setCanvasEdge(sItem);
+
+    return sItem;
+}
+
 CanvasCFGEdgeArrow* createArrow(CanvasCFGEdge* sItem, const QPolygon& poly, QColor arrowColor)
 {
     QPoint headPoint{poly.point(poly.size() - 1)};
@@ -2514,13 +2527,8 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
 
     QColor arrowColor = getArrowColor(edge);
 
-    auto sItem = new CanvasCFGEdge{edge};
+    auto sItem = createEdge(edge, poly, arrowColor);
     _scene->addItem(sItem);
-    edge->setCanvasEdge(sItem);
-    sItem->setControlPoints(poly);
-    sItem->setPen(QPen{arrowColor});
-    sItem->setZValue(0.5);
-    sItem->show();
 
     #if 0
     if (edge->branch() == selectedItem())
