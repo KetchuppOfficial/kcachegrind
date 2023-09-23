@@ -714,20 +714,6 @@ bool CFGExporter::writeDot(QIODevice* device)
         dumpNodes(*stream);
         dumpEdges(*stream);
 
-        #if 0
-        if (_go->showSkipped())
-        {
-            for (auto& n : _nodeMap)
-            {
-                if (n.incl <= _realBBLimit)
-                    continue;
-
-                dumpSkippedPredecessor(ts, n);
-                dumpSkippedSuccessor(ts, n);
-            }
-        }
-        #endif
-
         *stream << "}\n";
     }
 
