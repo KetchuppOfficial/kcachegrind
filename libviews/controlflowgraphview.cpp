@@ -2528,7 +2528,9 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
     QColor arrowColor = getArrowColor(edge);
 
     auto sItem = createEdge(edge, poly, arrowColor);
+
     _scene->addItem(sItem);
+    _scene->addItem(createArrow(sItem, poly, arrowColor));
 
     #if 0
     if (edge->branch() == selectedItem())
@@ -2542,8 +2544,6 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
     if (edge->branch() == activeItem())
         activeEdge = edge;
     #endif
-
-    _scene->addItem(createArrow(sItem, poly, arrowColor));
 
     // Useless till costs of branches aren't calculated
     #if 0
