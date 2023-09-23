@@ -2403,6 +2403,23 @@ CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream& lineS
 namespace
 {
 
+CFGEdge* getEdge(CFGNode* predecessor, CFGNode* successor)
+{
+    if (predecessor && successor)
+    {
+        auto te = predecessor->trueEdge();
+        if (te && te->toNode() == successor)
+            return te;
+        else
+        {
+            auto fe = predecessor->falseEdge();
+            return (fe && fe->toNode() == successor) ? fe : nullptr;
+        }
+    }
+    else
+        return nullptr;
+}
+
 QColor getArrowColor(CFGEdge* edge)
 {
     assert(edge);
@@ -2438,23 +2455,7 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
     QString node1Name, node2Name;
     lineStream >> node1Name >> node2Name;
 
-    CFGNode* predecessor = _exporter.toCFGNode(node1Name);
-    CFGNode* successor = _exporter.toCFGNode(node2Name);
-
-    CFGEdge* edge;
-    if (predecessor && successor)
-    {
-        auto te = predecessor->trueEdge();
-        if (te && te->toNode() == successor)
-            edge = te;
-        else
-        {
-            auto fe = predecessor->falseEdge();
-            edge = (fe && fe->toNode() == successor) ? fe : nullptr;
-        }
-    }
-    else
-        edge = nullptr;
+    CFGEdge* edge = getEdge(_exporter.toCFGNode(node1Name), _exporter.toCFGNode(node2Name));
 
     if (!edge)
     {
@@ -2468,6 +2469,8 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
 
     int nPoints;
     lineStream >> nPoints;
+    assert(nPoints > 1);
+
     QPolygon poly(nPoints);
 
     for (auto i = 0; i != nPoints; ++i)
@@ -2506,49 +2509,27 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
         activeEdge = edge;
     #endif
 
-    QPoint arrowDir;
-    int indexHead = -1;
+    QPoint headPoint{poly.point(nPoints - 1)};
+    QPoint arrowDir{headPoint - poly.point(nPoints - 2)};
+    assert(!arrowDir.isNull());
 
-    CanvasCFGNode* fromNode = predecessor->canvasNode();
-    if (fromNode)
-    {
-        QPointF toCenter = fromNode->rect().center();
-        qreal dx0 = poly.point(0).x() - toCenter.x();
-        qreal dy0 = poly.point(0).y() - toCenter.y();
-        qreal dx1 = poly.point(nPoints - 1).x() - toCenter.x();
-        qreal dy1 = poly.point(nPoints - 1).y() - toCenter.y();
+    auto length = static_cast<qreal>(arrowDir.x() * arrowDir.x() +
+                                     arrowDir.y() * arrowDir.y());
+    arrowDir *= 10.0 / std::sqrt(length);
 
-        if (dx0*dx0 + dy0*dy0 > dx1*dx1 + dy1*dy1)
-            for (indexHead = 0; arrowDir.isNull() && indexHead != nPoints - 1; ++indexHead)
-                arrowDir = poly.point(indexHead) - poly.point(indexHead + 1);
-    }
+    QPolygon arrow;
+    arrow << QPoint{headPoint + arrowDir};
+    arrow << QPoint{headPoint + QPoint{arrowDir.y() / 2, -arrowDir.x() / 2}};
+    arrow << QPoint{headPoint + QPoint{-arrowDir.y() / 2, arrowDir.x() / 2}};
 
-    if (arrowDir.isNull())
-        for (indexHead = nPoints - 1; arrowDir.isNull() && indexHead != 0; --indexHead)
-            arrowDir = poly.point(indexHead) - poly.point(indexHead - 1);
+    auto aItem = new CanvasCFGEdgeArrow(sItem);
+    _scene->addItem(aItem);
+    aItem->setPolygon(arrow);
+    aItem->setBrush(arrowColor);
+    aItem->setZValue(1.5);
+    aItem->show();
 
-    if (!arrowDir.isNull())
-    {
-        auto length = static_cast<qreal>(arrowDir.x() * arrowDir.x() +
-                                         arrowDir.y() * arrowDir.y());
-        arrowDir *= 10.0 / std::sqrt(length);
-
-        auto headPoint = poly.point(indexHead);
-
-        QPolygonF a;
-        a << QPointF{headPoint + arrowDir};
-        a << QPointF{headPoint + QPoint{arrowDir.y() / 2, -arrowDir.x() / 2}};
-        a << QPointF{headPoint + QPoint{-arrowDir.y() / 2, arrowDir.x() / 2}};
-
-        auto aItem = new CanvasCFGEdgeArrow(sItem);
-        _scene->addItem(aItem);
-        aItem->setPolygon(a);
-        aItem->setBrush(arrowColor);
-        aItem->setZValue(1.5);
-        aItem->show();
-
-        sItem->setArrow(aItem);
-    }
+    sItem->setArrow(aItem);
 
     if (!lineStream.atEnd())
     {
