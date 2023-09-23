@@ -2304,10 +2304,10 @@ std::pair<CFGNode*, CFGEdge*> ControlFlowGraphView::parseDot()
 
                 if (!isNode && !isEdge)
                     qDebug() << "Ignoring unknown command \'" << cmd << "\' from dot ("
-                            << _exporter.filename() << ":" << lineno << ")";
+                             << _exporter.filename() << ":" << lineno << ")";
                 else if (!_scene)
                     qDebug() << "Ignoring \'" << cmd << "\' without \'graph\' form dot ("
-                            << _exporter.filename() << ":" << lineno << ")";
+                             << _exporter.filename() << ":" << lineno << ")";
                 else if (isNode)
                     activeNode = parseNode(activeNode, lineStream);
                 else // if (isEdge)
