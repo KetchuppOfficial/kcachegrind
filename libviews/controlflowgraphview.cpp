@@ -1900,7 +1900,7 @@ void CanvasCFGEdge::setLabel(CanvasCFGEdgeLabel* l)
         if (_arrow)
             _arrow->setToolTip(tip);
 
-        _thickness = std::max(0.9, std::log(l->percentage()));
+        _thickness = 0.9;
     }
 }
 
