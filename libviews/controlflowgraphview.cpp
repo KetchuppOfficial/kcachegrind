@@ -717,7 +717,6 @@ bool CFGExporter::writeDot(QIODevice* device)
         *stream << "}\n";
     }
 
-
     if (!device)
     {
         if (_tmpFile)
