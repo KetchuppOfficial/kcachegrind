@@ -2324,7 +2324,7 @@ std::pair<CFGNode*, CFGEdge*> ControlFlowGraphView::parseDot()
 namespace
 {
 
-double getMaxNodeHeight(QTextStream &ts)
+double getMaxNodeHeight(QTextStream &dotStream)
 {
     #ifdef DEBUG
     qDebug() << "\033[1;31m" << "namespace::getNodeHeight" << "\033[0m";
@@ -2335,7 +2335,7 @@ double getMaxNodeHeight(QTextStream &ts)
     double maxNodeHeight = 0.0;
     while (true)
     {
-        QString line = ts.readLine();
+        QString line = dotStream.readLine();
 
         if (line.isNull())
             break;
@@ -2353,20 +2353,20 @@ double getMaxNodeHeight(QTextStream &ts)
             }
         }
     }
-    ts.seek(0);
+    dotStream.seek(0);
 
     return maxNodeHeight;
 }
 
 } // unnamed namespace
 
-std::pair<double, double> ControlFlowGraphView::calculateScales(QTextStream &ts)
+std::pair<double, double> ControlFlowGraphView::calculateScales(QTextStream &dotStream)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::calculateScales" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    auto maxNodeHeight = getMaxNodeHeight(ts);
+    auto maxNodeHeight = getMaxNodeHeight(dotStream);
 
     double scaleX, scaleY;
     if (maxNodeHeight > 0.0)
@@ -2380,7 +2380,8 @@ std::pair<double, double> ControlFlowGraphView::calculateScales(QTextStream &ts)
     return std::pair{scaleX, scaleY};
 }
 
-double ControlFlowGraphView::setupScreen(QTextStream &ts, double scaleX, double scaleY, int lineno)
+double ControlFlowGraphView::setupScreen(QTextStream &lineStream, double scaleX, double scaleY,
+                                         int lineno)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::setupScreen" << "\033[0m";
@@ -2388,7 +2389,7 @@ double ControlFlowGraphView::setupScreen(QTextStream &ts, double scaleX, double 
 
     double dotHeight;
     QString dotWidthString, dotHeightString;
-    ts >> dotHeight >> dotWidthString >> dotHeightString;
+    lineStream >> dotHeight >> dotWidthString >> dotHeightString;
 
     dotHeight = dotHeightString.toDouble(); // overrides previous unused value
 
@@ -2417,16 +2418,16 @@ double ControlFlowGraphView::setupScreen(QTextStream &ts, double scaleX, double 
     return dotHeight;
 }
 
-std::pair<int, int> ControlFlowGraphView::calculateSizes(QTextStream &ts, double scaleX,
-                                                                          double scaleY,
-                                                                          double dotHeight)
+std::pair<int, int> ControlFlowGraphView::calculateSizes(QTextStream &lineStream, double scaleX,
+                                                                                  double scaleY,
+                                                                                  double dotHeight)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::calculateSizes" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
     QString xStr, yStr;
-    ts >> xStr >> yStr;
+    lineStream >> xStr >> yStr;
 
     auto xx = static_cast<int>(scaleX * xStr.toDouble() + _xMargin);
     auto yy = static_cast<int>(scaleY * (dotHeight - yStr.toDouble()) + _yMargin);
@@ -2434,20 +2435,20 @@ std::pair<int, int> ControlFlowGraphView::calculateSizes(QTextStream &ts, double
     return std::pair{xx, yy};
 }
 
-CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream &ts, double scaleX,
-                                         double scaleY, double dotHeight)
+CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream &lineStream,
+                                         double scaleX, double scaleY, double dotHeight)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::parseNode" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
     QString nodeName;
-    ts >> nodeName;
+    lineStream >> nodeName;
 
-    auto [xx, yy] = calculateSizes(ts, scaleX, scaleY, dotHeight);
+    auto [xx, yy] = calculateSizes(lineStream, scaleX, scaleY, dotHeight);
 
     QString nodeWidth, nodeHeight;
-    ts >> nodeWidth >> nodeHeight;
+    lineStream >> nodeWidth >> nodeHeight;
 
     if (nodeName[0] == 'R' || nodeName[0] == 'S')
     {
@@ -2502,15 +2503,15 @@ CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream &ts, d
     return activeNode;
 }
 
-CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream &ts, double scaleX,
-                                         double scaleY, double dotHeight, int lineno)
+CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream &lineStream,
+                                         double scaleX, double scaleY, double dotHeight, int lineno)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::parseEdge" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
     QString node1Name, node2Name;
-    ts >> node1Name >> node2Name;
+    lineStream >> node1Name >> node2Name;
 
     CFGNode* predecessor = _exporter.toCFGNode(node1Name);
     CFGNode* successor = _exporter.toCFGNode(node2Name);
@@ -2541,19 +2542,19 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream &ts, d
     edge->setVisible(true);
 
     int nPoints;
-    ts >> nPoints;
+    lineStream >> nPoints;
     QPolygon poly(nPoints);
 
     for (auto i = 0; i != nPoints; ++i)
     {
-        if (ts.atEnd())
+        if (lineStream.atEnd())
         {
             qDebug("ControlFlowGraphView: Can not read %d spline nPoints (%s:%d)",
                     nPoints, qPrintable(_exporter.filename()), lineno);
             return nullptr;
         }
 
-        auto [xx, yy] = calculateSizes(ts, scaleX, scaleY, dotHeight);
+        auto [xx, yy] = calculateSizes(lineStream, scaleX, scaleY, dotHeight);
         poly.setPoint(i, xx, yy);
     }
 
@@ -2640,30 +2641,30 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream &ts, d
         sItem->setArrow(aItem);
     }
 
-    if (!ts.atEnd())
+    if (!lineStream.atEnd())
     {
-        ts.skipWhiteSpace();
+        lineStream.skipWhiteSpace();
 
         QChar c;
-        ts >> c;
+        lineStream >> c;
 
         QString label;
         if (c == '\"')
         {
-            ts >> c;
+            lineStream >> c;
             while (!c.isNull() && c != '\"')
             {
                 label.append(c);
-                ts >> c;
+                lineStream >> c;
             }
         }
         else
         {
-            ts >> label;
+            lineStream >> label;
             label.prepend(c);
         }
 
-        auto [xx, yy] = calculateSizes(ts, scaleX, scaleY, dotHeight);
+        auto [xx, yy] = calculateSizes(lineStream, scaleX, scaleY, dotHeight);
         auto lItem = new CanvasCFGEdgeLabel{this, sItem,
                                             static_cast<qreal>(xx - 50),
                                             static_cast<qreal>(yy - _detailLevel * 10),
