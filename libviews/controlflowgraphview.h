@@ -454,13 +454,13 @@ private:
 
     // called from dotExited
     std::pair<CFGNode*, CFGEdge*> parseDot();
-    std::pair<double, double> calculateScales(QTextStream& ts);
-    double setupScreen(QTextStream &ts, double scaleX, double scaleY, int lineno);
-    std::pair<int, int> calculateSizes(QTextStream &ts, double scaleX, double scaleY,
-                                                                       double dotHeight);
-    CFGNode *parseNode(CFGNode* activeNode, QTextStream &ts, double scaleX,
+    std::pair<double, double> calculateScales(QTextStream& dotStream);
+    double setupScreen(QTextStream &lineStream, double scaleX, double scaleY, int lineno);
+    std::pair<int, int> calculateSizes(QTextStream &lineStream, double scaleX, double scaleY,
+                                       double dotHeight);
+    CFGNode *parseNode(CFGNode* activeNode, QTextStream &lineStream, double scaleX,
                        double scaleY, double dotHeight);
-    CFGEdge* parseEdge(CFGEdge* activeEdge, QTextStream &ts, double scaleX,
+    CFGEdge* parseEdge(CFGEdge* activeEdge, QTextStream &lineStream, double scaleX,
                        double scaleY, double dotHeight, int lineno);
     void checkSceneAndActiveItems(CFGNode* activeNode, CFGEdge* activeEdge);
     void updateSelectedNodeOrEdge(CFGNode* activeNode, CFGEdge* activeEdge);
