@@ -1633,58 +1633,6 @@ bool CFGExporter::savePrompt(QWidget *parent, TraceFunction *func,
     return false;
 }
 
-#if 0
-void CFGExporter::dumpSkippedPredecessor(QTextStream& ts, const CFGNode& n)
-{
-    auto costSum = n.predecessorCostSum();
-
-    if (costSum > _realBranchLimit)
-    {
-        auto bb = n.basicBlock();
-        std::pair<TraceBasicBlock*, TraceBasicBlock*> p{nullptr, bb};
-        auto& edge = _edgeMap[p];
-
-        edge.setSuccessor(bb);
-        edge.cost = costSum;
-        edge.count = n.predecessorCountSum();
-
-        ts << QStringLiteral("  R%1 [shape=point,label=\"\"];\n")
-                            .arg(reinterpret_cast<std::ptrdiff_t>(bb), 0, 16);
-        ts << QStringLiteral("  R%1 -> B%2 [label=\"%3\\n%4 x\",weight=%5];\n")
-                            .arg(reinterpret_cast<std::ptrdiff_t>(bb), 0, 16)
-                            .arg(reinterpret_cast<std::ptrdiff_t>(bb), 0, 16)
-                            .arg(SubCost{costSum}.pretty())
-                            .arg(SubCost{edge.count}.pretty())
-                            .arg(static_cast<int>(std::log(costSum)));
-    }
-}
-
-void CFGExporter::dumpSkippedSuccessor(QTextStream& ts, const CFGNode& n)
-{
-    auto costSum = n.successorCostSum();
-
-    if (costSum > _realBranchLimit)
-    {
-        auto bb = n.basicBlock();
-        std::pair<TraceBasicBlock*, TraceBasicBlock*> p{bb, nullptr};
-        auto& edge = _edgeMap[p];
-
-        edge.setPredecessor(bb);
-        edge.cost = costSum;
-        edge.count = n.successorCountSum();
-
-        ts << QStringLiteral("  S%1 [shape=point,label=\"\"];\n")
-                            .arg(reinterpret_cast<std::ptrdiff_t>(bb), 0, 16);
-        ts << QStringLiteral("  B%1 -> S%2 [label=\"%3\\n%4 x\",weight=%5];\n")
-                            .arg(reinterpret_cast<std::ptrdiff_t>(bb), 0, 16)
-                            .arg(reinterpret_cast<std::ptrdiff_t>(bb), 0, 16)
-                            .arg(SubCost{costSum}.pretty())
-                            .arg(SubCost{edge.count}.pretty())
-                            .arg(static_cast<int>(std::log(costSum)));
-    }
-}
-#endif
-
 // ======================================================================================
 
 //
@@ -2350,52 +2298,40 @@ CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream& lineS
     QString nodeWidth, nodeHeight;
     lineStream >> nodeWidth >> nodeHeight;
 
-    if (nodeName[0] == 'R' || nodeName[0] == 'S')
+    CFGNode* node = _exporter.toCFGNode(nodeName);
+    if (node)
     {
-        auto eItem = new QGraphicsEllipseItem{xx - 5.0, yy - 5.0, 10.0, 10.0};
+        assert(node->instrNumber() > 0);
+        node->setVisible(true);
 
-        _scene->addItem(eItem);
-        eItem->setBrush(Qt::gray);
-        eItem->setZValue(1.0);
-        eItem->show();
-    }
-    else
-    {
-        CFGNode* node = _exporter.toCFGNode(nodeName);
-        if (node)
+        qreal w = _scaleX * nodeWidth.toDouble();
+        qreal h = _scaleY * nodeHeight.toDouble();
+
+        auto rItem = new CanvasCFGNode{this, node, xx - w / 2, yy - h / 2, w, h};
+        #if 0
+        if (_detailLevel > 0)
+            rItem->setMaxLines(0, 2 * _detailLevel);
+        #endif
+
+        _scene->addItem(rItem);
+        node->setCanvasNode(rItem);
+
+        if (node->basicBlock() == activeItem())
+            activeNode = node;
+
+        if (node->basicBlock() == selectedItem())
         {
-            assert(node->instrNumber() > 0);
-            node->setVisible(true);
-
-            qreal w = _scaleX * nodeWidth.toDouble();
-            qreal h = _scaleY * nodeHeight.toDouble();
-
-            auto rItem = new CanvasCFGNode{this, node, xx - w / 2, yy - h / 2, w, h};
-            #if 0
-            if (_detailLevel > 0)
-                rItem->setMaxLines(0, 2 * _detailLevel);
-            #endif
-
-            _scene->addItem(rItem);
-            node->setCanvasNode(rItem);
-
-            if (node->basicBlock() == activeItem())
-                activeNode = node;
-
-            if (node->basicBlock() == selectedItem())
-            {
-                _selectedNode = node;
-                rItem->setSelected(true);
-            }
-            else
-                rItem->setSelected(node == _selectedNode);
-
-            rItem->setZValue(1.0);
-            rItem->show();
+            _selectedNode = node;
+            rItem->setSelected(true);
         }
         else
-            qDebug("Warning: Unknown basic block \'%s\' ?!", qPrintable(nodeName));
+            rItem->setSelected(node == _selectedNode);
+
+        rItem->setZValue(1.0);
+        rItem->show();
     }
+    else
+        qDebug("Warning: Unknown basic block \'%s\' ?!", qPrintable(nodeName));
 
     return activeNode;
 }
