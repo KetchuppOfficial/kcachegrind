@@ -2400,6 +2400,35 @@ CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream& lineS
     return activeNode;
 }
 
+namespace
+{
+
+QColor getArrowColor(CFGEdge* edge)
+{
+    assert(edge);
+    assert(edge->branch());
+
+    QColor arrowColor;
+    switch(edge->branch()->type())
+    {
+        case TraceBranch::Type::unconditional:
+            arrowColor = Qt::black;
+            break;
+        case TraceBranch::Type::true_:
+            arrowColor = Qt::blue;
+            break;
+        case TraceBranch::Type::false_:
+            arrowColor = Qt::red;
+            break;
+        default:
+            assert(false);
+    }
+
+    return arrowColor;
+}
+
+} // unnamed namespace
+
 CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineStream, int lineno)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
@@ -2454,23 +2483,7 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
         poly.setPoint(i, xx, yy);
     }
 
-    assert(edge->branch());
-
-    QColor arrowColor;
-    switch(edge->branch()->type())
-    {
-        case TraceBranch::Type::unconditional:
-            arrowColor = Qt::black;
-            break;
-        case TraceBranch::Type::true_:
-            arrowColor = Qt::blue;
-            break;
-        case TraceBranch::Type::false_:
-            arrowColor = Qt::red;
-            break;
-        default:
-            assert(false);
-    }
+    QColor arrowColor = getArrowColor(edge);
 
     auto sItem = new CanvasCFGEdge{edge};
     _scene->addItem(sItem);
