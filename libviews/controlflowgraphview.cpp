@@ -2345,10 +2345,9 @@ double getMaxNodeHeight(QTextStream& dotStream)
 
             if (cmd == QLatin1String("node"))
             {
-                QString h; // first 4 values are overriden
-                lineStream >> h /* name */ >> h /* x */ >> h /* y */
-                                           >> h /* width */ >> h /* height */;
-                maxNodeHeight = std::max(maxNodeHeight, h.toDouble());
+                lineStream >> cmd /* name */ >> cmd /* x */ >> cmd /* y */ >> cmd /* width */
+                           >> cmd /* height */;
+                maxNodeHeight = std::max(maxNodeHeight, cmd.toDouble());
             }
         }
     }
