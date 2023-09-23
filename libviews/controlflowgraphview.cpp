@@ -601,7 +601,6 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
     #endif // CFGEXPORTER_DEBUG
 
     _graphCreated = false;
-    _detailLevel = DetailLevel::avgDetails;
     _layout = Layout::TopDown;
 
     _eventType = et;
@@ -2193,7 +2192,7 @@ std::pair<CFGNode*, CFGEdge*> ControlFlowGraphView::parseDot()
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
     QTextStream dotStream{std::addressof(_unparsedOutput), QIODevice::ReadOnly};
-    _scaleY = 8 + (1 + 2 * _exporter.detailLevel()) * fontMetrics().height();
+    _scaleY = 8 + 3 * fontMetrics().height();
 
     QString cmd;
     CFGNode* activeNode = nullptr;
