@@ -454,10 +454,10 @@ private:
     // called from dotExited
     std::pair<CFGNode*, CFGEdge*> parseDot();
     void calculateScales(QTextStream& dotStream);
-    double setupScreen(QTextStream& lineStream, int lineno);
-    std::pair<int, int> calculateSizes(QTextStream& lineStream, double dotHeight);
-    CFGNode *parseNode(CFGNode* activeNode, QTextStream& lineStream, double dotHeight);
-    CFGEdge* parseEdge(CFGEdge* activeEdge, QTextStream& lineStream, double dotHeight, int lineno);
+    void setupScreen(QTextStream& lineStream, int lineno);
+    std::pair<int, int> calculateSizes(QTextStream& lineStream);
+    CFGNode *parseNode(CFGNode* activeNode, QTextStream& lineStream);
+    CFGEdge* parseEdge(CFGEdge* activeEdge, QTextStream& lineStream, int lineno);
     void checkSceneAndActiveItems(CFGNode* activeNode, CFGEdge* activeEdge);
     void updateSelectedNodeOrEdge(CFGNode* activeNode, CFGEdge* activeEdge);
     void centerOnSelectedNodeOrEdge();
@@ -488,6 +488,7 @@ private:
     int _yMargin = 0;
     double _scaleX;
     double _scaleY;
+    double _dotHeight = 0.0;
 
     bool _isMoving = false;
     QPoint _lastPos;
