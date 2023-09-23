@@ -2213,22 +2213,13 @@ std::pair<CFGNode*, CFGEdge*> ControlFlowGraphView::parseDot()
                 break;
             else if (cmd == QLatin1String("graph"))
                 setupScreen(lineStream, lineno);
-            else
-            {
-                bool isNode = (cmd == QLatin1String("node"));
-                bool isEdge = (cmd == QLatin1String("edge"));
-
-                if (!isNode && !isEdge)
-                    qDebug() << "Ignoring unknown command \'" << cmd << "\' from dot ("
-                             << _exporter.filename() << ":" << lineno << ")";
-                else if (!_scene)
-                    qDebug() << "Ignoring \'" << cmd << "\' without \'graph\' form dot ("
-                             << _exporter.filename() << ":" << lineno << ")";
-                else if (isNode)
-                    activeNode = parseNode(activeNode, lineStream);
-                else // if (isEdge)
-                    activeEdge = parseEdge(activeEdge, lineStream, lineno);
-            }
+            else if (!_scene)
+                qDebug() << "Ignoring \'" << cmd << "\' without \'graph\' form dot ("
+                            << _exporter.filename() << ":" << lineno << ")";
+            else if (cmd == QLatin1String("node"))
+                activeNode = parseNode(activeNode, lineStream);
+            else if (cmd == QLatin1String("edge"))
+                activeEdge = parseEdge(activeEdge, lineStream, lineno);
         }
     }
 
