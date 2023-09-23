@@ -215,8 +215,6 @@ public:
     Layout layout() const { return _layout; }
     void setLayout(Layout layout) { _layout = layout; }
 
-    DetailLevel detailLevel () const { return _detailLevel; }
-
     size_type edgeCount() const { return _edgeMap.count(); }
     size_type nodeCount() const { return _nodeMap.count(); }
 
@@ -259,7 +257,6 @@ private:
 
     bool _graphCreated = false;
     Layout _layout = Layout::TopDown;
-    DetailLevel _detailLevel = avgDetails;
 
     QMap<std::pair<Addr, Addr>, CFGNode> _nodeMap;
     QMap<std::pair<TraceBasicBlock*, TraceBasicBlock*>, CFGEdge> _edgeMap;
