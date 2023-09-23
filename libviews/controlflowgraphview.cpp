@@ -1727,7 +1727,8 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     if (!_node || !_view)
         return;
 
-    updateGroup(); // set node's color
+    setBackColor(Qt::white);
+    update();
 
     #if 0
     if (_node->basicBlock())
@@ -1749,17 +1750,6 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     // set tool tip (balloon help) with the name of a basic block and percentage
     setToolTip(QStringLiteral("%1 (%2)").arg(text(0)).arg(text(1)));
     #endif
-}
-
-void CanvasCFGNode::updateGroup()
-{
-    if (!_node || !_view)
-        return;
-
-    auto color = GlobalGUIConfig::basicBlockColor(_view->groupType(), _node->basicBlock());
-    setBackColor(color);
-
-    update();
 }
 
 void CanvasCFGNode::setSelected(bool s)
@@ -3515,7 +3505,7 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
         {
             for (auto item : _scene->items())
                 if (item->type() == CanvasParts::Node)
-                    static_cast<CanvasCFGNode*>(item)->updateGroup();
+                    static_cast<CanvasCFGNode*>(item)->update();
 
             _scene->update();
             return;
