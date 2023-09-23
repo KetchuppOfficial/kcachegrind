@@ -2454,13 +2454,10 @@ CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream& lineS
             assert(node->instrNumber() > 0);
             node->setVisible(true);
 
-            auto w = static_cast<int>(_scaleX * nodeWidth.toDouble());
-            auto h = static_cast<int>(_scaleY * nodeHeight.toDouble());
+            qreal w = _scaleX * nodeWidth.toDouble();
+            qreal h = _scaleY * nodeHeight.toDouble();
 
-            auto rItem = new CanvasCFGNode{this, node, static_cast<qreal>(xx - w / 2),
-                                                       static_cast<qreal>(yy - h / 2),
-                                                       static_cast<qreal>(w),
-                                                       static_cast<qreal>(h)};
+            auto rItem = new CanvasCFGNode{this, node, xx - w / 2, yy - h / 2, w, h};
             #if 0
             if (_detailLevel > 0)
                 rItem->setMaxLines(0, 2 * _detailLevel);
@@ -2606,8 +2603,8 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
 
     if (!arrowDir.isNull())
     {
-        auto length = static_cast<double>(arrowDir.x() * arrowDir.x() +
-                                          arrowDir.y() * arrowDir.y());
+        auto length = static_cast<qreal>(arrowDir.x() * arrowDir.x() +
+                                         arrowDir.y() * arrowDir.y());
         arrowDir *= 10.0 / std::sqrt(length);
 
         auto headPoint = poly.point(indexHead);
