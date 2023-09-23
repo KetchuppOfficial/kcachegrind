@@ -2545,6 +2545,8 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
 
     _scene->addItem(createArrow(sItem, poly, arrowColor));
 
+    // Useless till costs of branches aren't calculated
+    #if 0
     if (!lineStream.atEnd())
     {
         lineStream.skipWhiteSpace();
@@ -2581,6 +2583,7 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
         if (_exporter.detailLevel() > 0)
             lItem->show();
     }
+    #endif
 
     return activeEdge;
 }
