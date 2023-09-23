@@ -246,9 +246,9 @@ private:
 
     bool fillInstrStrings(TraceFunction* func);
 
-    void dumpLayoutSettings(QTextStream &ts);
-    void dumpNodes(QTextStream &ts);
-    void dumpEdges(QTextStream &ts);
+    void dumpLayoutSettings(QTextStream& ts);
+    void dumpNodes(QTextStream& ts);
+    void dumpEdges(QTextStream& ts);
 
     QString _dotName;
     QTemporaryFile* _tmpFile;
@@ -354,7 +354,7 @@ public:
     void setArrow(CanvasCFGEdgeArrow *a);
 
     const QPolygon& controlPoints() const { return _points; }
-    void setControlPoints(const QPolygon &p);
+    void setControlPoints(const QPolygon& p);
 
     CFGEdge* edge() { return _edge; }
     const CFGEdge* edge() const { return _edge; }
@@ -403,8 +403,7 @@ public:
         Auto, Hide
     };
 
-    explicit ControlFlowGraphView(TraceItemView* parentView, QWidget* parent,
-                                  const QString &name);
+    explicit ControlFlowGraphView(TraceItemView* parentView, QWidget* parent, const QString& name);
     ~ControlFlowGraphView() override;
 
     QWidget* widget() override { return this; }
@@ -417,7 +416,7 @@ public Q_SLOTS:
     void zoomRectMoveFinished();
 
     void showRenderWarning();
-    void showRenderError(const QString &s);
+    void showRenderError(const QString& s);
     void stopRendering();
     void readDotOutput();
     void dotError();
@@ -455,10 +454,10 @@ private:
     // called from dotExited
     std::pair<CFGNode*, CFGEdge*> parseDot();
     void calculateScales(QTextStream& dotStream);
-    double setupScreen(QTextStream &lineStream, int lineno);
-    std::pair<int, int> calculateSizes(QTextStream &lineStream, double dotHeight);
-    CFGNode *parseNode(CFGNode* activeNode, QTextStream &lineStream, double dotHeight);
-    CFGEdge* parseEdge(CFGEdge* activeEdge, QTextStream &lineStream, double dotHeight, int lineno);
+    double setupScreen(QTextStream& lineStream, int lineno);
+    std::pair<int, int> calculateSizes(QTextStream& lineStream, double dotHeight);
+    CFGNode *parseNode(CFGNode* activeNode, QTextStream& lineStream, double dotHeight);
+    CFGEdge* parseEdge(CFGEdge* activeEdge, QTextStream& lineStream, double dotHeight, int lineno);
     void checkSceneAndActiveItems(CFGNode* activeNode, CFGEdge* activeEdge);
     void updateSelectedNodeOrEdge(CFGNode* activeNode, CFGEdge* activeEdge);
     void centerOnSelectedNodeOrEdge();
