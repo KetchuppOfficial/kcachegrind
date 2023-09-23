@@ -453,7 +453,6 @@ private:
 
     // called from dotExited
     std::pair<CFGNode*, CFGEdge*> parseDot();
-    void calculateScales(QTextStream& dotStream);
     void setupScreen(QTextStream& lineStream, int lineno);
     std::pair<int, int> calculateSizes(QTextStream& lineStream);
     CFGNode *parseNode(CFGNode* activeNode, QTextStream& lineStream);
@@ -486,7 +485,7 @@ private:
     double _panningZoom = 1.0;
     int _xMargin = 0;
     int _yMargin = 0;
-    double _scaleX;
+    static constexpr double _scaleX = 80.0;
     double _scaleY;
     double _dotHeight = 0.0;
 

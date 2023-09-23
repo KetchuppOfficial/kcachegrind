@@ -1778,37 +1778,24 @@ void CanvasCFGNode::setSelected(bool s)
 
 void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
-    #if 0
-    auto nInstructions = _node->instrNumber();
     p->setPen(Qt::black);
 
-    QRect rectangle = rect().toRect();
-    QRect bRect = p->boundingRect(rectangle.x(), rectangle.y(), rectangle.width(),
-                                  rectangle.height() / nInstructions,
-                                  Qt::AlignCenter, _node->longestInstr());
-
-    int step = bRect.height() + 5;
-    rectangle.setWidth(bRect.width() + 5);
-    rectangle.setHeight(step * nInstructions);
-
-    p->fillRect(rectangle.x(), rectangle.y() + rectangle.height() - step,
-                rectangle.width(), step, Qt::gray);
-
+    QRectF rectangle = rect();
     p->drawRect(rectangle);
-    p->drawText(rectangle.x(), rectangle.y(), rectangle.width(), step,
-                Qt::AlignCenter, *_node->begin());
+
+    auto step = rectangle.height() / _node->instrNumber();
 
     auto i = 0;
-    for (auto it = std::next(_node->begin()), ite = _node->end(); it != ite; ++it, ++i)
+    for (auto &instr : *_node)
     {
-        auto bottomRightCorner = rectangle.y() + step * i;
-        p->drawText(rectangle.x(), bottomRightCorner,
-                    rectangle.width(), step,
-                    Qt::AlignCenter, *it);
-        p->drawLine(rectangle.x(), bottomRightCorner,
-                    rectangle.x() + rectangle.width(), bottomRightCorner);
+        auto bottomLineY = rectangle.y() + step * i;
+        p->drawText(rectangle.x(), bottomLineY, rectangle.width(), step,
+                    Qt::AlignCenter, instr);
+        p->drawLine(rectangle.x(), bottomLineY,
+                    rectangle.x() + rectangle.width(), bottomLineY);
+
+        ++i;
     }
-    #endif
 }
 
 // ======================================================================================
@@ -2277,7 +2264,7 @@ std::pair<CFGNode*, CFGEdge*> ControlFlowGraphView::parseDot()
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
     QTextStream dotStream{std::addressof(_unparsedOutput), QIODevice::ReadOnly};
-    calculateScales(dotStream);
+    _scaleY = 8 + (1 + 2 * _exporter.detailLevel()) * fontMetrics().height();
 
     QString cmd;
     CFGNode* activeNode = nullptr;
@@ -2317,61 +2304,6 @@ std::pair<CFGNode*, CFGEdge*> ControlFlowGraphView::parseDot()
     }
 
     return std::pair{activeNode, activeEdge};
-}
-
-namespace
-{
-
-double getMaxNodeHeight(QTextStream& dotStream)
-{
-    #ifdef DEBUG
-    qDebug() << "\033[1;31m" << "namespace::getNodeHeight" << "\033[0m";
-    #endif // DEBUG
-
-    QString cmd;
-
-    double maxNodeHeight = 0.0;
-    while (true)
-    {
-        QString line = dotStream.readLine();
-
-        if (line.isNull())
-            break;
-        else if (!line.isEmpty())
-        {
-            QTextStream lineStream{std::addressof(line), QIODevice::ReadOnly};
-            lineStream >> cmd;
-
-            if (cmd == QLatin1String("node"))
-            {
-                lineStream >> cmd /* name */ >> cmd /* x */ >> cmd /* y */ >> cmd /* width */
-                           >> cmd /* height */;
-                maxNodeHeight = std::max(maxNodeHeight, cmd.toDouble());
-            }
-        }
-    }
-    dotStream.seek(0);
-
-    return maxNodeHeight;
-}
-
-} // unnamed namespace
-
-void ControlFlowGraphView::calculateScales(QTextStream& dotStream)
-{
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::calculateScales" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
-    auto maxNodeHeight = getMaxNodeHeight(dotStream);
-
-    if (maxNodeHeight > 0.0)
-    {
-        _scaleX = 80.0;
-        _scaleY = (8 + (1 + 2 * _exporter.detailLevel()) * fontMetrics().height()) / maxNodeHeight;
-    }
-    else
-        _scaleX = _scaleY = 1.0;
 }
 
 void ControlFlowGraphView::setupScreen(QTextStream& lineStream, int lineno)
