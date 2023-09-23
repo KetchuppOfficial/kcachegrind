@@ -2308,13 +2308,12 @@ CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream& lineS
         qreal h = _scaleY * nodeHeight.toDouble();
 
         auto rItem = new CanvasCFGNode{this, node, xx - w / 2, yy - h / 2, w, h};
-        #if 0
-        if (_detailLevel > 0)
-            rItem->setMaxLines(0, 2 * _detailLevel);
-        #endif
+        rItem->setZValue(1.0);
+        rItem->show();
+
+        node->setCanvasNode(rItem);
 
         _scene->addItem(rItem);
-        node->setCanvasNode(rItem);
 
         if (node->basicBlock() == activeItem())
             activeNode = node;
@@ -2326,9 +2325,6 @@ CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream& lineS
         }
         else
             rItem->setSelected(node == _selectedNode);
-
-        rItem->setZValue(1.0);
-        rItem->show();
     }
     else
         qDebug("Warning: Unknown basic block \'%s\' ?!", qPrintable(nodeName));
