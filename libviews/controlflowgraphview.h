@@ -286,7 +286,6 @@ public:
 
     int type() const override { return CanvasParts::Node; }
 
-    void updateGroup();
     void setSelected(bool s);
     void paint(QPainter*,
                [[maybe_unused]] const QStyleOptionGraphicsItem*,
