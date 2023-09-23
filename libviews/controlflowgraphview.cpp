@@ -70,8 +70,8 @@ void CFGNode::sortPredecessorEdges()
             return false;
         else
         {
-            auto &p1 = ce1->controlPoints();
-            auto &p2 = ce2->controlPoints();
+            auto& p1 = ce1->controlPoints();
+            auto& p2 = ce2->controlPoints();
             QPoint d1 = p1.point(1) - p1.point(0);
             QPoint d2 = p2.point(1) - p2.point(0);
 
@@ -669,7 +669,7 @@ void CFGExporter::sortEdges()
     qDebug() << "\033[1;31m" << "CFGExporter::sortEdges()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    for (auto &node : _nodeMap)
+    for (auto& node : _nodeMap)
         node.sortPredecessorEdges();
 }
 
@@ -726,7 +726,7 @@ bool CFGExporter::writeDot(QIODevice* device)
         #if 0
         if (_go->showSkipped())
         {
-            for (auto &n : _nodeMap)
+            for (auto& n : _nodeMap)
             {
                 if (n.incl <= _realBBLimit)
                     continue;
@@ -1395,7 +1395,7 @@ bool CFGExporter::fillInstrStrings(TraceFunction *func)
     return true;
 }
 
-void CFGExporter::dumpLayoutSettings(QTextStream &ts)
+void CFGExporter::dumpLayoutSettings(QTextStream& ts)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::dumpLayoutSettings()" << "\033[0m";
@@ -1438,7 +1438,7 @@ void CFGExporter::dumpLayoutSettings(QTextStream &ts)
     }
 }
 
-void CFGExporter::dumpNodes(QTextStream &ts)
+void CFGExporter::dumpNodes(QTextStream& ts)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::dumpNodes()" << "\033[0m";
@@ -1469,13 +1469,13 @@ void CFGExporter::dumpNodes(QTextStream &ts)
     }
 }
 
-void CFGExporter::dumpEdges(QTextStream &ts)
+void CFGExporter::dumpEdges(QTextStream& ts)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::dumpEdges()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    for (auto &edge : _edgeMap)
+    for (auto& edge : _edgeMap)
     {
         TraceBranch* br = edge.branch();
         assert(br);
@@ -1592,7 +1592,7 @@ bool CFGExporter::savePrompt(QWidget *parent, TraceFunction *func,
 
     if (saveDialog.exec())
     {
-        auto &intendedName = saveDialog.selectedFiles().first();
+        auto& intendedName = saveDialog.selectedFiles().first();
         if (intendedName.isNull() || intendedName.isEmpty())
             return false;
 
@@ -1642,7 +1642,7 @@ bool CFGExporter::savePrompt(QWidget *parent, TraceFunction *func,
 }
 
 #if 0
-void CFGExporter::dumpSkippedPredecessor(QTextStream &ts, const CFGNode &n)
+void CFGExporter::dumpSkippedPredecessor(QTextStream& ts, const CFGNode& n)
 {
     auto costSum = n.predecessorCostSum();
 
@@ -1650,7 +1650,7 @@ void CFGExporter::dumpSkippedPredecessor(QTextStream &ts, const CFGNode &n)
     {
         auto bb = n.basicBlock();
         std::pair<TraceBasicBlock*, TraceBasicBlock*> p{nullptr, bb};
-        auto &edge = _edgeMap[p];
+        auto& edge = _edgeMap[p];
 
         edge.setSuccessor(bb);
         edge.cost = costSum;
@@ -1667,7 +1667,7 @@ void CFGExporter::dumpSkippedPredecessor(QTextStream &ts, const CFGNode &n)
     }
 }
 
-void CFGExporter::dumpSkippedSuccessor(QTextStream &ts, const CFGNode &n)
+void CFGExporter::dumpSkippedSuccessor(QTextStream& ts, const CFGNode& n)
 {
     auto costSum = n.successorCostSum();
 
@@ -1675,7 +1675,7 @@ void CFGExporter::dumpSkippedSuccessor(QTextStream &ts, const CFGNode &n)
     {
         auto bb = n.basicBlock();
         std::pair<TraceBasicBlock*, TraceBasicBlock*> p{bb, nullptr};
-        auto &edge = _edgeMap[p];
+        auto& edge = _edgeMap[p];
 
         edge.setPredecessor(bb);
         edge.cost = costSum;
@@ -1934,7 +1934,7 @@ void CanvasCFGEdge::setArrow(CanvasCFGEdgeArrow* a)
                                     .arg(_label->text(0)).arg(_label->text(1)));
 }
 
-void CanvasCFGEdge::setControlPoints(const QPolygon &p)
+void CanvasCFGEdge::setControlPoints(const QPolygon& p)
 {
     _points = p;
 
@@ -2055,7 +2055,7 @@ void CanvasCFGFrame::paint(QPainter* p, const QStyleOptionGraphicsItem* option, 
 //
 
 ControlFlowGraphView::ControlFlowGraphView(TraceItemView* parentView, QWidget* parent,
-                                           const QString &name) :
+                                           const QString& name) :
     QGraphicsView(parent), TraceItemView(parentView)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
@@ -2151,7 +2151,7 @@ void ControlFlowGraphView::showRenderWarning()
     showText(s);
 }
 
-void ControlFlowGraphView::showRenderError(const QString &text)
+void ControlFlowGraphView::showRenderError(const QString& text)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::showRenderError" << "\033[0m";
@@ -2323,7 +2323,7 @@ std::pair<CFGNode*, CFGEdge*> ControlFlowGraphView::parseDot()
 namespace
 {
 
-double getMaxNodeHeight(QTextStream &dotStream)
+double getMaxNodeHeight(QTextStream& dotStream)
 {
     #ifdef DEBUG
     qDebug() << "\033[1;31m" << "namespace::getNodeHeight" << "\033[0m";
@@ -2359,7 +2359,7 @@ double getMaxNodeHeight(QTextStream &dotStream)
 
 } // unnamed namespace
 
-void ControlFlowGraphView::calculateScales(QTextStream &dotStream)
+void ControlFlowGraphView::calculateScales(QTextStream& dotStream)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::calculateScales" << "\033[0m";
@@ -2376,7 +2376,7 @@ void ControlFlowGraphView::calculateScales(QTextStream &dotStream)
         _scaleX = _scaleY = 1.0;
 }
 
-double ControlFlowGraphView::setupScreen(QTextStream &lineStream, int lineno)
+double ControlFlowGraphView::setupScreen(QTextStream& lineStream, int lineno)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::setupScreen" << "\033[0m";
@@ -2413,7 +2413,7 @@ double ControlFlowGraphView::setupScreen(QTextStream &lineStream, int lineno)
     return dotHeight;
 }
 
-std::pair<int, int> ControlFlowGraphView::calculateSizes(QTextStream &lineStream, double dotHeight)
+std::pair<int, int> ControlFlowGraphView::calculateSizes(QTextStream& lineStream, double dotHeight)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::calculateSizes" << "\033[0m";
@@ -2428,7 +2428,7 @@ std::pair<int, int> ControlFlowGraphView::calculateSizes(QTextStream &lineStream
     return std::pair{xx, yy};
 }
 
-CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream &lineStream,
+CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream& lineStream,
                                          double dotHeight)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
@@ -2496,7 +2496,7 @@ CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream &lineS
     return activeNode;
 }
 
-CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream &lineStream,
+CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineStream,
                                          double dotHeight, int lineno)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
@@ -2938,8 +2938,8 @@ enum MenuActions
     nActions
 };
 
-TraceBasicBlock* addNodesOrEdgesAction(QMenu &popup, QGraphicsItem *item,
-                           std::array<QAction*, MenuActions::nActions> &actions)
+TraceBasicBlock* addNodesOrEdgesAction(QMenu& popup, QGraphicsItem *item,
+                           std::array<QAction*, MenuActions::nActions>& actions)
 {
     TraceBasicBlock* bb = nullptr;
     #if 0
@@ -2983,7 +2983,7 @@ TraceBasicBlock* addNodesOrEdgesAction(QMenu &popup, QGraphicsItem *item,
     return bb;
 }
 
-QAction* addStopLayoutAction(QMenu &topLevel, QProcess* renderProcess)
+QAction* addStopLayoutAction(QMenu& topLevel, QProcess* renderProcess)
 {
     QAction* stopLayout;
     if (renderProcess)
@@ -3760,7 +3760,7 @@ void ControlFlowGraphView::clear()
     _scene = nullptr;
 }
 
-void ControlFlowGraphView::showText(const QString &text)
+void ControlFlowGraphView::showText(const QString& text)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::showText" << "\033[0m";
