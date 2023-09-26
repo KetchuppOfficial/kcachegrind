@@ -2751,9 +2751,6 @@ enum MenuActions
     toggleSkipped,
     toggleExpand,
     toggleCluster,
-    layoutCompact,
-    layoutNormal,
-    layoutTall,
 
     // special value
     nActions
@@ -2845,33 +2842,6 @@ QAction* addToggleClusterAction(QMenu *graphMenu, bool clusterGroups)
     return toggleCluster_;
 }
 
-QAction* addLayoutCompactAction(QMenu *visualizationMenu, int detailLevel)
-{
-    auto layoutCompact_ = visualizationMenu->addAction(QObject::tr("Compact"));
-    layoutCompact_->setCheckable(true);
-    layoutCompact_->setChecked(detailLevel == 0);
-
-    return layoutCompact_;
-}
-
-QAction* addLayoutNormalAction(QMenu *visualizationMenu, int detailLevel)
-{
-    auto layoutNormal_ = visualizationMenu->addAction(QObject::tr("Normal"));
-    layoutNormal_->setCheckable(true);
-    layoutNormal_->setChecked(detailLevel == 1);
-
-    return layoutNormal_;
-}
-
-QAction* addLayoutTallAction(QMenu *visualizationMenu, int detailLevel)
-{
-    auto layoutTall_ = visualizationMenu->addAction(QObject::tr("Tall"));
-    layoutTall_->setCheckable(true);
-    layoutTall_->setChecked(detailLevel == 2);
-
-    return layoutTall_;
-}
-
 void exportGraphAsImage(ControlFlowGraphView* view, QGraphicsScene* scene)
 {
     assert(scene);
@@ -2931,11 +2901,6 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
     actions[MenuActions::toggleExpand] = addToggleExpandAction(graphMenu, _expandCycles);
     actions[MenuActions::toggleCluster] = addToggleClusterAction(graphMenu, _clusterGroups);
 
-    auto visualizationMenu = popup.addMenu(QObject::tr("Visualization"));
-    actions[MenuActions::layoutCompact] = addLayoutCompactAction(visualizationMenu, _detailLevel);
-    actions[MenuActions::layoutNormal] = addLayoutNormalAction(visualizationMenu, _detailLevel);
-    actions[MenuActions::layoutTall] = addLayoutTallAction(visualizationMenu, _detailLevel);
-
     addLayoutMenu(std::addressof(popup));
     addZoomPosMenu(std::addressof(popup));
 
@@ -2977,18 +2942,6 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
             break;
         case MenuActions::toggleCluster:
             _clusterGroups ^= true;
-            refresh();
-            break;
-        case MenuActions::layoutCompact:
-            _detailLevel = 0;
-            refresh();
-            break;
-        case MenuActions::layoutNormal:
-            _detailLevel = 1;
-            refresh();
-            break;
-        case MenuActions::layoutTall:
-            _detailLevel = 2;
             refresh();
             break;
         default: // practically nActions
