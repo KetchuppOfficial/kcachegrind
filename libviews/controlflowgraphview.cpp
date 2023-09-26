@@ -622,7 +622,7 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
             case ProfileContext::Function:
             {
                 auto& BBs = static_cast<TraceFunction*>(i)->basicBlocks();
-                assert (!BBs.empty());
+                assert(!BBs.empty());
                 _item = BBs.front();
                 break;
             }
@@ -750,7 +750,7 @@ bool CFGExporter::createGraph()
         case ProfileContext::FunctionCycle:
         {
             auto& BBs = static_cast<TraceFunction*>(_item)->basicBlocks();
-            assert (!BBs.empty());
+            assert(!BBs.empty());
             _item = BBs.front();
             break;
         }
@@ -758,7 +758,7 @@ bool CFGExporter::createGraph()
         {
             auto f = static_cast<TraceCall*>(_item)->caller(false);
             auto& BBs = f->basicBlocks();
-            assert (!BBs.empty());
+            assert(!BBs.empty());
             _item = BBs.front();
             break;
         }
@@ -932,7 +932,7 @@ ObjdumpParser::ObjdumpParser(TraceFunction* func)
     #endif // OBJDUMP_PARSER_DEBUG
 
     auto instrMap = func->instrMap();
-    assert (!instrMap->empty());
+    assert(!instrMap->empty());
 
     _it = instrMap->begin();
     _ite = instrMap->end();
@@ -1117,7 +1117,7 @@ QMap<Addr, QString> ObjdumpParser::getInstrStrings()
         if (_nextCostAddr == 0 || _costAddr == 0 || _objAddr < _nextCostAddr)
         {
             addr = parseAddress();
-            assert (addr == _objAddr);
+            assert(addr == _objAddr);
 
             _line.advance(1);
 
@@ -1139,7 +1139,7 @@ QMap<Addr, QString> ObjdumpParser::getInstrStrings()
             else
             {
                 encoding = parseEncoding();
-                assert (!encoding.isNull());
+                assert(!encoding.isNull());
 
                 mnemonic = parseMnemonic();
                 operands = parseOperands();
@@ -1388,7 +1388,7 @@ void CFGExporter::dumpLayoutSettings(QTextStream& ts)
             case ProfileContext::FunctionCycle:
             {
                 auto& BBs = static_cast<TraceFunction*>(_item)->basicBlocks();
-                assert (!BBs.empty());
+                assert(!BBs.empty());
                 bb = BBs.front();
                 break;
             }
