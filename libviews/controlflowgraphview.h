@@ -403,7 +403,7 @@ public:
     ~ControlFlowGraphView() override;
 
     QWidget* widget() override { return this; }
-    ZoomPosition zoomPos () const { return _zoomPosition; }
+    ZoomPosition zoomPos() const { return _zoomPosition; }
 
     QString whatsThis() const override;
 
