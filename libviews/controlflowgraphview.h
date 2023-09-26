@@ -49,12 +49,6 @@ public:
     const CanvasCFGNode* canvasNode() const { return _cn; }
     void setCanvasNode(CanvasCFGNode *cn) { _cn = cn; }
 
-    bool isVisible() const { return _visible; }
-    void setVisible(bool v) { _visible = v; }
-
-    void clearEdges();
-    void sortPredecessorEdges();
-
     CFGEdge* trueEdge() { return _trueEdge; }
     const CFGEdge* trueEdge() const { return _trueEdge; }
     void setTrueEdge(CFGEdge*);
@@ -62,6 +56,12 @@ public:
     CFGEdge* falseEdge() { return _falseEdge; }
     const CFGEdge* falseEdge() const { return _falseEdge; }
     void setFalseEdge(CFGEdge*);
+
+    bool isVisible() const { return _visible; }
+    void setVisible(bool v) { _visible = v; }
+
+    void clearEdges();
+    void sortPredecessorEdges();
 
     void selectSuccessorEdge(CFGEdge*);
     void selectPredecessorEdge(CFGEdge*);
@@ -149,9 +149,6 @@ public:
     const CanvasCFGEdge* canvasEdge() const { return _ce; }
     void setCanvasEdge(CanvasCFGEdge* ce) { _ce = ce; }
 
-    bool isVisible() const { return _visible; }
-    void setVisible(bool v) { _visible = v; }
-
     TraceBranch* branch() { return _branch; }
     const TraceBranch* branch() const { return _branch; }
 
@@ -164,6 +161,9 @@ public:
     const CFGNode* toNode() const { return _toNode; }
     CFGNode* cachedToNode();
     void setSuccessorNode(CFGNode *n) { _toNode = n; }
+
+    bool isVisible() const { return _visible; }
+    void setVisible(bool v) { _visible = v; }
 
     TraceBasicBlock* from();
     const TraceBasicBlock* from() const;
