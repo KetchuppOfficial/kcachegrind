@@ -433,6 +433,7 @@ protected:
     void mouseMoveEvent(QMouseEvent*) override;
     void mouseReleaseEvent([[maybe_unused]] QMouseEvent*) override;
     void contextMenuEvent(QContextMenuEvent*) override;
+    void exportGraphAsImage();
     void keyPressEvent(QKeyEvent*) override;
     void scrollContentsBy(int dx, int dy) override;
 

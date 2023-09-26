@@ -2842,24 +2842,6 @@ QAction* addToggleClusterAction(QMenu *graphMenu, bool clusterGroups)
     return toggleCluster_;
 }
 
-void exportGraphAsImage(ControlFlowGraphView* view, QGraphicsScene* scene)
-{
-    assert(scene);
-
-    auto fileName = QFileDialog::getSaveFileName(view,
-                                                 QObject::tr("Export Graph as Image"),
-                                                 QString{},
-                                                 QObject::tr("Images (*.png *.jpg)"));
-    if (!fileName.isEmpty())
-    {
-        auto rect = scene->sceneRect().toRect();
-        QPixmap pix{rect.width(), rect.height()};
-        QPainter painter{std::addressof(pix)};
-        scene->render(std::addressof(painter));
-        pix.save(fileName);
-    }
-}
-
 } // unnamed namespace
 
 void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
@@ -2930,7 +2912,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
         }
         case MenuActions::exportAsImage:
             if (_scene)
-                exportGraphAsImage(this, _scene);
+                exportGraphAsImage();
             break;
         case MenuActions::toggleSkipped:
             _showSkipped ^= true;
@@ -2946,6 +2928,24 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
             break;
         default: // practically nActions
             break;
+    }
+}
+
+void ControlFlowGraphView::exportGraphAsImage()
+{
+    assert(_scene);
+
+    auto fileName = QFileDialog::getSaveFileName(this,
+                                                 QObject::tr("Export Graph as Image"),
+                                                 QString{},
+                                                 QObject::tr("Images (*.png *.jpg)"));
+    if (!fileName.isEmpty())
+    {
+        auto rect = _scene->sceneRect().toRect();
+        QPixmap pix{rect.width(), rect.height()};
+        QPainter painter{std::addressof(pix)};
+        _scene->render(std::addressof(painter));
+        pix.save(fileName);
     }
 }
 
