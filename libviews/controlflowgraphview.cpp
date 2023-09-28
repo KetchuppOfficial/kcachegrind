@@ -2806,16 +2806,15 @@ TraceBasicBlock* addNodesOrEdgesAction(QMenu& popup, QGraphicsItem *item,
 
 QAction* addStopLayoutAction(QMenu& topLevel, QProcess* renderProcess)
 {
-    QAction* stopLayout_;
     if (renderProcess)
     {
-        stopLayout_ = topLevel.addAction(QObject::tr("Stop Layouting"));
+        QAction* stopLayout_ = topLevel.addAction(QObject::tr("Stop Layouting"));
         topLevel.addSeparator();
+
+        return stopLayout_;
     }
     else
-        stopLayout_ = nullptr;
-
-    return stopLayout_;
+        return nullptr;
 }
 
 QAction* addToggleSkippedAction(QMenu *graphMenu, bool showSkipped)
