@@ -1605,16 +1605,20 @@ bool CFGExporter::savePrompt(QWidget *parent, TraceFunction *func,
             proc.start("dot", QStringList{ dotRenderType, dotName },
                        QProcess::ReadWrite);
             proc.waitForFinished();
-            wrote = (proc.exitStatus() == QProcess::NormalExit);
 
-            if (wrote)
+            if (proc.exitStatus() == QProcess::NormalExit)
+            {
                 QDesktopServices::openUrl(QUrl::fromLocalFile(intendedName));
+                return true;
+            }
+            else
+                return false;
         }
-
-        return wrote;
+        else
+            return wrote;
     }
-
-    return false;
+    else
+        return false;
 }
 
 // ======================================================================================
