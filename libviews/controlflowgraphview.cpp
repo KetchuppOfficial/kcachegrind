@@ -2588,7 +2588,7 @@ void ControlFlowGraphView::zoomPosTriggered(QAction* a)
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::zoomPosTriggered" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    _zoomPosition = static_cast<ZoomPosition>(a->data().toInt(nullptr));
+    _zoomPosition = static_cast<ZoomPosition>(a->data().toInt());
     updateSizes();
 }
 
@@ -2598,7 +2598,7 @@ void ControlFlowGraphView::layoutTriggered(QAction* a)
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::layoutTriggered" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    _exporter.setLayout(static_cast<CFGExporter::Layout>(a->data().toInt(nullptr)));
+    _exporter.setLayout(static_cast<CFGExporter::Layout>(a->data().toInt()));
     refresh();
 }
 
