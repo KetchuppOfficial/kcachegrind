@@ -3671,10 +3671,8 @@ QMenu* ControlFlowGraphView::addZoomPosMenu(QMenu* menu)
     addZoomPosAction(m, QObject::tr("Automatic"), ZoomPosition::Auto);
     addZoomPosAction(m, QObject::tr("Hide"), ZoomPosition::Hide);
 
-    #if 0
     connect(m, &QMenu::triggered,
             this, &ControlFlowGraphView::zoomPosTriggered);
-    #endif
 
     return m;
 }
