@@ -3397,7 +3397,6 @@ void ControlFlowGraphView::refresh()
     {
         case ProfileContext::BasicBlock:
         case ProfileContext::Function:
-        case ProfileContext::FunctionCycle:
         case ProfileContext::Call:
             break;
         default:
