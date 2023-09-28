@@ -202,7 +202,7 @@ class CFGExporter final
 public:
     using size_type = typename QMap<TraceBasicBlock*, CFGNode>::size_type;
 
-    enum Layout {TopDown, LeftRight, Circular};
+    enum Layout {TopDown, LeftRight};
     enum DetailLevel { lessDetails, avgDetails, moreDetails };
 
     CFGExporter() = default;
@@ -244,7 +244,6 @@ private:
 
     bool fillInstrStrings(TraceFunction* func);
 
-    void dumpLayoutSettings(QTextStream& ts);
     void dumpNodes(QTextStream& ts);
     void dumpEdges(QTextStream& ts);
 

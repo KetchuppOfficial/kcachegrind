@@ -710,7 +710,9 @@ bool CFGExporter::writeDot(QIODevice* device)
     {
         *stream << "digraph \"control-flow graph\" {\n";
 
-        dumpLayoutSettings(*stream);
+        if (_layout == Layout::LeftRight)
+            *stream << QStringLiteral("  rankdir=LR;\n");
+
         dumpNodes(*stream);
         dumpEdges(*stream);
 
@@ -1369,49 +1371,6 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
     }
 
     return true;
-}
-
-void CFGExporter::dumpLayoutSettings(QTextStream& ts)
-{
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::dumpLayoutSettings()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
-    if (_layout == Layout::LeftRight)
-        ts << QStringLiteral("  rankdir=LR;\n");
-    else if (_layout == Layout::Circular)
-    {
-        TraceBasicBlock* bb;
-        switch (_item->type())
-        {
-            case ProfileContext::Function:
-            case ProfileContext::FunctionCycle:
-            {
-                auto& BBs = static_cast<TraceFunction*>(_item)->basicBlocks();
-                assert(!BBs.empty());
-                bb = BBs.front();
-                break;
-            }
-            case ProfileContext::Call:
-            {
-                auto f = static_cast<TraceCall*>(_item)->caller(true);
-                auto& BBs = f->basicBlocks();
-                assert(!BBs.empty());
-                bb = BBs.front();
-                break;
-            }
-            case ProfileContext::BasicBlock:
-                bb = static_cast<TraceBasicBlock*>(_item);
-                break;
-            default:
-                bb = nullptr;
-        }
-
-        if (bb)
-            ts << QStringLiteral("  center=B%1;\n").arg(bb->firstAddr().toString());
-
-        ts << QStringLiteral("  overlap=false\n  splines=true;\n");
-    }
 }
 
 void CFGExporter::dumpNodes(QTextStream& ts)
@@ -3455,12 +3414,7 @@ void ControlFlowGraphView::refresh()
     connect(_renderProcess, finishedPtr,
             this, &ControlFlowGraphView::dotExited);
 
-    QString renderProgram;
-    if (_exporter.layout() == CFGExporter::Layout::Circular)
-        renderProgram = QStringLiteral("twopi");
-    else
-        renderProgram = QStringLiteral("dot");
-
+    QString renderProgram = QStringLiteral("dot");
     QStringList renderArgs{QStringLiteral("-Tplain")};
 
     _renderProcessCmdLine = renderProgram + QLatin1Char(' ') + renderArgs.join(QLatin1Char(' '));
@@ -3683,7 +3637,6 @@ QMenu* ControlFlowGraphView::addLayoutMenu(QMenu* menu)
 
     addLayoutAction(m, QObject::tr("Top to Down"), CFGExporter::Layout::TopDown);
     addLayoutAction(m, QObject::tr("Left to Right"), CFGExporter::Layout::LeftRight);
-    addLayoutAction(m, QObject::tr("Circular"), CFGExporter::Layout::Circular);
 
     #if 0
     connect(m, &QMenu::triggered,
