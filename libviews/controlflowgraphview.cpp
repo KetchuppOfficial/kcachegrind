@@ -2693,6 +2693,7 @@ void ControlFlowGraphView::mouseDoubleClickEvent(QMouseEvent* event)
         return;
 
     mouseEvent(&TraceItemView::activated, item);
+    centerOnSelectedNodeOrEdge();
 }
 
 void ControlFlowGraphView::mouseMoveEvent(QMouseEvent* event)
