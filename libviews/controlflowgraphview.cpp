@@ -2751,9 +2751,6 @@ enum MenuActions
     stopLayout,
     exportAsDot,
     exportAsImage,
-    toggleSkipped,
-    toggleExpand,
-    toggleCluster,
 
     // special value
     nActions
@@ -2817,33 +2814,6 @@ QAction* addStopLayoutAction(QMenu& topLevel, QProcess* renderProcess)
         return nullptr;
 }
 
-QAction* addToggleSkippedAction(QMenu *graphMenu, bool showSkipped)
-{
-    auto toggleSkipped_ = graphMenu->addAction(QObject::tr("Arrows for Skipped Calls"));
-    toggleSkipped_->setCheckable(true);
-    toggleSkipped_->setChecked(showSkipped);
-
-    return toggleSkipped_;
-}
-
-QAction* addToggleExpandAction(QMenu *graphMenu, bool expandCycles)
-{
-    auto toggleExpand_ = graphMenu->addAction(QObject::tr("Inner-cycle Calls"));
-    toggleExpand_->setCheckable(true);
-    toggleExpand_->setChecked(expandCycles);
-
-    return toggleExpand_;
-}
-
-QAction* addToggleClusterAction(QMenu *graphMenu, bool clusterGroups)
-{
-    auto toggleCluster_ = graphMenu->addAction(QObject::tr("Cluster Groups"));
-    toggleCluster_->setCheckable(true);
-    toggleCluster_->setChecked(clusterGroups);
-
-    return toggleCluster_;
-}
-
 } // unnamed namespace
 
 void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
@@ -2881,10 +2851,6 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
     addBranchLimitMenu(graphMenu);
     graphMenu->addSeparator();
 
-    actions[MenuActions::toggleSkipped] = addToggleSkippedAction(graphMenu, _showSkipped);
-    actions[MenuActions::toggleExpand] = addToggleExpandAction(graphMenu, _expandCycles);
-    actions[MenuActions::toggleCluster] = addToggleClusterAction(graphMenu, _clusterGroups);
-
     addLayoutMenu(std::addressof(popup));
     addZoomPosMenu(std::addressof(popup));
 
@@ -2915,18 +2881,6 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
         case MenuActions::exportAsImage:
             if (_scene)
                 exportGraphAsImage();
-            break;
-        case MenuActions::toggleSkipped:
-            _showSkipped ^= true;
-            refresh();
-            break;
-        case MenuActions::toggleExpand:
-            _expandCycles ^= true;
-            refresh();
-            break;
-        case MenuActions::toggleCluster:
-            _clusterGroups ^= true;
-            refresh();
             break;
         default: // practically nActions
             break;
