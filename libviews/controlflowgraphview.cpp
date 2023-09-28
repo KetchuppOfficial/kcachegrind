@@ -1589,7 +1589,7 @@ bool CFGExporter::savePrompt(QWidget *parent, TraceFunction *func,
             dotName = maybeTemp.fileName();
             dotRenderType = "-Tpdf";
         }
-        else if (mime == filter3)
+        else // mime == filter3
         {
             dotName = maybeTemp.fileName();
             dotRenderType = "-Tps";
