@@ -1602,8 +1602,7 @@ bool CFGExporter::savePrompt(QWidget *parent, TraceFunction *func,
         {
             QProcess proc;
             proc.setStandardOutputFile(intendedName, QFile::Truncate);
-            proc.start("dot", QStringList{ dotRenderType, dotName },
-                       QProcess::ReadWrite);
+            proc.start("dot", QStringList{dotRenderType, dotName}, QProcess::ReadWrite);
             proc.waitForFinished();
 
             if (proc.exitStatus() == QProcess::NormalExit)
