@@ -1383,9 +1383,12 @@ void CFGExporter::dumpNodes(QTextStream& ts)
     {
         TraceBasicBlock* bb = node.basicBlock();
 
-        ts << QStringLiteral("  b%1b%2 [shape=record, label=\"{")
+        ts << QStringLiteral("  b%1b%2 [shape=record, label=\"")
                             .arg(bb->firstAddr().toString())
                             .arg(bb->lastAddr().toString());
+
+        if (_layout == Layout::TopDown)
+            ts << '{';
 
         auto lastInstrIt = std::prev(bb->end());
 
@@ -1400,7 +1403,12 @@ void CFGExporter::dumpNodes(QTextStream& ts)
         }
 
         ts << QStringLiteral("<I%1>").arg((*lastInstrIt)->addr().toString())
-           << *std::prev(node.end()) << "}\"]\n";
+           << *std::prev(node.end());
+
+        if (_layout == Layout::TopDown)
+            ts << '}';
+
+        ts << "\"]\n";
     }
 }
 
@@ -3638,10 +3646,8 @@ QMenu* ControlFlowGraphView::addLayoutMenu(QMenu* menu)
     addLayoutAction(m, QObject::tr("Top to Down"), CFGExporter::Layout::TopDown);
     addLayoutAction(m, QObject::tr("Left to Right"), CFGExporter::Layout::LeftRight);
 
-    #if 0
     connect(m, &QMenu::triggered,
             this, &ControlFlowGraphView::layoutTriggered);
-    #endif
 
     return m;
 }
