@@ -1568,7 +1568,7 @@ bool CFGExporter::savePrompt(QWidget *parent, TraceFunction *func,
 
     if (saveDialog.exec())
     {
-        auto& intendedName = saveDialog.selectedFiles().first();
+        QString intendedName = saveDialog.selectedFiles().first();
         if (intendedName.isNull() || intendedName.isEmpty())
             return false;
 
@@ -1582,12 +1582,12 @@ bool CFGExporter::savePrompt(QWidget *parent, TraceFunction *func,
         if (mime == filter1)
         {
             dotName = intendedName;
-            dotRenderType = "-Tpdf";
+            dotRenderType = "";
         }
         else if (mime == filter2)
         {
             dotName = maybeTemp.fileName();
-            dotRenderType = "-Tps";
+            dotRenderType = "-Tpdf";
         }
         else if (mime == filter3)
         {
