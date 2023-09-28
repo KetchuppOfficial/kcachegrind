@@ -2643,7 +2643,7 @@ void ControlFlowGraphView::mouseEvent(void (TraceItemView::* func)(CostItem*), Q
     if (item->type() == CanvasParts::Node)
     {
         CFGNode* node = static_cast<CanvasCFGNode*>(item)->node();
-        (this->*func)(node->basicBlock()->function());
+        (this->*func)(node->basicBlock());
     }
     else
     {
