@@ -1670,10 +1670,17 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
     auto step = rectangle.height() / _node->instrNumber();
 
     auto topLineY = rectangle.y();
-    for (auto &instr : *_node)
+
+    auto instrIt = _node->begin();
+    p->drawText(rectangle.x(), topLineY, rectangle.width(), step,
+                Qt::AlignCenter, *instrIt);
+    topLineY += step;
+    ++instrIt;
+
+    for (auto ite = _node->end(); instrIt != ite; ++instrIt)
     {
         p->drawText(rectangle.x(), topLineY, rectangle.width(), step,
-                    Qt::AlignCenter, instr);
+                    Qt::AlignCenter, *instrIt);
         p->drawLine(rectangle.x(), topLineY,
                     rectangle.x() + rectangle.width(), topLineY);
 
