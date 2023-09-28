@@ -1662,10 +1662,22 @@ void CanvasCFGNode::setSelected(bool s)
 
 void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
-    p->setPen(Qt::black);
-
     QRectF rectangle = rect();
-    p->drawRect(rectangle);
+
+    if (StoredDrawParams::selected())
+    {
+        QPen pen{Qt::darkGreen};
+        pen.setWidth(2);
+        p->setPen(pen);
+
+        p->drawRect(rectangle);
+        p->setPen(Qt::black);
+    }
+    else
+    {
+        p->setPen(Qt::black);
+        p->drawRect(rectangle);
+    }
 
     auto step = rectangle.height() / _node->instrNumber();
 
