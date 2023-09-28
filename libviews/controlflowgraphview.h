@@ -47,7 +47,7 @@ public:
 
     CanvasCFGNode* canvasNode() { return _cn; }
     const CanvasCFGNode* canvasNode() const { return _cn; }
-    void setCanvasNode(CanvasCFGNode *cn) { _cn = cn; }
+    void setCanvasNode(CanvasCFGNode* cn) { _cn = cn; }
 
     CFGEdge* trueEdge() { return _trueEdge; }
     const CFGEdge* trueEdge() const { return _trueEdge; }
@@ -160,7 +160,7 @@ public:
     CFGNode* toNode() { return _toNode; }
     const CFGNode* toNode() const { return _toNode; }
     CFGNode* cachedToNode();
-    void setSuccessorNode(CFGNode *n) { _toNode = n; }
+    void setSuccessorNode(CFGNode* n) { _toNode = n; }
 
     bool isVisible() const { return _visible; }
     void setVisible(bool v) { _visible = v; }
@@ -182,7 +182,7 @@ public:
     double count = 0.0;
 
 private:
-    TraceBranch *_branch;
+    TraceBranch* _branch;
 
     CFGNode* _fromNode = nullptr;
     CFGNode* _toNode = nullptr;
@@ -234,8 +234,8 @@ public:
     // translates string "B<firstAddr>B<lastAddr>" into appropriate CFGNode*
     CFGNode* toCFGNode(QString s);
 
-    static bool savePrompt(QWidget *parent, TraceFunction *func,
-                           EventType *eventType, ProfileContext::Type groupType);
+    static bool savePrompt(QWidget* parent, TraceFunction* func,
+                           EventType* eventType, ProfileContext::Type groupType);
 
 private:
     bool createGraph();
@@ -339,15 +339,15 @@ private:
 class CanvasCFGEdge : public QGraphicsPathItem
 {
 public:
-    explicit CanvasCFGEdge(CFGEdge *e);
+    explicit CanvasCFGEdge(CFGEdge* e);
 
     CanvasCFGEdgeLabel* label() { return _label; }
     const CanvasCFGEdgeLabel* label() const { return _label; }
-    void setLabel(CanvasCFGEdgeLabel *l);
+    void setLabel(CanvasCFGEdgeLabel* l);
 
     CanvasCFGEdgeArrow* arrow() { return _arrow; }
     const CanvasCFGEdgeArrow* arrow() const { return _arrow; }
-    void setArrow(CanvasCFGEdgeArrow *a);
+    void setArrow(CanvasCFGEdgeArrow* a);
 
     const QPolygon& controlPoints() const { return _points; }
     void setControlPoints(const QPolygon& p);
@@ -452,7 +452,7 @@ private:
     std::pair<CFGNode*, CFGEdge*> parseDot();
     void setupScreen(QTextStream& lineStream, int lineno);
     std::pair<int, int> calculateSizes(QTextStream& lineStream);
-    CFGNode *parseNode(CFGNode* activeNode, QTextStream& lineStream);
+    CFGNode* parseNode(CFGNode* activeNode, QTextStream& lineStream);
     CFGEdge* parseEdge(CFGEdge* activeEdge, QTextStream& lineStream, int lineno);
     void checkSceneAndActiveItems(CFGNode* activeNode, CFGEdge* activeEdge);
     void updateSelectedNodeOrEdge(CFGNode* activeNode, CFGEdge* activeEdge);

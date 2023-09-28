@@ -57,7 +57,7 @@ void CFGNode::sortPredecessorEdges()
     qDebug() << "\033[1;31m" << "CFGNode::sortPredecessorEdges()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    auto edgeComp = [](const CFGEdge *ge1, const CFGEdge *ge2)
+    auto edgeComp = [](const CFGEdge* ge1, const CFGEdge* ge2)
     {
         auto ce1 = ge1->canvasEdge();
         auto ce2 = ge2->canvasEdge();
@@ -206,7 +206,7 @@ CFGEdge* CFGNode::visibleSuccessorEdge()
         if (_trueEdge->isVisible() && _falseEdge->isVisible())
         {
             return std::max(_trueEdge, _falseEdge,
-                            [](CFGEdge *e1, CFGEdge *e2){ return e1->cost < e2->cost; });
+                            [](CFGEdge* e1, CFGEdge* e2){ return e1->cost < e2->cost; });
         }
         else if (_trueEdge->isVisible())
             return _trueEdge;
@@ -683,7 +683,7 @@ bool CFGExporter::writeDot(QIODevice* device)
 
     // copy-constructors of QFile and QTextStream are deleted
     // so we have to allocate them on heap
-    QFile *file = nullptr;
+    QFile* file = nullptr;
     QTextStream* stream = nullptr;
 
     if (device)
@@ -775,7 +775,7 @@ bool CFGExporter::createGraph()
     return fillInstrStrings(bb->function());
 }
 
-CFGNode *CFGExporter::buildNode(TraceBasicBlock* bb)
+CFGNode* CFGExporter::buildNode(TraceBasicBlock* bb)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::buildNode()" << "\033[0m";
@@ -1341,7 +1341,7 @@ QString ObjdumpParser::parseOperands()
 
 } // unnamed namespace
 
-bool CFGExporter::fillInstrStrings(TraceFunction *func)
+bool CFGExporter::fillInstrStrings(TraceFunction* func)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::fillInstrStrings()" << "\033[0m";
@@ -1381,7 +1381,7 @@ void CFGExporter::dumpLayoutSettings(QTextStream& ts)
         ts << QStringLiteral("  rankdir=LR;\n");
     else if (_layout == Layout::Circular)
     {
-        TraceBasicBlock *bb;
+        TraceBasicBlock* bb;
         switch (_item->type())
         {
             case ProfileContext::Function:
@@ -1473,7 +1473,7 @@ void CFGExporter::dumpEdges(QTextStream& ts)
             case TraceBranch::Type::true_:
             case TraceBranch::Type::unconditional:
             {
-                const char *color = (br->type() == TraceBranch::Type::true_) ? "blue" : "black";
+                const char* color = (br->type() == TraceBranch::Type::true_) ? "blue" : "black";
 
                 ts << QStringLiteral("  b%1b%2:I%3:w -> b%4b%5")
                                     .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
@@ -1550,16 +1550,16 @@ CFGNode* CFGExporter::toCFGNode(QString s)
     return nullptr;
 }
 
-bool CFGExporter::savePrompt(QWidget *parent, TraceFunction *func,
-                             EventType *eventType, ProfileContext::Type groupType)
+bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
+                             EventType* eventType, ProfileContext::Type groupType)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::savePrompt()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    static constexpr const char *filter1 = "text/vnd.graphviz";
-    static constexpr const char *filter2 = "application/pdf";
-    static constexpr const char *filter3 = "application/postscript";
+    static constexpr const char* filter1 = "text/vnd.graphviz";
+    static constexpr const char* filter2 = "application/pdf";
+    static constexpr const char* filter3 = "application/postscript";
 
     QFileDialog saveDialog{parent, QObject::tr("Export Graph")};
     saveDialog.setMimeTypeFilters(QStringList{filter1, filter2, filter3});
@@ -1807,7 +1807,7 @@ void CanvasCFGEdgeArrow::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWi
 // CanvasCFGEdge
 //
 
-CanvasCFGEdge::CanvasCFGEdge(CFGEdge *e) : _edge{e}
+CanvasCFGEdge::CanvasCFGEdge(CFGEdge* e) : _edge{e}
 {
     setFlag(QGraphicsItem::ItemIsSelectable);
 }
@@ -2596,7 +2596,7 @@ void ControlFlowGraphView::predecessorDepthTriggered(QAction* a)
     refresh();
 }
 
-void ControlFlowGraphView::successorDepthTriggered(QAction *a)
+void ControlFlowGraphView::successorDepthTriggered(QAction* a)
 {
     _maxCalleeDepth = a->data().toInt(nullptr);
     refresh();
@@ -2689,7 +2689,7 @@ void ControlFlowGraphView::mousePressEvent(QMouseEvent* event)
     if (event->button() == Qt::LeftButton)
         _isMoving = true;
 
-    QGraphicsItem *item = itemAt(event->pos());
+    QGraphicsItem* item = itemAt(event->pos());
     if (item)
         mouseEvent(&TraceItemView::selected, item);
 
@@ -2756,7 +2756,7 @@ enum MenuActions
     nActions
 };
 
-TraceBasicBlock* addNodesOrEdgesAction(QMenu& popup, QGraphicsItem *item,
+TraceBasicBlock* addNodesOrEdgesAction(QMenu& popup, QGraphicsItem* item,
                            std::array<QAction*, MenuActions::nActions>& actions)
 {
     TraceBasicBlock* bb = nullptr;
@@ -3577,7 +3577,7 @@ QAction* ControlFlowGraphView::addLayoutAction(QMenu* m, QString s, CFGExporter:
 QMenu* ControlFlowGraphView::addPredecessorDepthMenu(QMenu* menu)
 {
     QMenu* m = menu->addMenu(QObject::tr("Predecessor Depth"));
-    QAction *a = addPredecessorDepthAction(m, QObject::tr("Unlimited"), -1);
+    QAction* a = addPredecessorDepthAction(m, QObject::tr("Unlimited"), -1);
 
     a->setEnabled(_funcLimit > 0.005);
     m->addSeparator();
@@ -3600,7 +3600,7 @@ QMenu* ControlFlowGraphView::addPredecessorDepthMenu(QMenu* menu)
 QMenu* ControlFlowGraphView::addSuccessorDepthMenu(QMenu* menu)
 {
     QMenu* m = menu->addMenu(QObject::tr("Successor Depth"));
-    QAction *a = addSuccessorDepthAction(m, QObject::tr("Unlimited"), -1);
+    QAction* a = addSuccessorDepthAction(m, QObject::tr("Unlimited"), -1);
 
     a->setEnabled(_funcLimit > 0.005);
     m->addSeparator();
@@ -3623,7 +3623,7 @@ QMenu* ControlFlowGraphView::addSuccessorDepthMenu(QMenu* menu)
 QMenu* ControlFlowGraphView::addNodeLimitMenu(QMenu* menu)
 {
     QMenu* m = menu->addMenu(QObject::tr("Min. Node Cost"));
-    QAction *a = addNodeLimitAction(m, QObject::tr("No Minimum"), 0.0);
+    QAction* a = addNodeLimitAction(m, QObject::tr("No Minimum"), 0.0);
 
     a->setEnabled(_maxCallerDepth >= 0 && _maxCalleeDepth >= 0);
     m->addSeparator();
