@@ -2895,10 +2895,10 @@ void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
     {
         auto [node, edge] = getNodeAndEdgeToSelect(transformKeyIfNeeded(e->key()));
 
-        if (node->basicBlock())
+        if (node && node->basicBlock())
             selected(node->basicBlock());
         #if 0
-        else if (edge->branch())
+        else if (edge && edge->branch())
             selected(edge->branch());
         #endif
     }
