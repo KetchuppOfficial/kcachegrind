@@ -235,7 +235,7 @@ public:
     CFGNode* toCFGNode(QString s);
 
     static bool savePrompt(QWidget* parent, TraceFunction* func,
-                           EventType* eventType, ProfileContext::Type groupType);
+                           EventType* eventType, ProfileContext::Type groupType, Layout layout);
 
 private:
     bool createGraph();
