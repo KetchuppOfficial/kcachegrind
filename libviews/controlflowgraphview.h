@@ -370,21 +370,6 @@ private:
 };
 
 
-class CanvasCFGFrame : public QGraphicsRectItem
-{
-public:
-    explicit CanvasCFGFrame(CanvasCFGNode*);
-
-    int type() const override { return CanvasParts::Frame; }
-    bool hit(const QPoint&) const { return false; }
-
-    void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
-
-private:
-    static QPixmap* _p;
-};
-
-
 class ControlFlowGraphView : public QGraphicsView, public TraceItemView,
                              public StorableGraphOptions
 {
