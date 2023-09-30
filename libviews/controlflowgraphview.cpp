@@ -701,11 +701,7 @@ bool CFGExporter::writeDot(QIODevice* device)
         stream = new QTextStream{file};
     }
 
-    bool ok = true;
-    if (!_graphCreated)
-        ok = createGraph();
-
-    if (ok)
+    if (_graphCreated || createGraph())
     {
         *stream << "digraph \"control-flow graph\" {\n";
 
