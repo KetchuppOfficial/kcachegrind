@@ -1871,75 +1871,6 @@ void CanvasCFGEdge::paint(QPainter* p, const QStyleOptionGraphicsItem* option, Q
 // ======================================================================================
 
 //
-// CanvasCFGFrame
-//
-
-QPixmap* CanvasCFGFrame::_p = nullptr;
-
-CanvasCFGFrame::CanvasCFGFrame(CanvasCFGNode* node)
-{
-    if (!_p)
-    {
-        QRect rect{-435, -435, 900, 900};
-
-        _p = new QPixmap(rect.size());
-        _p->fill(Qt::white);
-        QPainter p{_p};
-        p.setPen(Qt::NoPen);
-
-        rect.translate(-rect.x(), -rect.y());
-
-        constexpr auto nStages = 87;
-        constexpr auto d = 5;
-        auto v1 = 130.0f;
-        auto f = 1.03f;
-        auto v = v1 / (std::pow (f, nStages));
-        while (v < v1)
-        {
-            v *= f;
-
-            p.setBrush(QColor{265 - static_cast<int>(v),
-                              265 - static_cast<int>(v),
-                              265 - static_cast<int>(v)});
-            p.drawRect(QRect(rect.x(), rect.y(), rect.width(), d));
-            p.drawRect(QRect(rect.x(), rect.bottom() - d, rect.width(), d));
-            p.drawRect(QRect(rect.x(), rect.y() + d, d, rect.height() - 2*d));
-
-            rect.setRect(rect.x() + d,         rect.y() + d,
-                         rect.width() - 2 * d, rect.height() - 2 * d);
-        }
-    }
-
-    setRect(node->rect().center().x() - _p->width() / 2,
-            node->rect().center().y() - _p->height() / 2,
-            _p->width(), _p->height());
-}
-
-void CanvasCFGFrame::paint(QPainter* p, const QStyleOptionGraphicsItem* option, QWidget*)
-{
-#if QT_VERSION >= 0x040600
-    auto levelOfDetail = option->levelOfDetailFromTransform(p->transform());
-#else
-    auto levelOfDetail = option->levelOfDetail;
-#endif
-
-    if (levelOfDetail < 0.5)
-    {
-        QRadialGradient g{rect().center(), rect().width() / 3};
-        g.setColorAt(0.0, Qt::gray);
-        g.setColorAt(1.0, Qt::white);
-
-        p->setBrush(QBrush(g));
-        p->setPen(Qt::NoPen);
-        p->drawRect(rect());
-    }
-    else
-        p->drawPixmap(static_cast<int>(rect().x()), static_cast<int>(rect().y()), *_p);
-}
-
-// ======================================================================================
-
-//
 // ControlFlowGraphView
 //
 
@@ -2525,11 +2456,6 @@ void ControlFlowGraphView::updateSelectedNodeOrEdge(CFGNode* activeNode, CFGEdge
 
             auto cn = _selectedNode->canvasNode();
             cn->setSelected(true);
-
-            auto frame = new CanvasCFGFrame(cn);
-            _scene->addItem(frame);
-            frame->setPos(cn->pos());
-            frame->setZValue(-1);
         }
         else if (activeEdge)
         {
