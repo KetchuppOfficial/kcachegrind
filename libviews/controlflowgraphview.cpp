@@ -3349,7 +3349,7 @@ void ControlFlowGraphView::refresh()
     _renderTimer.setSingleShot(true);
     _renderTimer.start(1000);
 
-    _renderProcess = new QProcess(this);
+    _renderProcess = new QProcess{this};
 
     connect(_renderProcess, &QProcess::readyReadStandardOutput,
             this, &ControlFlowGraphView::readDotOutput);
