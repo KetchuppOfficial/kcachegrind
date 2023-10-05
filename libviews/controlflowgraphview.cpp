@@ -3265,18 +3265,6 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
                     return;
                 edge = nullptr;
                 break;
-            case ProfileContext::Function:
-            {
-                auto func = static_cast<TraceFunction*>(_selectedItem);
-                auto& BBs = func->basicBlocks();
-                assert(!BBs.empty());
-                TraceBasicBlock* bb = BBs.front();
-                node = _exporter.findNode(bb);
-                if (node == _selectedNode)
-                    return;
-                edge = nullptr;
-                break;
-            }
 
             // Function cycles are ignored because there are no instructions in them
             default:
