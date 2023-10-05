@@ -3427,8 +3427,7 @@ void ControlFlowGraphView::refresh()
     connect(_renderProcess, &QProcess::readyReadStandardOutput,
             this, &ControlFlowGraphView::readDotOutput);
 
-    auto errorPtr = static_cast<void (QProcess::*)(QProcess::ProcessError)>(&QProcess::error);
-    connect(_renderProcess, errorPtr,
+    connect(_renderProcess, &QProcess::errorOccurred,
             this, &ControlFlowGraphView::dotError);
 
     auto finishedPtr = static_cast<void (QProcess::*)(int,
