@@ -2414,7 +2414,6 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
     _scene->addItem(sItem);
     _scene->addItem(createArrow(sItem, poly, arrowColor));
 
-    #if 0
     if (edge->branch() == selectedItem())
     {
         _selectedEdge = edge;
@@ -2425,7 +2424,6 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
 
     if (edge->branch() == activeItem())
         activeEdge = edge;
-    #endif
 
     // Useless till costs of branches aren't calculated
     #if 0
@@ -2642,12 +2640,10 @@ void ControlFlowGraphView::mouseEvent(void (TraceItemView::* func)(CostItem*), Q
 
         if (item->type() == CanvasParts::Edge)
         {
-            [[maybe_unused]] CFGEdge* edge = static_cast<CanvasCFGEdge*>(item)->edge();
+            CFGEdge* edge = static_cast<CanvasCFGEdge*>(item)->edge();
 
-            #if 0
             if (edge->branch())
                 (this->*func)(edge->branch());
-            #endif
         }
     }
 }
@@ -2720,9 +2716,7 @@ namespace
 enum MenuActions
 {
     activateBasicBlock,
-    #if 0
     activateBranch,
-    #endif
     stopLayout,
     exportAsDot,
     exportAsImage,
@@ -2731,13 +2725,12 @@ enum MenuActions
     nActions
 };
 
-TraceBasicBlock* addNodesOrEdgesAction(QMenu& popup, QGraphicsItem* item,
-                           std::array<QAction*, MenuActions::nActions>& actions)
+auto addNodesOrEdgesAction(QMenu& popup, QGraphicsItem* item,
+                          std::array<QAction*, MenuActions::nActions>& actions)
+-> std::pair<TraceBasicBlock*, TraceBranch*>
 {
     TraceBasicBlock* bb = nullptr;
-    #if 0
     TraceBranch* branch = nullptr;
-    #endif
 
     if (item)
     {
@@ -2759,7 +2752,6 @@ TraceBasicBlock* addNodesOrEdgesAction(QMenu& popup, QGraphicsItem* item,
 
             if (item->type() == CanvasParts::Edge)
             {
-                #if 0
                 branch = static_cast<CanvasCFGEdge*>(item)->edge()->branch();
                 if (branch)
                 {
@@ -2768,12 +2760,11 @@ TraceBasicBlock* addNodesOrEdgesAction(QMenu& popup, QGraphicsItem* item,
                                             .arg(GlobalConfig::shortenSymbol(branch->prettyName())));
                     popup.addSeparator();
                 }
-                #endif
             }
         }
     }
 
-    return bb;
+    return std::pair{bb, branch};
 }
 
 QAction* addStopLayoutAction(QMenu& topLevel, QProcess* renderProcess)
@@ -2801,12 +2792,10 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
     std::array<QAction*, MenuActions::nActions> actions;
     actions[MenuActions::activateBasicBlock] = nullptr;
-    #if 0
     actions[MenuActions::activateBranch] = nullptr;
-    #endif
 
     QMenu popup;
-    TraceBasicBlock* bb = addNodesOrEdgesAction(popup, itemAt(event->pos()), actions);
+    auto [bb, branch] = addNodesOrEdgesAction(popup, itemAt(event->pos()), actions);
 
     actions[MenuActions::stopLayout] = addStopLayoutAction(popup, _renderProcess);
 
@@ -2838,11 +2827,9 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
         case MenuActions::activateBasicBlock:
             activated(bb);
             break;
-        #if 0
         case MenuActions::activateBranch:
             activated(branch);
             break;
-        #endif
         case MenuActions::stopLayout:
             stopRendering();
             break;
@@ -2896,11 +2883,8 @@ void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
     {
         if (_selectedNode)
             activated(_selectedNode->basicBlock());
-
-        #if 0
         else if (_selectedEdge && _selectedEdge->branch())
             activated(_selectedEdge->branch());
-        #endif
     }
     else if (!(e->modifiers() & (Qt::ShiftModifier | Qt::ControlModifier)) &&
              (_selectedNode || _selectedEdge))
@@ -2909,10 +2893,8 @@ void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
 
         if (node && node->basicBlock())
             selected(node->basicBlock());
-        #if 0
         else if (edge && edge->branch())
             selected(edge->branch());
-        #endif
     }
     else
         movePointOfView(e);
@@ -3278,10 +3260,10 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
                 break;
             }
 
-            #if 0
             case ProfileContext::Branch:
             {
-                CFGEdge* edge = _exporter.findEdge(static_cast<TraceBranch*>(_selectedItem));
+                auto branch = static_cast<TraceBranch*>(_selectedItem);
+                CFGEdge* edge = _exporter.findEdge(branch->fromBB(), branch->toBB());
                 if (edge == _selectedEdge)
                     return;
 
@@ -3290,7 +3272,6 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
                 selectEdge(edge);
                 break;
             }
-            #endif
 
             default:
                 unselectNode();
