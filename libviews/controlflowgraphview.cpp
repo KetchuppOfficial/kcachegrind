@@ -3402,6 +3402,7 @@ void ControlFlowGraphView::refresh()
     _selectedNode = nullptr;
     _selectedEdge = nullptr;
 
+    _scene->clear();
     _unparsedOutput.clear();
 
     _renderTimer.setSingleShot(true);
