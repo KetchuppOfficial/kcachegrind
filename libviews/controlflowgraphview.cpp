@@ -976,16 +976,17 @@ bool ObjdumpParser::runObjdump(TraceFunction* func)
             objdumpFormat = getObjDump();
 
         auto margin = _isArm ? 4 : 20;
-        auto args = QStringLiteral(" -C -d --start-address=0x%1 --stop-address=0x%2 %3")
-                                  .arg(_dumpStartAddr.toString())
-                                  .arg((_dumpEndAddr + margin).toString())
-                                  .arg(_objFile);
 
-        _objdumpCmd = objdumpFormat + args;
+        auto args = QStringList{"-C", "-d"};
+        args << QStringLiteral("--start-address=0x%1").arg(_dumpStartAddr.toString()),
+        args << QStringLiteral("--stop-address=0x%1").arg((_dumpEndAddr + margin).toString()),
+        args << _objFile;
+
+        _objdumpCmd = objdumpFormat + ' ' + args.join(' ');
 
         qDebug("Running \'%s\'...", qPrintable(_objdumpCmd));
 
-        _objdump.start(_objdumpCmd);
+        _objdump.start(objdumpFormat, args);
         if (!_objdump.waitForStarted() || !_objdump.waitForFinished())
         {
             // Should be implemented in a different manner
