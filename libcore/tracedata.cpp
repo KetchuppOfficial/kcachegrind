@@ -2657,7 +2657,7 @@ void TraceFunction::constructBasicBlocks()
         TraceBasicBlock* bbPtr = *it;
         TraceBranch& trueBr = bbPtr->trueBranch();
 
-        if (trueBr.type() == TraceBranch::Type::true_)
+        if (trueBr.brType() == TraceBranch::Type::true_)
         {
             auto nextBBIt = std::next(it);
             if (nextBBIt != ite)

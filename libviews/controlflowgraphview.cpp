@@ -1436,12 +1436,12 @@ void CFGExporter::dumpEdges(QTextStream& ts)
         auto bbToFirstAddr = toBB->firstAddr().toString();
         auto bbToLastAddr = toBB->lastAddr().toString();
 
-        switch (br->type())
+        switch (br->brType())
         {
             case TraceBranch::Type::true_:
             case TraceBranch::Type::unconditional:
             {
-                const char* color = (br->type() == TraceBranch::Type::true_) ? "blue" : "black";
+                const char* color = (br->brType() == TraceBranch::Type::true_) ? "blue" : "black";
 
                 ts << QStringLiteral("  b%1b%2:I%3:w -> b%4b%5")
                                     .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
@@ -2308,7 +2308,7 @@ QColor getArrowColor(CFGEdge* edge)
     assert(edge->branch());
 
     QColor arrowColor;
-    switch(edge->branch()->type())
+    switch(edge->branch()->brType())
     {
         case TraceBranch::Type::unconditional:
             arrowColor = Qt::black;
