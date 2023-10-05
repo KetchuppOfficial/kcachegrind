@@ -214,6 +214,9 @@ public:
 
     QString filename() const { return _dotName; }
 
+    bool CFGAvailable() const { return _errorMessage.isEmpty(); }
+    const QString& errorMessage() const { return _errorMessage; }
+
     Layout layout() const { return _layout; }
     void setLayout(Layout layout) { _layout = layout; }
 
@@ -255,6 +258,8 @@ private:
     CostItem* _item = nullptr;
     EventType* _eventType = nullptr;
     ProfileContext::Type _groupType = ProfileContext::InvalidType;
+
+    QString _errorMessage;
 
     bool _graphCreated = false;
     Layout _layout = Layout::TopDown;

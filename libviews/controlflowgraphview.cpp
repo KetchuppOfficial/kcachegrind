@@ -871,7 +871,7 @@ public:
     ObjdumpParser(TraceFunction* func);
     ~ObjdumpParser() = default;
 
-    QMap<Addr, QString> getInstrStrings();
+    std::pair<QString, QMap<Addr, QString>> getInstrStrings();
 
 private:
     using instr_iterator = typename TraceInstrMap::iterator;
@@ -1090,7 +1090,7 @@ QString ObjdumpParser::getSysRoot()
     return _env.value(QStringLiteral("SYSROOT"));
 }
 
-QMap<Addr, QString> ObjdumpParser::getInstrStrings()
+std::pair<QString, QMap<Addr, QString>> ObjdumpParser::getInstrStrings()
 {
     #ifdef OBJDUMP_PARSER_DEBUG
     qDebug() << "\033[1;31m" << "ObjdumpParser::getInstrStrings()" << "\033[0m";
@@ -1175,27 +1175,29 @@ QMap<Addr, QString> ObjdumpParser::getInstrStrings()
 
     if (_noAssLines > 1)
     {
-        qDebug() << QObject::tr("There are %n cost line(s) without machine code.", "", _noAssLines)
-                 << QObject::tr("This happens because the code of")
-                 << QStringLiteral("    %1").arg(_objFile)
-                 << QObject::tr("does not seem to match the profile data file.")
-                 << QObject::tr("Are you using an old profile data file or is the above mentioned")
-                 << QObject::tr("ELF object from an updated installation/another machine?");
+        QString message = QStringLiteral("There are %1 cost line(s) without machine code.\n"
+                                         "This happens because the code of %2 does not seem "
+                                         "to match the profile data file.\n"
+                                         "Are you using an old profile data file or is the above"
+                                         "mentioned\n"
+                                         "ELF object from an updated installation/another"
+                                         "machine?\n").arg(_noAssLines).arg(_objFile);
 
-        return {};
+        return {message, {}};
     }
     else if (instrStrings.empty())
     {
-        qDebug() << QObject::tr("There seems to be an error trying to execute the command")
-                 << QStringLiteral("    '%1'").arg(_objdumpCmd)
-                 << QObject::tr("Check that the ELF object used in the command exists.")
-                 << QObject::tr("Check that you have installed 'objdump'.")
-                 << QObject::tr("This utility can be found in the 'binutils' package.");
+        QString message = QStringLiteral("There seems to be an error trying to execute the command"
+                                         "\'%1\'.\n"
+                                         "Check that the ELF object used in the command exists.\n"
+                                         "Check that you have installed \'objdump\'.\n"
+                                         "This utility can be found in the \'binutils\' package.")
+                                        .arg(_objdumpCmd);
 
-        return {};
+        return {message, {}};
     }
-
-    return instrStrings;
+    else
+        return {{}, instrStrings};
 }
 
 void ObjdumpParser::getObjAddr()
@@ -1351,9 +1353,12 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
         return false;
 
     ObjdumpParser parser{func};
-    auto instrStrings = parser.getInstrStrings();
+    auto [message, instrStrings] = parser.getInstrStrings();
     if (instrStrings.empty())
+    {
+        _errorMessage = message;
         return false;
+    }
 
     for (auto it = _nodeMap.begin(), ite = _nodeMap.end(); it != ite; ++it)
     {
@@ -2475,9 +2480,16 @@ void ControlFlowGraphView::checkSceneAndActiveItems(CFGNode* activeNode, CFGEdge
     {
         _scene = new QGraphicsScene;
 
-        auto message = QObject::tr("Error running the graph layouting tool.\n"
-                                   "Please check that \'dot\' is installed (package Graphviz).");
-        _scene->addSimpleText(message);
+        if (_exporter.CFGAvailable())
+        {
+            QString message = QObject::tr("Error running the graph layouting tool.\n"
+                                          "Please check that \'dot\' is installed"
+                                          "(package Graphviz).");
+            _scene->addSimpleText(message);
+        }
+        else
+            _scene->addSimpleText(_exporter.errorMessage());
+
         centerOn(0, 0);
     }
     else if (!activeNode && !activeEdge)
