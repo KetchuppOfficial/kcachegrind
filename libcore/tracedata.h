@@ -1120,7 +1120,7 @@ public:
     TraceBranch() = default;
     ~TraceBranch() = default;
 
-    Type type() const { return _type; }
+    Type brType() const { return _type; }
     void setType(Type type) { _type = type; }
 
     TraceInstr* fromInstr() { return _from; }
