@@ -3303,7 +3303,7 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
     refresh();
 }
 
-void ControlFlowGraphView::unselectNode(CFGNode* node)
+void ControlFlowGraphView::unselectNode()
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::unselectNode" << "\033[0m";
