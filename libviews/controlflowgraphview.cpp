@@ -3247,51 +3247,56 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::doUpdate" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    if (changeType == TraceItemView::eventType2Changed)
-        return;
-    else if (changeType == TraceItemView::selectedItemChanged)
+    if (changeType == TraceItemView::selectedItemChanged)
     {
         if (!_scene || !_selectedItem)
             return;
 
-        CFGNode* node;
-        CFGEdge* edge;
-
         switch(_selectedItem->type())
         {
             case ProfileContext::BasicBlock:
-                node = _exporter.findNode(static_cast<TraceBasicBlock*>(_selectedItem));
+            {
+                CFGNode* node = _exporter.findNode(static_cast<TraceBasicBlock*>(_selectedItem));
                 if (node == _selectedNode)
                     return;
-                edge = nullptr;
-                break;
 
-            // Function cycles are ignored because there are no instructions in them
+                unselectNode();
+                unselectEdge();
+                selectNode(node);
+                break;
+            }
+
+            #if 0
+            case ProfileContext::Branch:
+            {
+                CFGEdge* edge = _exporter.findEdge(static_cast<TraceBranch*>(_selectedItem));
+                if (edge == _selectedEdge)
+                    return;
+
+                unselectNode();
+                unselectEdge();
+                selectEdge(edge);
+                break;
+            }
+            #endif
+
             default:
-                node = nullptr;
-                edge = nullptr;
+                unselectNode();
+                unselectEdge();
+                break;
         }
 
-        unselectNode();
-        unselectEdge();
-        selectNode(node);
-        selectEdge(edge);
-
         _scene->update();
-        return;
     }
     else if (changeType == TraceItemView::groupTypeChanged)
     {
-        if (!_scene)
-            return;
-        else if (!_clusterGroups)
+        if (_scene && !_clusterGroups)
         {
             for (auto item : _scene->items())
                 if (item->type() == CanvasParts::Node)
                     static_cast<CanvasCFGNode*>(item)->update();
 
             _scene->update();
-            return;
         }
     }
     else if (changeType & TraceItemView::dataChanged)
@@ -3299,9 +3304,10 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
         _exporter.reset(_activeItem, _eventType, _groupType);
         _selectedNode = nullptr;
         _selectedEdge = nullptr;
+        refresh();
     }
-
-    refresh();
+    else if (changeType != TraceItemView::eventType2Changed)
+        refresh();
 }
 
 void ControlFlowGraphView::unselectNode()
