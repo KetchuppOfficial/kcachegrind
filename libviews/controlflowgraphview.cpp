@@ -1215,7 +1215,7 @@ void ObjdumpParser::getObjAddr()
         else
         {
             _objdumpLineno++;
-            if (readBytes == _line.capacity())
+            if (readBytes == static_cast<qsizetype>(_line.capacity()))
                 qDebug("ERROR: Line %d is too long\n", _objdumpLineno);
             else if (_line.absData()[readBytes - 1] == '\n')
                 _line.setElem(readBytes - 1, '\0');
