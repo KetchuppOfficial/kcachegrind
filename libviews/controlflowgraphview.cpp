@@ -1622,6 +1622,10 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
                              qreal x, qreal y, qreal w, qreal h) :
     QGraphicsRectItem{x, y, w, h}, _node{node}, _view{view}
 {
+    #ifdef CANVASCFGNODE_DEBUG
+    qDebug() << "\033[1;31m" << "CanvasCFGNode::CanvasCFGNode()" << "\033[0m";
+    #endif // CANVASCFGNODE_DEBUG
+
     if (!_node || !_view)
         return;
 
@@ -1652,12 +1656,20 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
 
 void CanvasCFGNode::setSelected(bool s)
 {
+    #ifdef CANVASCFGNODE_DEBUG
+    qDebug() << "\033[1;31m" << "CanvasCFGNode::setSelected()" << "\033[0m";
+    #endif // CANVASCFGNODE_DEBUG
+
     StoredDrawParams::setSelected(s);
     update();
 }
 
 void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
+    #ifdef CANVASCFGNODE_DEBUG
+    qDebug() << "\033[1;31m" << "CanvasCFGNode::paint()" << "\033[0m";
+    #endif // CANVASCFGNODE_DEBUG
+
     QRectF rectangle = rect();
 
     if (StoredDrawParams::selected())
@@ -1706,6 +1718,10 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
                                        qreal x, qreal y, qreal w, qreal h) :
     QGraphicsRectItem{x, y, w, h}, _ce{ce}, _view{v}
 {
+    #ifdef CANVASCFGEDGELABEL_DEBUG
+    qDebug() << "\033[1;31m" << "CanvasCFGEdgeLabel::CanvasCFGEdgeLabel()" << "\033[0m";
+    #endif // CANVASCFGEDGELABEL_DEBUG
+
     auto e = _ce->edge();
     if (!e)
         return;
@@ -1752,6 +1768,10 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
 
 void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem* option, QWidget*)
 {
+    #ifdef CANVASCFGEDGELABEL_DEBUG
+    qDebug() << "\033[1;31m" << "CanvasCFGEdgeLabel::paint()" << "\033[0m";
+    #endif // CANVASCFGEDGELABEL_DEBUG
+
 #if QT_VERSION >= 0x040600
     if (option->levelOfDetailFromTransform(p->transform()) < 0.5)
         return;
@@ -1774,10 +1794,19 @@ void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem* opti
 // CanvasCFGEdgeArrow
 //
 
-CanvasCFGEdgeArrow::CanvasCFGEdgeArrow(CanvasCFGEdge* ce) : _ce{ce} {}
+CanvasCFGEdgeArrow::CanvasCFGEdgeArrow(CanvasCFGEdge* ce) : _ce{ce}
+{
+    #ifdef CANVASCFGEDGEARROW_DEBUG
+    qDebug() << "\033[1;31m" << "CanvasCFGEdgeArrow::CanvasCFGEdgeArrow()" << "\033[0m";
+    #endif // CANVASCFGEDGEARROW_DEBUG
+}
 
 void CanvasCFGEdgeArrow::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
+    #ifdef CANVASCFGEDGEARROW_DEBUG
+    qDebug() << "\033[1;31m" << "CanvasCFGEdgeArrow::paint()" << "\033[0m";
+    #endif // CANVASCFGEDGEARROW_DEBUG
+
     p->setRenderHint(QPainter::Antialiasing);
     p->setBrush(_ce->isSelected() ? Qt::red : Qt::black);
     p->drawPolygon(polygon(), Qt::OddEvenFill);
@@ -1791,11 +1820,19 @@ void CanvasCFGEdgeArrow::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWi
 
 CanvasCFGEdge::CanvasCFGEdge(CFGEdge* e) : _edge{e}
 {
+    #ifdef CANVASCFGEDGE_DEBUG
+    qDebug() << "\033[1;31m" << "CanvasCFGEdge::CanvasCFGEdge()" << "\033[0m";
+    #endif // CANVASCFGEDGE_DEBUG
+
     setFlag(QGraphicsItem::ItemIsSelectable);
 }
 
 void CanvasCFGEdge::setLabel(CanvasCFGEdgeLabel* l)
 {
+    #ifdef CANVASCFGEDGE_DEBUG
+    qDebug() << "\033[1;31m" << "CanvasCFGEdge::setLabel()" << "\033[0m";
+    #endif // CANVASCFGEDGE_DEBUG
+
     _label = l;
 
     if (_label)
@@ -1812,6 +1849,10 @@ void CanvasCFGEdge::setLabel(CanvasCFGEdgeLabel* l)
 
 void CanvasCFGEdge::setArrow(CanvasCFGEdgeArrow* a)
 {
+    #ifdef CANVASCFGEDGE_DEBUG
+    qDebug() << "\033[1;31m" << "CanvasCFGEdge::setArrow()" << "\033[0m";
+    #endif // CANVASCFGEDGE_DEBUG
+
     _arrow = a;
 
     if (_arrow && _label)
@@ -1821,6 +1862,10 @@ void CanvasCFGEdge::setArrow(CanvasCFGEdgeArrow* a)
 
 void CanvasCFGEdge::setControlPoints(const QPolygon& p)
 {
+    #ifdef CANVASCFGEDGE_DEBUG
+    qDebug() << "\033[1;31m" << "CanvasCFGEdge:setControlPoints()" << "\033[0m";
+    #endif // CANVASCFGEDGE_DEBUG
+
     _points = p;
 
     QPainterPath path;
@@ -1833,12 +1878,20 @@ void CanvasCFGEdge::setControlPoints(const QPolygon& p)
 
 void CanvasCFGEdge::setSelected(bool s)
 {
+    #ifdef CANVASCFGEDGE_DEBUG
+    qDebug() << "\033[1;31m" << "CanvasCFGEdge:setSelected()" << "\033[0m";
+    #endif // CANVASCFGEDGE_DEBUG
+
     QGraphicsItem::setSelected(s);
     update();
 }
 
 void CanvasCFGEdge::paint(QPainter* p, const QStyleOptionGraphicsItem* option, QWidget*)
 {
+    #ifdef CANVASCFGEDGE_DEBUG
+    qDebug() << "\033[1;31m" << "CanvasCFGEdge:paint()" << "\033[0m";
+    #endif // CANVASCFGEDGE_DEBUG
+
     p->setRenderHint(QPainter::Antialiasing);
 
 #if QT_VERSION >= 0x040600
@@ -2798,6 +2851,10 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
 void ControlFlowGraphView::exportGraphAsImage()
 {
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::exportGraphAsImage" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
     assert(_scene);
 
     auto fileName = QFileDialog::getSaveFileName(this,
@@ -3468,6 +3525,10 @@ QAction* ControlFlowGraphView::addZoomPosAction(QMenu* m, QString s, ControlFlow
 
 QAction* ControlFlowGraphView::addLayoutAction(QMenu* m, QString s, CFGExporter::Layout layout)
 {
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addLayoutAction" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
     QAction* a = m->addAction(s);
 
     a->setData(static_cast<int>(layout));
@@ -3565,6 +3626,10 @@ QMenu* ControlFlowGraphView::addBranchLimitMenu(QMenu* menu)
 
 QMenu* ControlFlowGraphView::addZoomPosMenu(QMenu* menu)
 {
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addZoomPosMenu" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
     QMenu* m = menu->addMenu(QObject::tr("Birds-eye View"));
 
     addZoomPosAction(m, QObject::tr("Top Left"), ZoomPosition::TopLeft);
@@ -3582,6 +3647,10 @@ QMenu* ControlFlowGraphView::addZoomPosMenu(QMenu* menu)
 
 QMenu* ControlFlowGraphView::addLayoutMenu(QMenu* menu)
 {
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addLayoutMenu" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
     QMenu* m = menu->addMenu(QObject::tr("Layout"));
 
     addLayoutAction(m, QObject::tr("Top to Down"), CFGExporter::Layout::TopDown);
