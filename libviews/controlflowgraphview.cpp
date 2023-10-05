@@ -3441,7 +3441,7 @@ void ControlFlowGraphView::refresh()
 
     _renderProcessCmdLine = renderProgram + QLatin1Char(' ') + renderArgs.join(QLatin1Char(' '));
 
-    qDebug("ControlFlogGraphView::refresh: Starting process %p, \'%s\'",
+    qDebug("ControlFlowGraphView::refresh: Starting process %p, \'%s\'",
            _renderProcess, qPrintable(_renderProcessCmdLine));
 
     auto process = _renderProcess;
