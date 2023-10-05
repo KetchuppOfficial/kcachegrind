@@ -1814,7 +1814,7 @@ void CanvasCFGEdgeArrow::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWi
     #endif // CANVASCFGEDGEARROW_DEBUG
 
     p->setRenderHint(QPainter::Antialiasing);
-    p->setBrush(_ce->isSelected() ? Qt::red : Qt::black);
+    p->setBrush(Qt::black);
     p->drawPolygon(polygon(), Qt::OddEvenFill);
 }
 
@@ -1908,19 +1908,9 @@ void CanvasCFGEdge::paint(QPainter* p, const QStyleOptionGraphicsItem* option, Q
 
     auto mypen = pen();
 
-    // paint whole edge black
-    mypen.setWidthF(1.0 / levelOfDetail * _thickness);
+    mypen.setWidthF(isSelected() ? 2.0 : 1.0 / levelOfDetail * _thickness);
     p->setPen(mypen);
     p->drawPath(path());
-
-    if (isSelected())
-    {
-        // paint inner half of edge red
-        mypen.setColor(Qt::red);
-        mypen.setWidthF(1.0 / levelOfDetail * _thickness / 2.0);
-        p->setPen(mypen);
-        p->drawPath(path());
-    }
 }
 
 // ======================================================================================
