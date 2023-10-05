@@ -94,7 +94,9 @@ public:
         qDebug() << "\033[1;31m" << "CFGNode::insertInstructions" << "\033[0m";
         #endif // TOTAL_DEBUG
 
-        assert(std::distance(first, last) == _bb->instrNumber());
+        using diff_type = typename std::iterator_traits<It>::difference_type;
+
+        assert(std::distance(first, last) == static_cast<diff_type>(_bb->instrNumber()));
 
         _instructions.reserve(std::distance(first, last));
         std::copy(first, last, std::back_inserter(_instructions));
@@ -102,7 +104,7 @@ public:
 
     size_type instrNumber() const
     {
-        assert (_instructions.size() == _bb->instrNumber());
+        assert (_instructions.size() == static_cast<qsizetype>(_bb->instrNumber()));
         return _instructions.size();
     }
 
