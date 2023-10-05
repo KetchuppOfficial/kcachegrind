@@ -3272,7 +3272,8 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
                 edge = nullptr;
         }
 
-        resetOldSelectedNodeAndEdge();
+        unselectNode();
+        unselectEdge();
         setNewSelectedNodeAndEdge(node, edge);
 
         _scene->update();
@@ -3302,21 +3303,34 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
     refresh();
 }
 
-void ControlFlowGraphView::resetOldSelectedNodeAndEdge()
+void ControlFlowGraphView::unselectNode(CFGNode* node)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::resetOldSelectedNodeAndEdge" << "\033[0m";
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::unselectNode" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    if (_selectedNode && _selectedNode->canvasNode())
-        _selectedNode->canvasNode()->setSelected(false);
-    else if (_selectedNode && !_selectedNode->canvasNode())
-        qDebug() << "\033[1;31m" << "No canvas node" << "\033[0m";
-    _selectedNode = nullptr;
+    if (_selectedNode)
+    {
+        if (_selectedNode->canvasNode())
+            _selectedNode->canvasNode()->setSelected(false);
 
-    if (_selectedEdge && _selectedEdge->canvasEdge())
-        _selectedEdge->canvasEdge()->setSelected(false);
-    _selectedEdge = nullptr;
+        _selectedNode = nullptr;
+    }
+}
+
+void ControlFlowGraphView::unselectEdge()
+{
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::unselectEdge" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    if (_selectedEdge)
+    {
+        if (_selectedEdge->canvasEdge())
+            _selectedEdge->canvasEdge()->setSelected(false);
+
+        _selectedEdge = nullptr;
+    }
 }
 
 void ControlFlowGraphView::setNewSelectedNodeAndEdge(CFGNode* node, CFGEdge* edge)

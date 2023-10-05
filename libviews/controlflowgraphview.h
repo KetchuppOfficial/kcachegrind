@@ -428,7 +428,8 @@ private:
     void updateSizes(QSize s = QSize(0,0));
     CostItem* canShow(CostItem*) override;
     void doUpdate(int changeType, bool) override;
-    void resetOldSelectedNodeAndEdge();
+    void unselectNode();
+    void unselectEdge();
     void setNewSelectedNodeAndEdge(CFGNode* node, CFGEdge* edge);
     void refresh();
     void clear();
