@@ -3920,6 +3920,8 @@ bool TraceBasicBlock::existsJumpToInstr(TraceInstr* instr) const
 // TraceBranch
 //
 
+TraceBranch::TraceBranch() : TraceCostItem{ProfileContext::context(ProfileContext::Branch)} {}
+
 TraceBasicBlock* TraceBranch::fromBB()
 {
     return _from ? _from->basicBlock() : nullptr;

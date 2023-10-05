@@ -1112,13 +1112,13 @@ protected:
     bool _valid;
 };
 
-class TraceBranch final
+class TraceBranch : public TraceCostItem
 {
 public:
     enum class Type {invalid, unconditional, true_, false_};
 
-    TraceBranch() = default;
-    ~TraceBranch() = default;
+    TraceBranch();
+    ~TraceBranch() override = default;
 
     Type brType() const { return _type; }
     void setType(Type type) { _type = type; }
@@ -1139,6 +1139,11 @@ public:
 
     bool isCycle() const;
     bool isBranchInside() const;
+
+    QString prettyName() const override { return QString{}; }
+    QString formattedName() const override { return QString{}; }
+
+    void update() override {};
 
 private:
 
