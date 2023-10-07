@@ -1200,7 +1200,7 @@ public:
     const_iterator end() const { return _instructions.end(); }
     const_iterator cend() const { return end(); }
 
-    void addBranchInside(TraceBasicBlock* fromBB);
+    void addBranchInside(TraceBranch& fromBB);
     bool existsJumpToInstr(TraceInstr *instr) const;
 
     std::vector<TraceBasicBlock*> predecessors() const;
