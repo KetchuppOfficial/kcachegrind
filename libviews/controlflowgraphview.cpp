@@ -147,16 +147,6 @@ void CFGNode::addPredecessor(CFGEdge* edge)
         _predecessors.append(edge);
 }
 
-void CFGNode::addUniquePredecessor(CFGEdge* edge)
-{
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::addUniquePredecessor()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
-    if (edge && (_predecessors.count(edge) == 0))
-        _predecessors.append(edge);
-}
-
 double CFGNode::successorCostSum() const
 {
     #ifdef CFGNODE_DEBUG
@@ -838,7 +828,7 @@ void CFGExporter::addPredecessors()
         TraceBasicBlock* bb = node.basicBlock();
         assert(bb);
         for (auto predecessor : bb->predecessors())
-            node.addUniquePredecessor(findEdge(predecessor, bb));
+            node.addPredecessor(findEdge(predecessor, bb));
     }
 }
 
