@@ -201,6 +201,11 @@ CFGEdge* CFGNode::visibleSuccessorEdge()
     qDebug() << "\033[1;31m" << "CFGNode::visibleSuccessorEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
+    if (_lastSuccessorIndex == trueIndex)
+        return _trueEdge->isVisible() ? _trueEdge : nullptr;
+    else if (_lastSuccessorIndex == falseIndex)
+        return _falseEdge->isVisible() ? _falseEdge : nullptr;
+
     if (_trueEdge && _falseEdge)
     {
         if (_trueEdge->isVisible() && _falseEdge->isVisible())
