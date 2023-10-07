@@ -5,6 +5,8 @@
 #include <type_traits>
 #include <iterator>
 #include <algorithm>
+#include <optional>
+#include <variant>
 
 #include <QList>
 #include <QString>
@@ -453,7 +455,6 @@ private:
 
     // called from keyPressEvent
     int transformKeyIfNeeded(int key);
-    std::pair<CFGNode*, CFGEdge*> getNodeAndEdgeToSelect(int key);
     void movePointOfView(QKeyEvent* e);
 
     QAction* addPredecessorDepthAction(QMenu*, QString, int);
