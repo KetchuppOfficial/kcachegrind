@@ -234,6 +234,8 @@ CFGEdge* CFGNode::visiblePredecessorEdge()
     qDebug() << "\033[1;31m" << "CFGNode::visiblePredecessorEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
+    assert(!_predecessors.isEmpty());
+
     auto edge = _predecessors.value(_lastPredecessorIndex);
 
     if (edge && !edge->isVisible())
@@ -241,10 +243,10 @@ CFGEdge* CFGNode::visiblePredecessorEdge()
 
     if (!edge)
     {
-        double maxCost = 0.0;
-        CFGEdge* maxEdge = nullptr;
+        CFGEdge* maxEdge = _predecessors[0];
+        double maxCost = maxEdge->cost;
 
-        for (auto i = 0; i < _predecessors.size(); ++i)
+        for (auto i = 1; i < _predecessors.size(); ++i)
         {
             edge = _predecessors[i];
 
