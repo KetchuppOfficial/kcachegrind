@@ -3371,8 +3371,6 @@ void ControlFlowGraphView::refresh()
             return;
     }
 
-    qDebug() << "ControlFlowGraphView::refresh";
-
     _selectedNode = nullptr;
     _selectedEdge = nullptr;
 
