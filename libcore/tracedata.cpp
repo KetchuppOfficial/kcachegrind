@@ -2664,12 +2664,15 @@ void TraceFunction::constructBasicBlocks()
             {
                 auto& falseBr = bbPtr->falseBranch();
                 falseBr.setToInstr((*nextBBIt)->firstInstr());
+                TraceBasicBlock* toBB = falseBr.toBB();
+                if (toBB)
+                    toBB->addBranchInside(falseBr);
             }
         }
 
         TraceBasicBlock* toBB = trueBr.toBB();
         if (toBB)
-            toBB->addBranchInside(bbPtr);
+            toBB->addBranchInside(trueBr);
     }
 
     assert (std::all_of(_basicBlocks.begin(), _basicBlocks.end(),
@@ -3896,14 +3899,14 @@ Addr TraceBasicBlock::lastAddr() const
     return lastInstr()->addr();
 }
 
-void TraceBasicBlock::addBranchInside(TraceBasicBlock* fromBB)
+void TraceBasicBlock::addBranchInside(TraceBranch& branch)
 {
-    if (!fromBB)
-        return;
+    TraceInstr* to = branch.toInstr();
+    TraceBasicBlock* fromBB = branch.fromBB();
 
-    TraceInstr* to = fromBB->trueBranch().toInstr();
     assert(to);
     assert(std::find(_instructions.begin(), _instructions.end(), to) != _instructions.end());
+    assert(fromBB);
 
     _instrToBB[to].push_back(fromBB);
 }
