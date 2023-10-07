@@ -69,7 +69,6 @@ public:
     void selectPredecessorEdge(CFGEdge*);
 
     void addPredecessor(CFGEdge*);
-    void addUniquePredecessor(CFGEdge*);
 
     double successorCostSum() const;
     double successorCountSum() const;
