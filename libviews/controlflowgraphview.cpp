@@ -216,7 +216,7 @@ CFGEdge* CFGNode::visibleSuccessorEdge()
             return nullptr;
     }
     else if (_trueEdge)
-        return _trueEdge->isVisible() ? _trueEdge: nullptr;
+        return _trueEdge->isVisible() ? _trueEdge : nullptr;
     else if (_falseEdge)
         return _falseEdge->isVisible() ? _falseEdge : nullptr;
     else
