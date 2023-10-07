@@ -385,42 +385,34 @@ TraceBasicBlock* CFGEdge::to()
 
 CFGEdge* CFGEdge::nextVisibleEdge()
 {
-    CFGEdge* edge = nullptr;
-
-    if (_lastFromPredecessor && _fromNode)
+    if (_lastFromPredecessor)
     {
-        edge = _fromNode->nextVisibleSuccessorEdge(this);
-        if (!edge && _toNode)
-            edge = _toNode->nextVisiblePredecessorEdge(this);
+        if (_toNode)
+            return _toNode->nextVisiblePredecessorEdge(this);
     }
-    else if (_toNode)
+    else
     {
-        edge = _toNode->nextVisiblePredecessorEdge(this);
-        if (!edge && _fromNode)
-            edge = _fromNode->nextVisibleSuccessorEdge(this);
+        if (_fromNode)
+            return _fromNode->nextVisibleSuccessorEdge(this);
     }
 
-    return edge;
+    return nullptr;
 }
 
 CFGEdge* CFGEdge::priorVisibleEdge()
 {
-    CFGEdge* edge = nullptr;
-
-    if (_lastFromPredecessor && _fromNode)
+    if (_lastFromPredecessor)
     {
-        edge = _fromNode->priorVisibleSuccessorEdge(this);
-        if (!edge && _toNode)
-            edge = _toNode->priorVisiblePredecessorEdge(this);
+        if (_toNode)
+            return _toNode->priorVisiblePredecessorEdge(this);
     }
-    else if (_toNode)
+    else
     {
-        edge = _toNode->priorVisiblePredecessorEdge(this);
-        if (!edge && _fromNode)
-            edge = _fromNode->priorVisibleSuccessorEdge(this);
+        if (_fromNode)
+            return _fromNode->priorVisibleSuccessorEdge(this);
     }
 
-    return edge;
+    return nullptr;
 }
 
 QString CFGEdge::prettyName() const
