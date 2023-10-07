@@ -268,30 +268,6 @@ CFGEdge* CFGNode::nextVisibleSuccessorEdge(CFGEdge* edge)
             return _falseEdge;
         }
     }
-    else
-    {
-        if (_lastSuccessorIndex == noIndex)
-        {
-            if (_trueEdge && _trueEdge->isVisible())
-            {
-                _lastSuccessorIndex = trueIndex;
-                return _trueEdge;
-            }
-            else if (_falseEdge && _falseEdge->isVisible())
-            {
-                _lastSuccessorIndex = falseIndex;
-                return _falseEdge;
-            }
-        }
-        else if (_lastSuccessorIndex == trueIndex)
-        {
-            if (_falseEdge && _falseEdge->isVisible())
-            {
-                _lastSuccessorIndex = falseIndex;
-                return _falseEdge;
-            }
-        }
-    }
 
     return nullptr;
 }
@@ -329,30 +305,6 @@ CFGEdge* CFGNode::priorVisibleSuccessorEdge(CFGEdge* edge)
         {
             _lastSuccessorIndex = trueIndex;
             return _trueEdge;
-        }
-    }
-    else
-    {
-        if (_lastSuccessorIndex == noIndex)
-        {
-            if (_falseEdge && _falseEdge->isVisible())
-            {
-                _lastSuccessorIndex = falseIndex;
-                return _falseEdge;
-            }
-            else if (_trueEdge && _trueEdge->isVisible())
-            {
-                _lastSuccessorIndex = trueIndex;
-                return _trueEdge;
-            }
-        }
-        else if (_lastSuccessorIndex == falseIndex)
-        {
-            if (_trueEdge && _trueEdge->isVisible())
-            {
-                _lastSuccessorIndex = trueIndex;
-                return _trueEdge;
-            }
         }
     }
 
@@ -393,8 +345,8 @@ CFGNode* CFGEdge::cachedFromNode()
 {
     if (_fromNode)
     {
-        _lastFromPredecessor = true;
-        _fromNode->selectPredecessorEdge(this);
+        _lastFromPredecessor = false;
+        _fromNode->selectSuccessorEdge(this);
     }
 
     return _fromNode;
@@ -404,8 +356,8 @@ CFGNode* CFGEdge::cachedToNode()
 {
     if (_toNode)
     {
-        _lastFromPredecessor = false;
-        _toNode->selectSuccessorEdge(this);
+        _lastFromPredecessor = true;
+        _toNode->selectPredecessorEdge(this);
     }
 
     return _toNode;
