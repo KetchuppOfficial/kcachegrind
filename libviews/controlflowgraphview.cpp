@@ -771,6 +771,7 @@ bool CFGExporter::createGraph()
     auto bb = static_cast<TraceBasicBlock*>(_item);
 
     buildNode(bb);
+    addPredecessors();
 
     return fillInstrStrings(bb->function());
 }
@@ -826,6 +827,17 @@ CFGEdge* CFGExporter::buildEdge(CFGNode* fromNode, TraceBranch* branch)
     }
     else
         return nullptr;
+}
+
+void CFGExporter::addPredecessors()
+{
+    for (auto &node : _nodeMap)
+    {
+        TraceBasicBlock* bb = node.basicBlock();
+        assert(bb);
+        for (auto predecessor : bb->predecessors())
+            node.addUniquePredecessor(findEdge(predecessor, bb));
+    }
 }
 
 int CFGExporter::transformKeyIfNeeded(int key)

@@ -249,6 +249,7 @@ private:
     bool createGraph();
     CFGNode* buildNode(TraceBasicBlock* bb);
     CFGEdge* buildEdge(CFGNode* fromNode, TraceBranch* branch);
+    void addPredecessors();
 
     bool fillInstrStrings(TraceFunction* func);
 
