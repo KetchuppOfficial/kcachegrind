@@ -421,19 +421,6 @@ TraceBasicBlock* CFGEdge::from()
     return _fromNode ? _fromNode->basicBlock() : nullptr;
 }
 
-TraceBasicBlock* CFGEdge::cachedFrom()
-{
-    auto bb = from();
-
-    if (bb)
-    {
-        _lastFromPredecessor = true;
-        _fromNode->selectPredecessorEdge(this);
-    }
-
-    return bb;
-}
-
 const TraceBasicBlock* CFGEdge::to() const
 {
     return _toNode ? _toNode->basicBlock() : nullptr;
@@ -442,19 +429,6 @@ const TraceBasicBlock* CFGEdge::to() const
 TraceBasicBlock* CFGEdge::to()
 {
     return _toNode ? _toNode->basicBlock() : nullptr;
-}
-
-TraceBasicBlock* CFGEdge::cachedTo()
-{
-    auto bb = to();
-
-    if (bb)
-    {
-        _lastFromPredecessor = false;
-        _toNode->selectSuccessorEdge(this);
-    }
-
-    return bb;
 }
 
 CFGEdge* CFGEdge::nextVisibleEdge()
