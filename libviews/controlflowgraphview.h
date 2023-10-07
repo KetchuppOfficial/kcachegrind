@@ -170,11 +170,9 @@ public:
 
     TraceBasicBlock* from();
     const TraceBasicBlock* from() const;
-    TraceBasicBlock* cachedFrom();
 
     TraceBasicBlock* to();
     const TraceBasicBlock* to() const;
-    TraceBasicBlock* cachedTo();
 
     CFGEdge* nextVisibleEdge();
     CFGEdge* priorVisibleEdge();
