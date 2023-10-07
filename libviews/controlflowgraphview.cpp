@@ -431,8 +431,7 @@ TraceBasicBlock* CFGEdge::cachedFrom()
     if (bb)
     {
         _lastFromPredecessor = true;
-        if (_fromNode)
-            _fromNode->selectPredecessorEdge(this);
+        _fromNode->selectPredecessorEdge(this);
     }
 
     return bb;
@@ -455,8 +454,7 @@ TraceBasicBlock* CFGEdge::cachedTo()
     if (bb)
     {
         _lastFromPredecessor = false;
-        if (_fromNode)
-            _fromNode->selectSuccessorEdge(this);
+        _toNode->selectSuccessorEdge(this);
     }
 
     return bb;
