@@ -1471,21 +1471,12 @@ void CFGExporter::dumpEdges(QTextStream& ts)
         }
 
         #if 0
-        ts << QStringLiteral("  B%1 -> B%2 [weight=%3")
+        ts << QStringLiteral("  B%1 -> B%2 [weight=%3, label=\"%4 (%5x)\"];\n")
                             .arg(reinterpret_cast<std::ptrdiff_t>(edge.from()), 0, 16)
                             .arg(reinterpret_cast<std::ptrdiff_t>(edge.to()), 0, 16)
-                            .arg(static_cast<long>(std::log(std::log(edge.cost))));
-
-        if (_detailLevel == DetailLevel::avgDetails)
-            ts << QStringLiteral(",label=\"%1 (%2x)\"")
-                                .arg(SubCost{edge.cost}.pretty())
-                                .arg(SubCost{edge.count}.pretty());
-        else if (_detailLevel == DetailLevel::moreDetails)
-            ts << QStringLiteral(",label=\"%3\\n%4 x\"")
-                                .arg(SubCost{edge.cost}.pretty())
-                                .arg(SubCost{edge.count}.pretty());
-
-        ts << QStringLiteral("];\n");
+                            .arg(static_cast<long>(std::log(std::log(edge.cost))))
+                            .arg(SubCost{edge.cost}.pretty())
+                            .arg(SubCost{edge.count}.pretty());
         #endif
     }
 }
@@ -2443,15 +2434,13 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
         auto [xx, yy] = calculateSizes(lineStream);
         auto lItem = new CanvasCFGEdgeLabel{this, sItem,
                                             static_cast<qreal>(xx - 50),
-                                            static_cast<qreal>(yy - _detailLevel * 10),
-                                            100.0,
-                                            static_cast<qreal>(_detailLevel * 20)};
+                                            static_cast<qreal>(yy - 10),
+                                            100.0, 20.0};
         _scene->addItem(lItem);
         lItem->setZValue(1.5);
         sItem->setLabel(lItem);
 
-        if (_exporter.detailLevel() > 0)
-            lItem->show();
+        lItem->show();
     }
     #endif
 
