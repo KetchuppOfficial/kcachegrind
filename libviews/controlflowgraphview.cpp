@@ -828,6 +828,32 @@ CFGEdge* CFGExporter::buildEdge(CFGNode* fromNode, TraceBranch* branch)
         return nullptr;
 }
 
+int CFGExporter::transformKeyIfNeeded(int key)
+{
+    if (_layout == Layout::LeftRight)
+    {
+        switch (key)
+        {
+            case Qt::Key_Up:
+                key = Qt::Key_Left;
+                break;
+            case Qt::Key_Down:
+                key = Qt::Key_Right;
+                break;
+            case Qt::Key_Left:
+                key = Qt::Key_Up;
+                break;
+            case Qt::Key_Right:
+                key = Qt::Key_Down;
+                break;
+            default:
+                assert(false); // we should never reach here
+        }
+    }
+
+    return key;
+}
+
 namespace
 {
 
@@ -2911,7 +2937,7 @@ void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
     {
         if (_selectedNode)
         {
-            auto key = transformKeyIfNeeded(e->key());
+            auto key = _exporter.transformKeyIfNeeded(e->key());
             CFGEdge* edge = getEdgeToSelect(_selectedNode, key);
 
             if (edge && edge->branch())
@@ -2919,7 +2945,7 @@ void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
         }
         else if (_selectedEdge)
         {
-            auto key = transformKeyIfNeeded(e->key());
+            auto key = _exporter.transformKeyIfNeeded(e->key());
             auto [node, edge] = getNodeOrEdgeToSelect(_selectedEdge, key);
 
             if (node && node->basicBlock())
@@ -2930,36 +2956,6 @@ void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
     }
     else
         movePointOfView(e);
-}
-
-int ControlFlowGraphView::transformKeyIfNeeded(int key)
-{
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::transformKeyIfNeeded" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
-    if (_exporter.layout() == CFGExporter::Layout::LeftRight)
-    {
-        switch (key)
-        {
-            case Qt::Key_Up:
-                key = Qt::Key_Left;
-                break;
-            case Qt::Key_Down:
-                key = Qt::Key_Right;
-                break;
-            case Qt::Key_Left:
-                key = Qt::Key_Up;
-                break;
-            case Qt::Key_Right:
-                key = Qt::Key_Down;
-                break;
-            default:
-                assert(false); // we should never reach here
-        }
-    }
-
-    return key;
 }
 
 void ControlFlowGraphView::movePointOfView(QKeyEvent* e)

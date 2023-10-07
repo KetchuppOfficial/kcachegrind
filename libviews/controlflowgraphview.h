@@ -237,6 +237,8 @@ public:
 
     void sortEdges();
 
+    int transformKeyIfNeeded(int key);
+
     // translates string "B<firstAddr>B<lastAddr>" into appropriate CFGNode*
     CFGNode* toCFGNode(QString s);
 
@@ -454,7 +456,6 @@ private:
     void centerOnSelectedNodeOrEdge();
 
     // called from keyPressEvent
-    int transformKeyIfNeeded(int key);
     void movePointOfView(QKeyEvent* e);
 
     QAction* addPredecessorDepthAction(QMenu*, QString, int);
