@@ -472,31 +472,29 @@ private:
     QMenu* addLayoutMenu(QMenu*);
 
     QGraphicsScene* _scene = nullptr;
-    int _xMargin = 0;
-    int _yMargin = 0;
+    QPoint _lastPos;
     static constexpr double _scaleX = 80.0;
     double _scaleY;
     double _dotHeight = 0.0;
+    int _xMargin = 0;
+    int _yMargin = 0;
+    bool _isMoving = false;
 
     PanningView* _panningView;
     double _panningZoom = 1.0;
     ZoomPosition _zoomPosition = ZoomPosition::Auto;
     ZoomPosition _lastAutoPosition = ZoomPosition::TopLeft;
 
-    bool _isMoving = false;
-    QPoint _lastPos;
-
     CFGExporter _exporter;
 
     CFGNode* _selectedNode = nullptr;
+    CFGNode* _prevSelectedNode = nullptr;
     CFGEdge* _selectedEdge = nullptr;
+    QPoint _prevSelectedPos;
 
-    // background rendering
     QProcess* _renderProcess = nullptr;
     QString _renderProcessCmdLine;
     QTimer _renderTimer;
-    CFGNode* _prevSelectedNode = nullptr;
-    QPoint _prevSelectedPos;
     QString _unparsedOutput;
 };
 
