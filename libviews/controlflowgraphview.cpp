@@ -411,7 +411,7 @@ CFGNode* CFGEdge::cachedToNode()
         _toNode->selectSuccessorEdge(this);
     }
 
-    return _fromNode;
+    return _toNode;
 }
 
 const TraceBasicBlock* CFGEdge::from() const
