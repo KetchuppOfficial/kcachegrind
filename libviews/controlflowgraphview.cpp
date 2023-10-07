@@ -2853,6 +2853,45 @@ void ControlFlowGraphView::exportGraphAsImage()
     }
 }
 
+namespace
+{
+
+CFGEdge* getEdgeToSelect(CFGNode* node, int key)
+{
+    assert(node);
+
+    switch (key)
+    {
+        case Qt::Key_Up:
+            return node->visiblePredecessorEdge();
+        case Qt::Key_Down:
+            return node->visibleSuccessorEdge();
+        default:
+            return nullptr;
+    }
+}
+
+std::pair<CFGNode*, CFGEdge*> getNodeOrEdgeToSelect(CFGEdge* edge, int key)
+{
+    assert(edge);
+
+    switch (key)
+    {
+        case Qt::Key_Up:
+            return std::pair{edge->cachedFromNode(), nullptr};
+        case Qt::Key_Down:
+            return std::pair{edge->cachedToNode(), nullptr};
+        case Qt::Key_Left:
+            return std::pair{nullptr, edge->priorVisibleEdge()};
+        case Qt::Key_Right:
+            return std::pair{nullptr, edge->nextVisibleEdge()};
+        default:
+            return std::pair{nullptr, nullptr};
+    }
+}
+
+} // namespace
+
 void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
@@ -2868,15 +2907,26 @@ void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
         else if (_selectedEdge && _selectedEdge->branch())
             activated(_selectedEdge->branch());
     }
-    else if (!(e->modifiers() & (Qt::ShiftModifier | Qt::ControlModifier)) &&
-             (_selectedNode || _selectedEdge))
+    else if (!(e->modifiers() & (Qt::ShiftModifier | Qt::ControlModifier)))
     {
-        auto [node, edge] = getNodeAndEdgeToSelect(transformKeyIfNeeded(e->key()));
+        if (_selectedNode)
+        {
+            auto key = transformKeyIfNeeded(e->key());
+            CFGEdge* edge = getEdgeToSelect(_selectedNode, key);
 
-        if (node && node->basicBlock())
-            selected(node->basicBlock());
-        else if (edge && edge->branch())
-            selected(edge->branch());
+            if (edge && edge->branch())
+                selected(edge->branch());
+        }
+        else if (_selectedEdge)
+        {
+            auto key = transformKeyIfNeeded(e->key());
+            auto [node, edge] = getNodeOrEdgeToSelect(_selectedEdge, key);
+
+            if (node && node->basicBlock())
+                selected(node->basicBlock());
+            else if (edge && edge->branch())
+                selected(edge->branch());
+        }
     }
     else
         movePointOfView(e);
@@ -2910,67 +2960,6 @@ int ControlFlowGraphView::transformKeyIfNeeded(int key)
     }
 
     return key;
-}
-
-std::pair<CFGNode*, CFGEdge*> ControlFlowGraphView::getNodeAndEdgeToSelect(int key)
-{
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::getNodeAndEdgeToSelect" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
-    CFGNode* node;
-    CFGEdge* edge;
-
-    if (_selectedNode)
-    {
-        node = nullptr;
-
-        switch (key)
-        {
-            case Qt::Key_Up:
-                edge = _selectedNode->visiblePredecessorEdge();
-                break;
-            case Qt::Key_Down:
-                edge = _selectedNode->visibleSuccessorEdge();
-                break;
-            default:
-                edge = nullptr;
-                break;
-        }
-    }
-    else if (_selectedEdge)
-    {
-        switch (key)
-        {
-            case Qt::Key_Up:
-                node = _selectedEdge->cachedFromNode();
-                edge = nullptr;
-                break;
-            case Qt::Key_Down:
-                node = _selectedEdge->cachedToNode();
-                edge = nullptr;
-                break;
-            case Qt::Key_Left:
-                node = nullptr;
-                edge = _selectedEdge->priorVisibleEdge();
-                break;
-            case Qt::Key_Right:
-                node = nullptr;
-                edge = _selectedEdge->nextVisibleEdge();
-                break;
-            default:
-                node = nullptr;
-                edge = nullptr;
-                break;
-        }
-    }
-    else
-    {
-        node = nullptr;
-        edge = nullptr;
-    }
-
-    return std::pair{node, edge};
 }
 
 void ControlFlowGraphView::movePointOfView(QKeyEvent* e)
