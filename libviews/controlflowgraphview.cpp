@@ -3488,7 +3488,7 @@ QAction* ControlFlowGraphView::addBranchLimitAction(QMenu* m, QString s, double 
     return a;
 }
 
-QAction* ControlFlowGraphView::addZoomPosAction(QMenu* m, QString s, ControlFlowGraphView::ZoomPosition pos)
+QAction* ControlFlowGraphView::addZoomPosAction(QMenu* m, QString s, ZoomPosition pos)
 {
     QAction* a = m->addAction(s);
 
