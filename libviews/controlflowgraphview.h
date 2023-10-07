@@ -205,7 +205,6 @@ public:
     using size_type = typename QMap<TraceBasicBlock*, CFGNode>::size_type;
 
     enum Layout {TopDown, LeftRight};
-    enum DetailLevel { lessDetails, avgDetails, moreDetails };
 
     CFGExporter() = default;
     CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Type gt,
