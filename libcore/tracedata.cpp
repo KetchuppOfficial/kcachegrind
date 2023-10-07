@@ -3914,6 +3914,16 @@ bool TraceBasicBlock::existsJumpToInstr(TraceInstr* instr) const
     return it != _instrToBB.end() && !it->second.empty();
 }
 
+std::vector<TraceBasicBlock*> TraceBasicBlock::predecessors() const
+{
+    std::vector<TraceBasicBlock*> predecessors;
+
+    for (auto it = _instrToBB.begin(), ite = _instrToBB.end(); it != ite; ++it)
+        std::copy(it->second.begin(), it->second.end(), std::back_inserter(predecessors));
+
+    return predecessors;
+}
+
 // ======================================================================================
 
 //

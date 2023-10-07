@@ -1203,6 +1203,8 @@ public:
     void addBranchInside(TraceBasicBlock* fromBB);
     bool existsJumpToInstr(TraceInstr *instr) const;
 
+    std::vector<TraceBasicBlock*> predecessors() const;
+
 private:
     std::vector<TraceInstr*> _instructions;
     std::unordered_map<TraceInstr*, std::vector<TraceBasicBlock*>> _instrToBB;
