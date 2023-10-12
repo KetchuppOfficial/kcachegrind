@@ -338,7 +338,7 @@ CFGEdge* CFGNode::priorVisiblePredecessorEdge(CFGEdge* edge)
 
 CFGEdge::CFGEdge(TraceBranch* branch) : _branch{branch} {}
 
-CFGNode* CFGEdge::cachedFromNode()
+CFGNode* CFGEdge::keyboardPrevNode()
 {
     if (_fromNode)
     {
@@ -349,7 +349,7 @@ CFGNode* CFGEdge::cachedFromNode()
     return _fromNode;
 }
 
-CFGNode* CFGEdge::cachedToNode()
+CFGNode* CFGEdge::keyboardNextNode()
 {
     if (_toNode)
     {
@@ -2823,9 +2823,9 @@ std::pair<CFGNode*, CFGEdge*> getNodeOrEdgeToSelect(CFGEdge* edge, int key)
     switch (key)
     {
         case Qt::Key_Up:
-            return std::pair{edge->cachedFromNode(), nullptr};
+            return std::pair{edge->keyboardPrevNode(), nullptr};
         case Qt::Key_Down:
-            return std::pair{edge->cachedToNode(), nullptr};
+            return std::pair{edge->keyboardNextNode(), nullptr};
         case Qt::Key_Left:
             return std::pair{nullptr, edge->priorVisibleEdge()};
         case Qt::Key_Right:

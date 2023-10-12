@@ -155,12 +155,10 @@ public:
 
     CFGNode* fromNode() { return _fromNode; }
     const CFGNode* fromNode() const { return _fromNode; }
-    CFGNode* cachedFromNode();
     void setPredecessorNode(CFGNode* n) { _fromNode = n; }
 
     CFGNode* toNode() { return _toNode; }
     const CFGNode* toNode() const { return _toNode; }
-    CFGNode* cachedToNode();
     void setSuccessorNode(CFGNode* n) { _toNode = n; }
 
     bool isVisible() const { return _visible; }
@@ -172,6 +170,8 @@ public:
     TraceBasicBlock* to();
     const TraceBasicBlock* to() const;
 
+    CFGNode* keyboardNextNode();
+    CFGNode* keyboardPrevNode();
     CFGEdge* nextVisibleEdge();
     CFGEdge* priorVisibleEdge();
 
