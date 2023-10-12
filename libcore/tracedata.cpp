@@ -3819,7 +3819,7 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
                                  typename TraceInstrMap::iterator last)
     : TraceCostItem{ProfileContext::context(ProfileContext::BasicBlock)},
       _instructions(std::distance(first, last)),
-      _instrToBB(_instructions.capacity()),
+      _instrToBranch(_instructions.capacity()),
       _func{first->function()}
 {
     assert(std::all_of(first, last, [f = _func](TraceInstr& i){ return i.function() == f; }) &&
@@ -3902,26 +3902,25 @@ Addr TraceBasicBlock::lastAddr() const
 void TraceBasicBlock::addBranchInside(TraceBranch& branch)
 {
     TraceInstr* to = branch.toInstr();
-    TraceBasicBlock* fromBB = branch.fromBB();
 
     assert(to);
     assert(std::find(_instructions.begin(), _instructions.end(), to) != _instructions.end());
-    assert(fromBB);
+    assert(branch.fromBB());
 
-    _instrToBB[to].push_back(fromBB);
+    _instrToBranch[to].push_back(std::addressof(branch));
 }
 
 bool TraceBasicBlock::existsJumpToInstr(TraceInstr* instr) const
 {
-    auto it = _instrToBB.find(instr);
-    return it != _instrToBB.end() && !it->second.empty();
+    auto it = _instrToBranch.find(instr);
+    return it != _instrToBranch.end() && !it->second.empty();
 }
 
-std::vector<TraceBasicBlock*> TraceBasicBlock::predecessors() const
+std::vector<TraceBranch*> TraceBasicBlock::predecessors() const
 {
-    std::vector<TraceBasicBlock*> predecessors;
+    std::vector<TraceBranch*> predecessors;
 
-    for (auto it = _instrToBB.begin(), ite = _instrToBB.end(); it != ite; ++it)
+    for (auto it = _instrToBranch.begin(), ite = _instrToBranch.end(); it != ite; ++it)
         std::copy(it->second.begin(), it->second.end(), std::back_inserter(predecessors));
 
     return predecessors;
