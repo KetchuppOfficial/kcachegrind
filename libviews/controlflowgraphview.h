@@ -228,8 +228,8 @@ public:
     CFGNode* findNode(TraceBasicBlock* bb);
     const CFGNode* findNode(TraceBasicBlock* bb) const;
 
-    CFGEdge* findEdge(TraceBasicBlock* bb1, TraceBasicBlock* bb2);
-    const CFGEdge* findEdge(TraceBasicBlock* bb1, TraceBasicBlock* bb2) const;
+    CFGEdge* findEdge(Addr from, Addr to);
+    const CFGEdge* findEdge(Addr from, Addr to) const;
 
     void reset(CostItem* i, EventType* et, ProfileContext::Type gt,
                QString filename = QString{});
@@ -242,6 +242,8 @@ public:
 
     // translates string "B<firstAddr>B<lastAddr>" into appropriate CFGNode*
     CFGNode* toCFGNode(QString s);
+
+    CFGEdge* toCFGEdge(const QString& nodeFromName, const QString& nodeToName);
 
     static bool savePrompt(QWidget* parent, TraceFunction* func,
                            EventType* eventType, ProfileContext::Type groupType, Layout layout);
@@ -270,7 +272,7 @@ private:
     Layout _layout = Layout::TopDown;
 
     QMap<std::pair<Addr, Addr>, CFGNode> _nodeMap;
-    QMap<std::pair<TraceBasicBlock*, TraceBasicBlock*>, CFGEdge> _edgeMap;
+    QMap<std::pair<Addr, Addr>, CFGEdge> _edgeMap;
 };
 
 enum CanvasParts : int

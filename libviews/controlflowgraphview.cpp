@@ -511,19 +511,19 @@ CFGNode* CFGExporter::findNode(TraceBasicBlock* bb)
     return const_cast<CFGNode*>(static_cast<const CFGExporter*>(this)->findNode(bb));
 }
 
-const CFGEdge* CFGExporter::findEdge(TraceBasicBlock* bb1, TraceBasicBlock* bb2) const
+const CFGEdge* CFGExporter::findEdge(Addr from, Addr to) const
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::findEdge()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    auto it = _edgeMap.find(std::make_pair(bb1, bb2));
+    auto it = _edgeMap.find(std::make_pair(from, to));
     return (it == _edgeMap.end()) ? nullptr : std::addressof(*it);
 }
 
-CFGEdge* CFGExporter::findEdge(TraceBasicBlock* bb1, TraceBasicBlock* bb2)
+CFGEdge* CFGExporter::findEdge(Addr from, Addr to)
 {
-    return const_cast<CFGEdge*>(static_cast<const CFGExporter*>(this)->findEdge(bb1, bb2));
+    return const_cast<CFGEdge*>(static_cast<const CFGExporter*>(this)->findEdge(from, to));
 }
 
 void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QString filename)
@@ -737,19 +737,23 @@ CFGEdge* CFGExporter::buildEdge(CFGNode* fromNode, TraceBranch* branch)
     assert(fromNode);
     assert(branch);
 
-    TraceBasicBlock* to = branch->toBB();
-    if (to)
+    TraceInstr* toInstr = branch->toInstr();
+    if (toInstr)
     {
-        TraceBasicBlock* from = branch->fromBB();
+        TraceInstr* fromInstr = branch->fromInstr();
 
-        std::pair key{from, to};
+        std::pair key{fromInstr->addr(), toInstr->addr()};
         auto edgeIt = _edgeMap.find(key);
 
         if (edgeIt == _edgeMap.end())
         {
-            edgeIt = _edgeMap.insert(key, CFGEdge{branch});
-            edgeIt->setPredecessorNode(fromNode);
-            edgeIt->setSuccessorNode((to == from) ? fromNode : buildNode(to));
+            TraceBasicBlock* fromBB = fromInstr->basicBlock();
+            TraceBasicBlock* toBB = toInstr->basicBlock();
+
+            auto edge = CFGEdge{branch};
+            edge.setPredecessorNode(fromNode);
+            edge.setSuccessorNode(fromBB == toBB ? fromNode : buildNode(toBB));
+            edgeIt = _edgeMap.insert(key, edge);
         }
 
         return std::addressof(*edgeIt);
@@ -761,12 +765,9 @@ CFGEdge* CFGExporter::buildEdge(CFGNode* fromNode, TraceBranch* branch)
 void CFGExporter::addPredecessors()
 {
     for (auto &node : _nodeMap)
-    {
-        TraceBasicBlock* bb = node.basicBlock();
-        assert(bb);
-        for (auto predecessor : bb->predecessors())
-            node.addPredecessor(findEdge(predecessor, bb));
-    }
+        for (auto branch : node.basicBlock()->predecessors())
+            node.addPredecessor(findEdge(branch->fromInstr()->addr(),
+                                         branch->toInstr()->addr()));
 }
 
 int CFGExporter::transformKeyIfNeeded(int key)
@@ -1477,6 +1478,38 @@ CFGNode* CFGExporter::toCFGNode(QString s)
     }
 
     return nullptr;
+}
+
+CFGEdge* CFGExporter::toCFGEdge(const QString& nodeFromName, const QString& nodeToName)
+{
+    auto i = nodeFromName.indexOf('I');
+    qDebug() << "\033[1;31m" << nodeFromName << "\033[0m";
+    assert(i != -1);
+
+    bool ok;
+    auto from = nodeFromName.mid(i + 1).toULongLong(&ok, 16);
+    assert(ok);
+
+    auto fromAddr = Addr{from};
+    Addr toAddr;
+
+    i = nodeToName.indexOf('I');
+    if (i == -1)
+    {
+        CFGNode* nodeTo = toCFGNode(nodeToName);
+        assert(nodeTo);
+
+        toAddr = nodeTo->basicBlock()->firstAddr();
+    }
+    else
+    {
+        auto to = nodeToName.mid(i + 1).toULongLong(&ok, 16);
+        assert(ok);
+
+        toAddr = Addr{to};
+    }
+
+    return findEdge(fromAddr, toAddr);
 }
 
 bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
@@ -2327,7 +2360,10 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
     QString node1Name, node2Name;
     lineStream >> node1Name >> node2Name;
 
+    #if 0
     CFGEdge* edge = getEdge(_exporter.toCFGNode(node1Name), _exporter.toCFGNode(node2Name));
+    #endif
+    CFGEdge* edge = _exporter.toCFGEdge(node1Name, node2Name);
 
     if (!edge)
     {
@@ -3171,7 +3207,8 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
             case ProfileContext::Branch:
             {
                 auto branch = static_cast<TraceBranch*>(_selectedItem);
-                CFGEdge* edge = _exporter.findEdge(branch->fromBB(), branch->toBB());
+                CFGEdge* edge = _exporter.findEdge(branch->fromInstr()->addr(),
+                                                   branch->toInstr()->addr());
                 if (edge == _selectedEdge)
                     return;
 
