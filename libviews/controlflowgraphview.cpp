@@ -338,15 +338,24 @@ CFGEdge* CFGNode::priorVisiblePredecessorEdge(CFGEdge* edge)
 
 CFGEdge::CFGEdge(TraceBranch* branch) : _branch{branch} {}
 
-CFGNode* CFGEdge::keyboardPrevNode()
+TraceBasicBlock* CFGEdge::from()
 {
-    if (_fromNode)
-    {
-        _lastVisited = NodeType::nodeFrom;
-        _fromNode->selectSuccessorEdge(this);
-    }
+    return _fromNode ? _fromNode->basicBlock() : nullptr;
+}
 
-    return _fromNode;
+const TraceBasicBlock* CFGEdge::from() const
+{
+    return _fromNode ? _fromNode->basicBlock() : nullptr;
+}
+
+TraceBasicBlock* CFGEdge::to()
+{
+    return _toNode ? _toNode->basicBlock() : nullptr;
+}
+
+const TraceBasicBlock* CFGEdge::to() const
+{
+    return _toNode ? _toNode->basicBlock() : nullptr;
 }
 
 CFGNode* CFGEdge::keyboardNextNode()
@@ -360,24 +369,15 @@ CFGNode* CFGEdge::keyboardNextNode()
     return _toNode;
 }
 
-const TraceBasicBlock* CFGEdge::from() const
+CFGNode* CFGEdge::keyboardPrevNode()
 {
-    return _fromNode ? _fromNode->basicBlock() : nullptr;
-}
+    if (_fromNode)
+    {
+        _lastVisited = NodeType::nodeFrom;
+        _fromNode->selectSuccessorEdge(this);
+    }
 
-TraceBasicBlock* CFGEdge::from()
-{
-    return _fromNode ? _fromNode->basicBlock() : nullptr;
-}
-
-const TraceBasicBlock* CFGEdge::to() const
-{
-    return _toNode ? _toNode->basicBlock() : nullptr;
-}
-
-TraceBasicBlock* CFGEdge::to()
-{
-    return _toNode ? _toNode->basicBlock() : nullptr;
+    return _fromNode;
 }
 
 CFGEdge* CFGEdge::nextVisibleEdge()
