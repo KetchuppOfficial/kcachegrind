@@ -144,6 +144,8 @@ class CanvasCFGEdge;
 class CFGEdge final
 {
 public:
+    enum NodeType { none, nodeTo, nodeFrom };
+
     CFGEdge(TraceBranch* branch);
 
     CanvasCFGEdge* canvasEdge() { return _ce; }
@@ -177,11 +179,13 @@ public:
 
     QString prettyName() const;
 
+    NodeType visitedFrom() const { return _visitedFrom; }
+    void setVisitedFrom(NodeType node) { _visitedFrom = node; }
+
     double cost = 0.0;
     double count = 0.0;
 
 private:
-    enum NodeType { none, nodeTo, nodeFrom };
 
     TraceBranch* _branch;
 
@@ -191,7 +195,7 @@ private:
     CanvasCFGEdge* _ce = nullptr;
     bool _visible = false;
 
-    NodeType _lastVisited = NodeType::none;
+    NodeType _visitedFrom = NodeType::none;
 };
 
 

@@ -83,28 +83,32 @@ void CFGNode::sortPredecessorEdges()
     qDebug() << "\033[1;31m" << "CFGNode::sortPredecessorEdges()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    auto edgeComp = [](const CFGEdge* ge1, const CFGEdge* ge2)
+    auto edgeComp = [canvasNode = _cn](const CFGEdge* ge1, const CFGEdge* ge2)
     {
         auto ce1 = ge1->canvasEdge();
         auto ce2 = ge2->canvasEdge();
 
         if (!ce1 && !ce2)
-            return ce1 < ce2;
+            return ce1 > ce2;
         else if (!ce1)
-            return true;
-        else if (!ce2)
             return false;
+        else if (!ce2)
+            return true;
         else
         {
-            auto& p1 = ce1->controlPoints();
-            auto& p2 = ce2->controlPoints();
-            QPoint d1 = p1.point(1) - p1.point(0);
-            QPoint d2 = p2.point(1) - p2.point(0);
+            QRectF nodeRect = canvasNode->rect();
+            QPointF center = nodeRect.center();
+            center.setY(nodeRect.bottom());
 
-            auto angle1 = std::atan2(static_cast<double>(d1.y()), static_cast<double>(d1.x()));
-            auto angle2 = std::atan2(static_cast<double>(d2.y()), static_cast<double>(d2.x()));
+            QPointF d1 = ce1->controlPoints().back() - center;
+            QPointF d2 = ce2->controlPoints().back() - center;
 
-            return angle1 < angle2;
+            /* y coordinate is negated to change orientation of the coordinate system
+               from positive to negative */
+            auto angle1 = std::atan2(-d1.y(), d1.x());
+            auto angle2 = std::atan2(-d2.y(), d2.x());
+
+            return angle1 > angle2;
         }
     };
 
@@ -188,31 +192,40 @@ CFGEdge* CFGNode::keyboardNextEdge()
     qDebug() << "\033[1;31m" << "CFGNode::keyboardNextEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    if (_lastSuccessorIndex == trueIndex)
-        return _trueEdge->isVisible() ? _trueEdge : nullptr;
-    else if (_lastSuccessorIndex == falseIndex)
-        return _falseEdge->isVisible() ? _falseEdge : nullptr;
+    CFGEdge* edge;
 
-    if (_trueEdge && _falseEdge)
-    {
-        if (_trueEdge->isVisible() && _falseEdge->isVisible())
-        {
-            return std::max(_trueEdge, _falseEdge,
-                            [](CFGEdge* e1, CFGEdge* e2){ return e1->cost < e2->cost; });
-        }
-        else if (_trueEdge->isVisible())
-            return _trueEdge;
-        else if (_falseEdge->isVisible())
-            return _falseEdge;
-        else
-            return nullptr;
-    }
-    else if (_trueEdge)
-        return _trueEdge->isVisible() ? _trueEdge : nullptr;
-    else if (_falseEdge)
-        return _falseEdge->isVisible() ? _falseEdge : nullptr;
+    if (_lastSuccessorIndex == trueIndex)
+        edge = _trueEdge->isVisible() ? _trueEdge : nullptr;
+    else if (_lastSuccessorIndex == falseIndex)
+        edge = _falseEdge->isVisible() ? _falseEdge : nullptr;
     else
-        return nullptr;
+    {
+        if (_trueEdge && _falseEdge)
+        {
+            if (_trueEdge->isVisible() && _falseEdge->isVisible())
+            {
+                edge = std::max(_trueEdge, _falseEdge,
+                                [](CFGEdge* e1, CFGEdge* e2){ return e1->cost < e2->cost; });
+            }
+            else if (_trueEdge->isVisible())
+                edge = _trueEdge;
+            else if (_falseEdge->isVisible())
+                edge = _falseEdge;
+            else
+                edge = nullptr;
+        }
+        else if (_trueEdge)
+            edge = _trueEdge->isVisible() ? _trueEdge : nullptr;
+        else if (_falseEdge)
+            edge = _falseEdge->isVisible() ? _falseEdge : nullptr;
+        else
+            edge = nullptr;
+    }
+
+    if (edge)
+        edge->setVisitedFrom(CFGEdge::NodeType::nodeFrom);
+
+    return edge;
 }
 
 CFGEdge* CFGNode::keyboardPrevEdge()
@@ -221,14 +234,14 @@ CFGEdge* CFGNode::keyboardPrevEdge()
     qDebug() << "\033[1;31m" << "CFGNode::keyboardPrevEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    assert(!_predecessors.isEmpty());
-
     auto edge = _predecessors.value(_lastPredecessorIndex);
 
     if (edge && !edge->isVisible())
         edge = nullptr;
 
-    if (!edge)
+    if (edge)
+        edge->setVisitedFrom(CFGEdge::NodeType::nodeTo);
+    else if (!_predecessors.isEmpty())
     {
         CFGEdge* maxEdge = _predecessors[0];
         double maxCost = maxEdge->cost;
@@ -246,6 +259,7 @@ CFGEdge* CFGNode::keyboardPrevEdge()
         }
 
         edge = maxEdge;
+        edge->setVisitedFrom(CFGEdge::NodeType::nodeTo);
     }
 
     return edge;
@@ -282,7 +296,7 @@ CFGEdge* CFGNode::nextVisiblePredecessorEdge(CFGEdge* edge)
         return nullptr;
     else
     {
-        _lastPredecessorIndex = std::distance(begin, it);
+        _lastPredecessorIndex = std::distance(_predecessors.begin(), it);
         return *it;
     }
 }
@@ -293,16 +307,13 @@ CFGEdge* CFGNode::priorVisibleSuccessorEdge(CFGEdge* edge)
     qDebug() << "\033[1;31m" << "CFGNode::priorVisibleSuccessorEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    if (edge)
+    if (edge && edge == _falseEdge && _trueEdge && _trueEdge->isVisible())
     {
-        if (edge == _falseEdge && _trueEdge && _trueEdge->isVisible())
-        {
-            _lastSuccessorIndex = trueIndex;
-            return _trueEdge;
-        }
+        _lastSuccessorIndex = trueIndex;
+        return _trueEdge;
     }
-
-    return nullptr;
+    else
+        return nullptr;
 }
 
 CFGEdge* CFGNode::priorVisiblePredecessorEdge(CFGEdge* edge)
@@ -358,10 +369,7 @@ const TraceBasicBlock* CFGEdge::to() const
 CFGNode* CFGEdge::keyboardNextNode()
 {
     if (_toNode)
-    {
-        _lastVisited = NodeType::nodeTo;
         _toNode->selectPredecessorEdge(this);
-    }
 
     return _toNode;
 }
@@ -369,44 +377,61 @@ CFGNode* CFGEdge::keyboardNextNode()
 CFGNode* CFGEdge::keyboardPrevNode()
 {
     if (_fromNode)
-    {
-        _lastVisited = NodeType::nodeFrom;
         _fromNode->selectSuccessorEdge(this);
-    }
 
     return _fromNode;
 }
 
 CFGEdge* CFGEdge::nextVisibleEdge()
 {
-    if (_lastVisited == NodeType::nodeTo)
+    if (_visitedFrom == NodeType::nodeTo)
     {
         assert(_toNode);
-        return _toNode->nextVisiblePredecessorEdge(this);
+
+        CFGEdge* edge = _toNode->nextVisiblePredecessorEdge(this);
+        if (edge)
+            edge->setVisitedFrom(NodeType::nodeTo);
+
+        return edge;
     }
-    else if (_lastVisited == NodeType::nodeFrom)
+    else if (_visitedFrom == NodeType::nodeFrom)
     {
         assert(_fromNode);
-        return _fromNode->nextVisibleSuccessorEdge(this);
-    }
 
-    return nullptr;
+        CFGEdge* edge = _fromNode->nextVisibleSuccessorEdge(this);
+        if (edge)
+            edge->setVisitedFrom(NodeType::nodeFrom);
+
+        return edge;
+    }
+    else
+        return nullptr;
 }
 
 CFGEdge* CFGEdge::priorVisibleEdge()
 {
-    if (_lastVisited == NodeType::nodeTo)
+    if (_visitedFrom == NodeType::nodeTo)
     {
         assert(_toNode);
-        return _toNode->priorVisiblePredecessorEdge(this);
+
+        CFGEdge* edge = _toNode->priorVisiblePredecessorEdge(this);
+        if (edge)
+            edge->setVisitedFrom(NodeType::nodeTo);
+
+        return edge;
     }
-    else if (_lastVisited == NodeType::nodeFrom)
+    else if (_visitedFrom == NodeType::nodeFrom)
     {
         assert(_fromNode);
-        return _fromNode->priorVisibleSuccessorEdge(this);
-    }
 
-    return nullptr;
+        CFGEdge* edge = _fromNode->priorVisibleSuccessorEdge(this);
+        if (edge)
+            edge->setVisitedFrom(NodeType::nodeFrom);
+
+        return edge;
+    }
+    else
+        return nullptr;
 }
 
 QString CFGEdge::prettyName() const
