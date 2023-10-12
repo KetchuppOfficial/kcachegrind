@@ -182,10 +182,10 @@ double CFGNode::predecessorCountSum() const
                            [](double val, CFGEdge* e){ return val + e->count; });
 }
 
-CFGEdge* CFGNode::visibleSuccessorEdge()
+CFGEdge* CFGNode::keyboardNextEdge()
 {
     #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::visibleSuccessorEdge()" << "\033[0m";
+    qDebug() << "\033[1;31m" << "CFGNode::keyboardNextEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
     if (_lastSuccessorIndex == trueIndex)
@@ -215,10 +215,10 @@ CFGEdge* CFGNode::visibleSuccessorEdge()
         return nullptr;
 }
 
-CFGEdge* CFGNode::visiblePredecessorEdge()
+CFGEdge* CFGNode::keyboardPrevEdge()
 {
     #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::visiblePredecessorEdge()" << "\033[0m";
+    qDebug() << "\033[1;31m" << "CFGNode::keyboardPrevEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
     assert(!_predecessors.isEmpty());
@@ -2808,9 +2808,9 @@ CFGEdge* getEdgeToSelect(CFGNode* node, int key)
     switch (key)
     {
         case Qt::Key_Up:
-            return node->visiblePredecessorEdge();
+            return node->keyboardPrevEdge();
         case Qt::Key_Down:
-            return node->visibleSuccessorEdge();
+            return node->keyboardNextEdge();
         default:
             return nullptr;
     }

@@ -77,8 +77,8 @@ public:
     double predecessorCountSum() const;
 
     // keyboard navigation
-    CFGEdge* visibleSuccessorEdge();
-    CFGEdge* visiblePredecessorEdge();
+    CFGEdge* keyboardNextEdge();
+    CFGEdge* keyboardPrevEdge();
 
     CFGEdge* nextVisibleSuccessorEdge(CFGEdge* edge);
     CFGEdge* nextVisiblePredecessorEdge(CFGEdge* edge);
