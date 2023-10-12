@@ -181,6 +181,8 @@ public:
     double count = 0.0;
 
 private:
+    enum NodeType { none, nodeTo, nodeFrom };
+
     TraceBranch* _branch;
 
     CFGNode* _fromNode = nullptr;
@@ -189,7 +191,7 @@ private:
     CanvasCFGEdge* _ce = nullptr;
     bool _visible = false;
 
-    bool _lastFromPredecessor = true;
+    NodeType _lastVisited = NodeType::none;
 };
 
 
