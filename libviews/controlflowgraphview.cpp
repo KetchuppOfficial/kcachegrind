@@ -342,7 +342,7 @@ CFGNode* CFGEdge::cachedFromNode()
 {
     if (_fromNode)
     {
-        _lastFromPredecessor = false;
+        _lastVisited = NodeType::nodeFrom;
         _fromNode->selectSuccessorEdge(this);
     }
 
@@ -353,7 +353,7 @@ CFGNode* CFGEdge::cachedToNode()
 {
     if (_toNode)
     {
-        _lastFromPredecessor = true;
+        _lastVisited = NodeType::nodeTo;
         _toNode->selectPredecessorEdge(this);
     }
 
@@ -382,12 +382,12 @@ TraceBasicBlock* CFGEdge::to()
 
 CFGEdge* CFGEdge::nextVisibleEdge()
 {
-    if (_lastFromPredecessor)
+    if (_lastVisited == NodeType::nodeTo)
     {
         if (_toNode)
             return _toNode->nextVisiblePredecessorEdge(this);
     }
-    else
+    else if (_lastVisited == NodeType::nodeFrom)
     {
         if (_fromNode)
             return _fromNode->nextVisibleSuccessorEdge(this);
@@ -398,12 +398,12 @@ CFGEdge* CFGEdge::nextVisibleEdge()
 
 CFGEdge* CFGEdge::priorVisibleEdge()
 {
-    if (_lastFromPredecessor)
+    if (_lastVisited == NodeType::nodeTo)
     {
         if (_toNode)
             return _toNode->priorVisiblePredecessorEdge(this);
     }
-    else
+    else if (_lastVisited == NodeType::nodeFrom)
     {
         if (_fromNode)
             return _fromNode->priorVisibleSuccessorEdge(this);
