@@ -41,6 +41,32 @@
 
 CFGNode::CFGNode(TraceBasicBlock* bb) : _bb{bb} {}
 
+void CFGNode::setTrueEdge(CFGEdge* e)
+{
+    #ifdef CFGNODE_DEBUG
+    qDebug() << "\033[1;31m" << "CFGNode::setTrueEdge()" << "\033[0m";
+    #endif // CFGNODE_DEBUG
+
+    if (e)
+    {
+        _trueEdge = e;
+        _trueEdge->setPredecessorNode(this);
+    }
+}
+
+void CFGNode::setFalseEdge(CFGEdge* e)
+{
+    #ifdef CFGNODE_DEBUG
+    qDebug() << "\033[1;31m" << "CFGNode::setFalseEdge()" << "\033[0m";
+    #endif // CFGNODE_DEBUG
+
+    if (e)
+    {
+        _falseEdge = e;
+        _falseEdge->setPredecessorNode(this);
+    }
+}
+
 void CFGNode::clearEdges()
 {
     #ifdef CFGNODE_DEBUG
@@ -83,55 +109,6 @@ void CFGNode::sortPredecessorEdges()
     };
 
     std::sort(_predecessors.begin(), _predecessors.end(), edgeComp);
-}
-
-void CFGNode::setTrueEdge(CFGEdge* e)
-{
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::setTrueEdge()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
-    if (e)
-    {
-        _trueEdge = e;
-        _trueEdge->setPredecessorNode(this);
-    }
-}
-
-void CFGNode::setFalseEdge(CFGEdge* e)
-{
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::setFalseEdge()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
-    if (e)
-    {
-        _falseEdge = e;
-        _falseEdge->setPredecessorNode(this);
-    }
-}
-
-void CFGNode::selectSuccessorEdge(CFGEdge* edge)
-{
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::selectSuccessorEdge()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
-    if (edge == _trueEdge)
-        _lastSuccessorIndex = trueIndex;
-    else if (edge == _falseEdge)
-        _lastSuccessorIndex = falseIndex;
-    else
-        _lastSuccessorIndex = noIndex;
-}
-
-void CFGNode::selectPredecessorEdge(CFGEdge* edge)
-{
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::selectPredecessorEdge()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
-    _lastPredecessorIndex = _predecessors.indexOf(edge);
 }
 
 void CFGNode::addPredecessor(CFGEdge* edge)
@@ -180,6 +157,29 @@ double CFGNode::predecessorCountSum() const
 
     return std::accumulate(_predecessors.begin(), _predecessors.end(), 0.0,
                            [](double val, CFGEdge* e){ return val + e->count; });
+}
+
+void CFGNode::selectSuccessorEdge(CFGEdge* edge)
+{
+    #ifdef CFGNODE_DEBUG
+    qDebug() << "\033[1;31m" << "CFGNode::selectSuccessorEdge()" << "\033[0m";
+    #endif // CFGNODE_DEBUG
+
+    if (edge == _trueEdge)
+        _lastSuccessorIndex = trueIndex;
+    else if (edge == _falseEdge)
+        _lastSuccessorIndex = falseIndex;
+    else
+        _lastSuccessorIndex = noIndex;
+}
+
+void CFGNode::selectPredecessorEdge(CFGEdge* edge)
+{
+    #ifdef CFGNODE_DEBUG
+    qDebug() << "\033[1;31m" << "CFGNode::selectPredecessorEdge()" << "\033[0m";
+    #endif // CFGNODE_DEBUG
+
+    _lastPredecessorIndex = _predecessors.indexOf(edge);
 }
 
 CFGEdge* CFGNode::keyboardNextEdge()

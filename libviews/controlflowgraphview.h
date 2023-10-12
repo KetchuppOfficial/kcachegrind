@@ -65,9 +65,6 @@ public:
     void clearEdges();
     void sortPredecessorEdges();
 
-    void selectSuccessorEdge(CFGEdge*);
-    void selectPredecessorEdge(CFGEdge*);
-
     void addPredecessor(CFGEdge*);
 
     double successorCostSum() const;
@@ -77,6 +74,9 @@ public:
     double predecessorCountSum() const;
 
     // keyboard navigation
+    void selectSuccessorEdge(CFGEdge*);
+    void selectPredecessorEdge(CFGEdge*);
+
     CFGEdge* keyboardNextEdge();
     CFGEdge* keyboardPrevEdge();
 
