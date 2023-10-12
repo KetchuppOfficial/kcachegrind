@@ -384,13 +384,13 @@ CFGEdge* CFGEdge::nextVisibleEdge()
 {
     if (_lastVisited == NodeType::nodeTo)
     {
-        if (_toNode)
-            return _toNode->nextVisiblePredecessorEdge(this);
+        assert(_toNode);
+        return _toNode->nextVisiblePredecessorEdge(this);
     }
     else if (_lastVisited == NodeType::nodeFrom)
     {
-        if (_fromNode)
-            return _fromNode->nextVisibleSuccessorEdge(this);
+        assert(_fromNode);
+        return _fromNode->nextVisibleSuccessorEdge(this);
     }
 
     return nullptr;
@@ -400,13 +400,13 @@ CFGEdge* CFGEdge::priorVisibleEdge()
 {
     if (_lastVisited == NodeType::nodeTo)
     {
-        if (_toNode)
-            return _toNode->priorVisiblePredecessorEdge(this);
+        assert(_toNode);
+        return _toNode->priorVisiblePredecessorEdge(this);
     }
     else if (_lastVisited == NodeType::nodeFrom)
     {
-        if (_fromNode)
-            return _fromNode->priorVisibleSuccessorEdge(this);
+        assert(_fromNode);
+        return _fromNode->priorVisibleSuccessorEdge(this);
     }
 
     return nullptr;
