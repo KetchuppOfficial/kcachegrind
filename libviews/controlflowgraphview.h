@@ -131,8 +131,6 @@ private:
     QList<CFGEdge*> _predecessors;
     int _lastPredecessorIndex = -1;
 
-    bool _lastFromPredecessor = true;
-
     bool _visible = false;
     CanvasCFGNode* _cn = nullptr;
 
