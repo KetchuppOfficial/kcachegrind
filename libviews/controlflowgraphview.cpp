@@ -123,8 +123,6 @@ void CFGNode::selectSuccessorEdge(CFGEdge* edge)
         _lastSuccessorIndex = falseIndex;
     else
         _lastSuccessorIndex = noIndex;
-
-    _lastFromPredecessor = false;
 }
 
 void CFGNode::selectPredecessorEdge(CFGEdge* edge)
@@ -134,7 +132,6 @@ void CFGNode::selectPredecessorEdge(CFGEdge* edge)
     #endif // CFGNODE_DEBUG
 
     _lastPredecessorIndex = _predecessors.indexOf(edge);
-    _lastFromPredecessor = true;
 }
 
 void CFGNode::addPredecessor(CFGEdge* edge)
