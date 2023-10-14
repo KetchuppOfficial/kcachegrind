@@ -1483,11 +1483,13 @@ CFGNode* CFGExporter::toCFGNode(QString s)
 CFGEdge* CFGExporter::toCFGEdge(const QString& nodeFromName, const QString& nodeToName)
 {
     auto i = nodeFromName.indexOf('I');
-    qDebug() << "\033[1;31m" << nodeFromName << "\033[0m";
     assert(i != -1);
 
+    auto colon_i = nodeFromName.indexOf(':', i);
+    assert(colon_i != -1);
+
     bool ok;
-    auto from = nodeFromName.mid(i + 1).toULongLong(&ok, 16);
+    auto from = nodeFromName.mid(i + 1, colon_i - i - 1).toULongLong(&ok, 16);
     assert(ok);
 
     auto fromAddr = Addr{from};
@@ -1496,14 +1498,21 @@ CFGEdge* CFGExporter::toCFGEdge(const QString& nodeFromName, const QString& node
     i = nodeToName.indexOf('I');
     if (i == -1)
     {
-        CFGNode* nodeTo = toCFGNode(nodeToName);
+        colon_i = nodeToName.indexOf(':');
+        assert(colon_i != -1);
+
+        CFGNode* nodeTo = toCFGNode(nodeToName.mid(0, colon_i));
         assert(nodeTo);
 
         toAddr = nodeTo->basicBlock()->firstAddr();
     }
     else
     {
-        auto to = nodeToName.mid(i + 1).toULongLong(&ok, 16);
+        auto pos = nodeToName.indexOf(QRegularExpression{"[^0-9a-fA-F]"}, i + 1);
+        if (pos != -1)
+            pos -= (i + 1);
+
+        auto to = nodeToName.mid(i + 1, pos).toULongLong(&ok, 16);
         assert(ok);
 
         toAddr = Addr{to};
@@ -2269,23 +2278,6 @@ CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream& lineS
 namespace
 {
 
-CFGEdge* getEdge(CFGNode* predecessor, CFGNode* successor)
-{
-    if (predecessor && successor)
-    {
-        auto te = predecessor->trueEdge();
-        if (te && te->toNode() == successor)
-            return te;
-        else
-        {
-            auto fe = predecessor->falseEdge();
-            return (fe && fe->toNode() == successor) ? fe : nullptr;
-        }
-    }
-    else
-        return nullptr;
-}
-
 QColor getArrowColor(CFGEdge* edge)
 {
     assert(edge);
@@ -2360,9 +2352,6 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
     QString node1Name, node2Name;
     lineStream >> node1Name >> node2Name;
 
-    #if 0
-    CFGEdge* edge = getEdge(_exporter.toCFGNode(node1Name), _exporter.toCFGNode(node2Name));
-    #endif
     CFGEdge* edge = _exporter.toCFGEdge(node1Name, node2Name);
 
     if (!edge)
@@ -3373,7 +3362,7 @@ void ControlFlowGraphView::refresh()
             this, &ControlFlowGraphView::dotExited);
 
     QString renderProgram = QStringLiteral("dot");
-    QStringList renderArgs{QStringLiteral("-Tplain")};
+    QStringList renderArgs{QStringLiteral("-Tplain-ext")};
 
     _renderProcessCmdLine = renderProgram + QLatin1Char(' ') + renderArgs.join(QLatin1Char(' '));
 
