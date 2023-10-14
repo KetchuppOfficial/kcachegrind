@@ -35,8 +35,6 @@ class CFGNode final
     template<typename It>
     using iterator_category_t = typename std::iterator_traits<It>::iterator_category;
 
-    enum { noIndex, trueIndex, falseIndex };
-
 public:
     using iterator = typename QStringList::iterator;
     using const_iterator = typename QStringList::const_iterator;
@@ -51,21 +49,15 @@ public:
     const CanvasCFGNode* canvasNode() const { return _cn; }
     void setCanvasNode(CanvasCFGNode* cn) { _cn = cn; }
 
-    CFGEdge* trueEdge() { return _trueEdge; }
-    const CFGEdge* trueEdge() const { return _trueEdge; }
-    void setTrueEdge(CFGEdge*);
-
-    CFGEdge* falseEdge() { return _falseEdge; }
-    const CFGEdge* falseEdge() const { return _falseEdge; }
-    void setFalseEdge(CFGEdge*);
-
     bool isVisible() const { return _visible; }
     void setVisible(bool v) { _visible = v; }
 
-    void clearEdges();
-    void sortPredecessorEdges();
+    void addSuccessorEdge(CFGEdge*);
+    void addPredecessorEdge(CFGEdge*);
 
-    void addPredecessor(CFGEdge*);
+    void clearEdges();
+    void sortSuccessorEdges();
+    void sortPredecessorEdges();
 
     double successorCostSum() const;
     double successorCountSum() const;
@@ -124,9 +116,8 @@ private:
 
     TraceBasicBlock* _bb;
 
-    CFGEdge* _trueEdge = nullptr;
-    CFGEdge* _falseEdge = nullptr;
-    int _lastSuccessorIndex = noIndex;
+    QList<CFGEdge*> _successors;
+    int _lastSuccessorIndex = -1;
 
     QList<CFGEdge*> _predecessors;
     int _lastPredecessorIndex = -1;
