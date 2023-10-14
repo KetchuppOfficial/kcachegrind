@@ -3843,17 +3843,23 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
         assert(jump);
         TraceInstr* from = jump->instrFrom();
 
-        _branches.resize(2);
+        if (jump->isCondJump())
+        {
+            _branches.resize(2);
 
-        // true branch
+            _branches[0].setType(TraceBranch::Type::true_);
+
+            _branches[1].setFromInstr(from);
+            _branches[1].setType(TraceBranch::Type::false_);
+        }
+        else
+        {
+            _branches.resize(1);
+            _branches[0].setType(TraceBranch::Type::unconditional);
+        }
+
         _branches[0].setFromInstr(from);
         _branches[0].setToInstr(jump->instrTo());
-        _branches[0].setType(jump->isCondJump() ? TraceBranch::Type::true_
-                                                : TraceBranch::Type::unconditional);
-
-        // false branch
-        _branches[1].setFromInstr(from);
-        _branches[1].setType(TraceBranch::Type::false_);
     }
     else if (nJumps > 1)
     {
