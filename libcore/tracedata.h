@@ -1115,7 +1115,7 @@ protected:
 class TraceBranch : public TraceCostItem
 {
 public:
-    enum class Type {invalid, unconditional, true_, false_};
+    enum class Type {invalid, unconditional, indirect, true_, false_};
 
     TraceBranch();
     ~TraceBranch() override = default;
@@ -1186,11 +1186,10 @@ public:
     TraceFunction* function() { return _func; }
     const TraceFunction* function() const { return _func; }
 
-    TraceBranch& trueBranch() { return _trueBranch; }
-    const TraceBranch& trueBranch() const { return _trueBranch; }
+    size_type nBranches() const { return _branches.size(); }
 
-    TraceBranch& falseBranch() { return _falseBranch; }
-    const TraceBranch& falseBranch() const { return _falseBranch; }
+    TraceBranch& branch(size_type i) { return _branches[i]; }
+    const TraceBranch& branch(size_type i) const { return _branches[i]; }
 
     iterator begin() { return _instructions.begin(); }
     const_iterator begin() const { return _instructions.begin(); }
@@ -1209,9 +1208,8 @@ private:
     std::vector<TraceInstr*> _instructions;
     std::unordered_map<TraceInstr*, std::vector<TraceBranch*>> _instrToBranch;
 
+    std::vector<TraceBranch> _branches;
     TraceFunction* _func;
-    TraceBranch _trueBranch;
-    TraceBranch _falseBranch;
 };
 
 typedef QList<TraceAssociation*> TraceAssociationList;

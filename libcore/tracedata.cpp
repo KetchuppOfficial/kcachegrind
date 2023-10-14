@@ -2641,7 +2641,8 @@ void TraceFunction::constructBasicBlocks()
 
     for (auto from = instructions->begin(), ite = instructions->end(); from != ite; )
     {
-        auto to = std::find_if(from, ite, [](TraceInstr &i){ return i.instrJumps().size() == 1; });
+        auto to = std::find_if_not(from, ite,
+                                   [](TraceInstr &i){ return i.instrJumps().isEmpty(); });
 
         if (to != ite)
             ++to;
@@ -2655,24 +2656,27 @@ void TraceFunction::constructBasicBlocks()
     for (auto it = _basicBlocks.begin(), ite = _basicBlocks.end(); it != ite; ++it)
     {
         TraceBasicBlock* bbPtr = *it;
-        TraceBranch& trueBr = bbPtr->trueBranch();
+        auto nBranches = bbPtr->nBranches();
 
-        if (trueBr.brType() == TraceBranch::Type::true_)
+        if (nBranches == 0)
+            continue;
+        else if (nBranches == 2)
         {
             auto nextBBIt = std::next(it);
             if (nextBBIt != ite)
             {
-                auto& falseBr = bbPtr->falseBranch();
+                auto& falseBr = bbPtr->branch(1);
                 falseBr.setToInstr((*nextBBIt)->firstInstr());
-                TraceBasicBlock* toBB = falseBr.toBB();
-                if (toBB)
-                    toBB->addBranchInside(falseBr);
             }
         }
 
-        TraceBasicBlock* toBB = trueBr.toBB();
-        if (toBB)
-            toBB->addBranchInside(trueBr);
+        for (decltype(nBranches) i = 0; i != nBranches; ++i)
+        {
+            TraceBranch& br = bbPtr->branch(i);
+            TraceBasicBlock* toBB = br.toBB();
+            if (toBB)
+                toBB->addBranchInside(br);
+        }
     }
 
     assert (std::all_of(_basicBlocks.begin(), _basicBlocks.end(),
@@ -3831,19 +3835,39 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
     assert(lastInstr());
     auto &jumps = lastInstr()->instrJumps();
 
-    if (!jumps.empty())
+    auto nJumps = jumps.size();
+
+    if (nJumps == 1)
     {
-        TraceInstrJump* jump = jumps.front();
+        TraceInstrJump* jump = jumps[0];
         assert(jump);
         TraceInstr* from = jump->instrFrom();
 
-        _falseBranch.setFromInstr(from);
-        _falseBranch.setType(TraceBranch::Type::false_);
+        _branches.resize(2);
 
-        _trueBranch.setFromInstr(from);
-        _trueBranch.setToInstr(jump->instrTo());
-        _trueBranch.setType(jump->isCondJump() ? TraceBranch::Type::true_
-                                               : TraceBranch::Type::unconditional);
+        // true branch
+        _branches[0].setFromInstr(from);
+        _branches[0].setToInstr(jump->instrTo());
+        _branches[0].setType(jump->isCondJump() ? TraceBranch::Type::true_
+                                                : TraceBranch::Type::unconditional);
+
+        // false branch
+        _branches[1].setFromInstr(from);
+        _branches[1].setType(TraceBranch::Type::false_);
+    }
+    else if (nJumps > 1)
+    {
+        _branches.resize(nJumps);
+
+        for (auto i = 0; i != nJumps; ++i)
+        {
+            TraceInstrJump* jump = jumps[i];
+            assert(jump);
+
+            _branches[i].setFromInstr(jump->instrFrom());
+            _branches[i].setToInstr(jump->instrTo());
+            _branches[i].setType(TraceBranch::Type::indirect);
+        }
     }
 
     for (; first != last; ++first)

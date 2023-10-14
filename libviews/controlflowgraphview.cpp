@@ -41,30 +41,27 @@
 
 CFGNode::CFGNode(TraceBasicBlock* bb) : _bb{bb} {}
 
-void CFGNode::setTrueEdge(CFGEdge* e)
+void CFGNode::addSuccessorEdge(CFGEdge* edge)
 {
     #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::setTrueEdge()" << "\033[0m";
+    qDebug() << "\033[1;31m" << "CFGNode::setSuccessorEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    if (e)
+    if (edge)
     {
-        _trueEdge = e;
-        _trueEdge->setPredecessorNode(this);
+        _successors.append(edge);
+        edge->setPredecessorNode(this);
     }
 }
 
-void CFGNode::setFalseEdge(CFGEdge* e)
+void CFGNode::addPredecessorEdge(CFGEdge* edge)
 {
     #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::setFalseEdge()" << "\033[0m";
+    qDebug() << "\033[1;31m" << "CFGNode::addPredecessorEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    if (e)
-    {
-        _falseEdge = e;
-        _falseEdge->setPredecessorNode(this);
-    }
+    if (edge)
+        _predecessors.append(edge);
 }
 
 void CFGNode::clearEdges()
@@ -73,8 +70,44 @@ void CFGNode::clearEdges()
     qDebug() << "\033[1;31m" << "CFGNode::clearEdges()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    _trueEdge = _falseEdge = nullptr;
     _predecessors.clear();
+    _successors.clear();
+}
+
+void CFGNode::sortSuccessorEdges()
+{
+    #ifdef CFGNODE_DEBUG
+    qDebug() << "\033[1;31m" << "CFGNode::sortSuccessorEdges()" << "\033[0m";
+    #endif // CFGNODE_DEBUG
+
+    auto edgeComp = [canvasNode = _cn](const CFGEdge* ge1, const CFGEdge* ge2)
+    {
+        auto ce1 = ge1->canvasEdge();
+        auto ce2 = ge2->canvasEdge();
+
+        if (!ce1 && !ce2)
+            return ce1 > ce2;
+        else if (!ce1)
+            return false;
+        else if (!ce2)
+            return true;
+        else
+        {
+            QRectF nodeRect = canvasNode->rect();
+            QPointF center = nodeRect.center();
+            center.setY(nodeRect.top());
+
+            QPointF d1 = ce1->controlPoints().front() - center;
+            QPointF d2 = ce2->controlPoints().front() - center;
+
+            auto angle1 = std::atan2(d1.y(), d1.x());
+            auto angle2 = std::atan2(d2.y(), d2.x());
+
+            return angle1 > angle2;
+        }
+    };
+
+    std::sort(_successors.begin(), _successors.end(), edgeComp);
 }
 
 void CFGNode::sortPredecessorEdges()
@@ -115,23 +148,14 @@ void CFGNode::sortPredecessorEdges()
     std::sort(_predecessors.begin(), _predecessors.end(), edgeComp);
 }
 
-void CFGNode::addPredecessor(CFGEdge* edge)
-{
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::addPredecessor()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
-    if (edge)
-        _predecessors.append(edge);
-}
-
 double CFGNode::successorCostSum() const
 {
     #ifdef CFGNODE_DEBUG
     qDebug() << "\033[1;31m" << "CFGNode::successorCostSum()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    return (_trueEdge ? _trueEdge->cost : 0.0) + (_falseEdge ? _falseEdge->cost : 0.0);
+    return std::accumulate(_successors.begin(), _successors.end(), 0.0,
+                           [](double val, CFGEdge* e){ return val + e->cost; });
 }
 
 double CFGNode::successorCountSum() const
@@ -140,7 +164,8 @@ double CFGNode::successorCountSum() const
     qDebug() << "\033[1;31m" << "CFGNode::successorCountSum()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    return (_trueEdge ? _trueEdge->count : 0.0) + (_falseEdge ? _falseEdge->count : 0.0);
+    return std::accumulate(_successors.begin(), _successors.end(), 0.0,
+                           [](double val, CFGEdge* e){ return val + e->count; });
 }
 
 double CFGNode::predecessorCostSum() const
@@ -169,12 +194,7 @@ void CFGNode::selectSuccessorEdge(CFGEdge* edge)
     qDebug() << "\033[1;31m" << "CFGNode::selectSuccessorEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    if (edge == _trueEdge)
-        _lastSuccessorIndex = trueIndex;
-    else if (edge == _falseEdge)
-        _lastSuccessorIndex = falseIndex;
-    else
-        _lastSuccessorIndex = noIndex;
+    _lastSuccessorIndex = _successors.indexOf(edge);
 }
 
 void CFGNode::selectPredecessorEdge(CFGEdge* edge)
@@ -192,38 +212,33 @@ CFGEdge* CFGNode::keyboardNextEdge()
     qDebug() << "\033[1;31m" << "CFGNode::keyboardNextEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    CFGEdge* edge;
+    auto edge = _successors.value(_lastSuccessorIndex);
 
-    if (_lastSuccessorIndex == trueIndex)
-        edge = _trueEdge->isVisible() ? _trueEdge : nullptr;
-    else if (_lastSuccessorIndex == falseIndex)
-        edge = _falseEdge->isVisible() ? _falseEdge : nullptr;
-    else
-    {
-        if (_trueEdge && _falseEdge)
-        {
-            if (_trueEdge->isVisible() && _falseEdge->isVisible())
-            {
-                edge = std::max(_trueEdge, _falseEdge,
-                                [](CFGEdge* e1, CFGEdge* e2){ return e1->cost < e2->cost; });
-            }
-            else if (_trueEdge->isVisible())
-                edge = _trueEdge;
-            else if (_falseEdge->isVisible())
-                edge = _falseEdge;
-            else
-                edge = nullptr;
-        }
-        else if (_trueEdge)
-            edge = _trueEdge->isVisible() ? _trueEdge : nullptr;
-        else if (_falseEdge)
-            edge = _falseEdge->isVisible() ? _falseEdge : nullptr;
-        else
-            edge = nullptr;
-    }
+    if (edge && !edge->isVisible())
+        edge = nullptr;
 
     if (edge)
         edge->setVisitedFrom(CFGEdge::NodeType::nodeFrom);
+    else if (!_predecessors.isEmpty())
+    {
+        CFGEdge* maxEdge = _successors[0];
+        double maxCost = maxEdge->cost;
+
+        for (auto i = 1; i < _successors.size(); ++i)
+        {
+            edge = _successors[i];
+
+            if (edge->isVisible() && edge->cost > maxCost)
+            {
+                maxEdge = edge;
+                maxCost = maxEdge->cost;
+                _lastSuccessorIndex = i;
+            }
+        }
+
+        edge = maxEdge;
+        edge->setVisitedFrom(CFGEdge::NodeType::nodeFrom);
+    }
 
     return edge;
 }
@@ -271,13 +286,19 @@ CFGEdge* CFGNode::nextVisibleSuccessorEdge(CFGEdge* edge)
     qDebug() << "\033[1;31m" << "CFGNode::nextVisibleSuccessorEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    if (edge && edge == _trueEdge && _falseEdge && _falseEdge->isVisible())
-    {
-        _lastSuccessorIndex = falseIndex;
-        return _falseEdge;
-    }
-    else
+    auto shift = edge ? _successors.indexOf(edge) : _lastSuccessorIndex;
+    auto begin = std::next(_successors.begin(), shift + 1);
+    auto end = _successors.end();
+
+    auto it = std::find_if(begin, end, [](CFGEdge* e){ return e->isVisible(); });
+
+    if (it == end)
         return nullptr;
+    else
+    {
+        _lastSuccessorIndex = std::distance(_successors.begin(), it);
+        return *it;
+    }
 }
 
 CFGEdge* CFGNode::nextVisiblePredecessorEdge(CFGEdge* edge)
@@ -307,13 +328,20 @@ CFGEdge* CFGNode::priorVisibleSuccessorEdge(CFGEdge* edge)
     qDebug() << "\033[1;31m" << "CFGNode::priorVisibleSuccessorEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    if (edge && edge == _falseEdge && _trueEdge && _trueEdge->isVisible())
+    int idx = edge ? _successors.indexOf(edge) : _lastSuccessorIndex;
+
+    idx = (idx < 0) ? _successors.size() - 1 : idx - 1;
+    for (; idx >= 0; --idx)
     {
-        _lastSuccessorIndex = trueIndex;
-        return _trueEdge;
+        edge = _successors[idx];
+        if (edge->isVisible())
+        {
+            _lastSuccessorIndex = idx;
+            return edge;
+        }
     }
-    else
-        return nullptr;
+
+    return nullptr;
 }
 
 CFGEdge* CFGNode::priorVisiblePredecessorEdge(CFGEdge* edge)
@@ -721,8 +749,9 @@ CFGNode* CFGExporter::buildNode(TraceBasicBlock* bb)
         nodeIt = _nodeMap.insert(key, CFGNode{bb});
         auto nodePtr = std::addressof(*nodeIt);
 
-        nodeIt->setTrueEdge(buildEdge(nodePtr, std::addressof(bb->trueBranch())));
-        nodeIt->setFalseEdge(buildEdge(nodePtr, std::addressof(bb->falseBranch())));
+        auto nBranches = bb->nBranches();
+        for (decltype(nBranches) i = 0; i != nBranches; ++i)
+            nodeIt->addSuccessorEdge(buildEdge(nodePtr, std::addressof(bb->branch(i))));
     }
 
     return std::addressof(*nodeIt);
@@ -766,8 +795,8 @@ void CFGExporter::addPredecessors()
 {
     for (auto &node : _nodeMap)
         for (auto branch : node.basicBlock()->predecessors())
-            node.addPredecessor(findEdge(branch->fromInstr()->addr(),
-                                         branch->toInstr()->addr()));
+            node.addPredecessorEdge(findEdge(branch->fromInstr()->addr(),
+                                             branch->toInstr()->addr()));
 }
 
 int CFGExporter::transformKeyIfNeeded(int key)
@@ -1410,9 +1439,24 @@ void CFGExporter::dumpEdges(QTextStream& ts)
         switch (br->brType())
         {
             case TraceBranch::Type::true_:
+            case TraceBranch::Type::indirect:
             case TraceBranch::Type::unconditional:
             {
-                const char* color = (br->brType() == TraceBranch::Type::true_) ? "blue" : "black";
+                auto color = [br]() -> const char *
+                {
+                    switch (br->brType())
+                    {
+                        case TraceBranch::Type::true_:
+                            return "blue";
+                        case TraceBranch::Type::unconditional:
+                            return "black";
+                        case TraceBranch::Type::indirect:
+                            return "green";
+                        default:
+                            assert(false);
+                            return nullptr;
+                    }
+                }();
 
                 ts << QStringLiteral("  b%1b%2:I%3:w -> b%4b%5")
                                     .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
@@ -2294,6 +2338,9 @@ QColor getArrowColor(CFGEdge* edge)
             break;
         case TraceBranch::Type::false_:
             arrowColor = Qt::red;
+            break;
+        case TraceBranch::Type::indirect:
+            arrowColor = Qt::darkGreen;
             break;
         default:
             assert(false);
