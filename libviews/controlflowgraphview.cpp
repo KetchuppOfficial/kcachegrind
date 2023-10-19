@@ -93,12 +93,10 @@ void CFGNode::sortSuccessorEdges()
             return true;
         else
         {
-            QRectF nodeRect = canvasNode->rect();
-            QPointF center = nodeRect.center();
-            center.setY(nodeRect.top());
+            QPointF center = canvasNode->rect().bottomLeft();
 
-            QPointF d1 = ce1->controlPoints().front() - center;
-            QPointF d2 = ce2->controlPoints().front() - center;
+            QPointF d1 = ce1->controlPoints().back() - center;
+            QPointF d2 = ce2->controlPoints().back() - center;
 
             auto angle1 = std::atan2(d1.y(), d1.x());
             auto angle2 = std::atan2(d2.y(), d2.x());
@@ -628,7 +626,10 @@ void CFGExporter::sortEdges()
     #endif // CFGEXPORTER_DEBUG
 
     for (auto& node : _nodeMap)
+    {
         node.sortPredecessorEdges();
+        node.sortSuccessorEdges();
+    }
 }
 
 bool CFGExporter::writeDot(QIODevice* device)
