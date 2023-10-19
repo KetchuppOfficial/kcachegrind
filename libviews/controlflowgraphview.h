@@ -198,7 +198,8 @@ class CFGExporter final
 public:
     using size_type = typename QMap<TraceBasicBlock*, CFGNode>::size_type;
 
-    enum Layout {TopDown, LeftRight};
+    enum Layout { TopDown, LeftRight };
+    enum DetailsLevel { pcOnly, full };
 
     CFGExporter() = default;
     CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Type gt,
@@ -212,6 +213,9 @@ public:
 
     Layout layout() const { return _layout; }
     void setLayout(Layout layout) { _layout = layout; }
+
+    DetailsLevel detailsLevel() const { return _detailsLevel; }
+    void setDetailsLevel(DetailsLevel level) { _detailsLevel = level; }
 
     size_type edgeCount() const { return _edgeMap.count(); }
     size_type nodeCount() const { return _nodeMap.count(); }
@@ -261,6 +265,7 @@ private:
 
     bool _graphCreated = false;
     Layout _layout = Layout::TopDown;
+    DetailsLevel _detailsLevel = DetailsLevel::full;
 
     QMap<std::pair<Addr, Addr>, CFGNode> _nodeMap;
     QMap<std::pair<Addr, Addr>, CFGEdge> _edgeMap;
@@ -414,6 +419,7 @@ public Q_SLOTS:
 #endif
     void zoomPosTriggered(QAction*);
     void layoutTriggered(QAction*);
+    void detailsLevelTriggered(QAction*);
 
 protected:
     void resizeEvent(QResizeEvent*) override;
@@ -458,6 +464,7 @@ private:
     QAction* addBranchLimitAction(QMenu*, QString, double);
     QAction* addZoomPosAction(QMenu*, QString, ControlFlowGraphView::ZoomPosition);
     QAction* addLayoutAction(QMenu*, QString, CFGExporter::Layout);
+    QAction* addDetailsAction(QMenu*, QString, CFGExporter::DetailsLevel);
 
     QMenu* addPredecessorDepthMenu(QMenu*);
     QMenu* addSuccessorDepthMenu(QMenu*);
@@ -465,6 +472,7 @@ private:
     QMenu* addBranchLimitMenu(QMenu*);
     QMenu* addZoomPosMenu(QMenu*);
     QMenu* addLayoutMenu(QMenu*);
+    QMenu* addDetailsMenu(QMenu*);
 
     QGraphicsScene* _scene = nullptr;
     QPoint _lastPos;
