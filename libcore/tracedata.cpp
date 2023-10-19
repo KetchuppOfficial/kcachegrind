@@ -3939,7 +3939,6 @@ void TraceBasicBlock::addBranchInside(TraceBranch& branch)
 
     assert(to);
     assert(std::find(_instructions.begin(), _instructions.end(), to) != _instructions.end());
-    assert(branch.fromBB());
 
     _instrToBranch[to].push_back(std::addressof(branch));
 }
