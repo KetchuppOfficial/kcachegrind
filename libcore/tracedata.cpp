@@ -3845,12 +3845,16 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
 
         if (jump->isCondJump())
         {
-            _branches.resize(2);
+            if (jump->executedCount().v == jump->followedCount().v)
+                _branches.resize(1);
+            else
+            {
+                _branches.resize(2);
+                _branches[1].setFromInstr(from);
+                _branches[1].setType(TraceBranch::Type::false_);
+            }
 
             _branches[0].setType(TraceBranch::Type::true_);
-
-            _branches[1].setFromInstr(from);
-            _branches[1].setType(TraceBranch::Type::false_);
         }
         else
         {
