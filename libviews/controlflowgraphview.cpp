@@ -217,7 +217,7 @@ CFGEdge* CFGNode::keyboardNextEdge()
 
     if (edge)
         edge->setVisitedFrom(CFGEdge::NodeType::nodeFrom);
-    else if (!_predecessors.isEmpty())
+    else if (!_successors.isEmpty())
     {
         CFGEdge* maxEdge = _successors[0];
         double maxCost = maxEdge->cost;
