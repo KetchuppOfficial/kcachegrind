@@ -1375,42 +1375,189 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
     return true;
 }
 
+namespace
+{
+
+void dumpNodeExtended(QTextStream& ts, const CFGNode& node, CFGExporter::Layout layout)
+{
+    const TraceBasicBlock* bb = node.basicBlock();
+
+    ts << QStringLiteral("  b%1b%2 [shape=record, label=\"")
+                        .arg(bb->firstAddr().toString())
+                        .arg(bb->lastAddr().toString());
+
+    if (layout == CFGExporter::Layout::TopDown)
+        ts << '{';
+
+    auto lastInstrIt = std::prev(bb->end());
+
+    auto i = 0;
+    for (auto it = bb->begin(); it != lastInstrIt; ++it, ++i)
+    {
+        TraceInstr* instr = *it;
+        if (bb->existsJumpToInstr(instr))
+            ts << QStringLiteral("<I%1>").arg(instr->addr().toString());
+
+        ts << *std::next(node.begin(), i) << " | ";
+    }
+
+    ts << QStringLiteral("<I%1>").arg((*lastInstrIt)->addr().toString())
+        << *std::prev(node.end());
+
+    if (layout == CFGExporter::Layout::TopDown)
+        ts << '}';
+
+    ts << "\"]\n";
+}
+
+void dumpNodeReduced(QTextStream& ts, const TraceBasicBlock* bb)
+{
+    QString firstAddr = bb->firstAddr().toString();
+    ts << QStringLiteral("  b%1b%2 [shape=box, label=\"%3\"]")
+                        .arg(firstAddr)
+                        .arg(bb->lastAddr().toString())
+                        .arg(firstAddr);
+}
+
+const char* getEdgeColor(TraceBranch::Type type)
+{
+    switch (type)
+    {
+        case TraceBranch::Type::true_:
+            return "blue";
+        case TraceBranch::Type::unconditional:
+            return "black";
+        case TraceBranch::Type::indirect:
+            return "green";
+        default:
+            assert(false);
+            return nullptr;
+    }
+}
+
+void dumpEdgeExtended(QTextStream& ts, const TraceBranch* br)
+{
+    assert(br);
+
+    auto fromBB = br->fromBB();
+    assert(fromBB);
+
+    auto bbFromFirstAddr = fromBB->firstAddr().toString();
+    auto bbFromLastAddr = fromBB->lastAddr().toString();
+
+    auto toBB = br->toBB();
+    assert(toBB);
+
+    auto bbToFirstAddr = toBB->firstAddr().toString();
+    auto bbToLastAddr = toBB->lastAddr().toString();
+
+    switch (br->brType())
+    {
+        case TraceBranch::Type::true_:
+        case TraceBranch::Type::indirect:
+        case TraceBranch::Type::unconditional:
+        {
+            ts << QStringLiteral("  b%1b%2:I%3:w -> b%4b%5")
+                                .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
+                                .arg(bbToFirstAddr).arg(bbToLastAddr);
+
+            if (br->isCycle())
+                ts << QStringLiteral(":I%1:w [constraint=false, ")
+                                    .arg(br->toInstr()->addr().toString());
+            else if (br->isBranchInside())
+                ts << QStringLiteral(":I%1 [")
+                                    .arg(br->toInstr()->addr().toString());
+            else
+                ts << QStringLiteral(":n [");
+
+            ts << QStringLiteral("color=%1]\n").arg(getEdgeColor(br->brType()));
+
+            break;
+        }
+
+        case TraceBranch::Type::false_:
+            ts << QStringLiteral("  b%1b%2:I%3:e -> b%4b%5:n [color=red]\n")
+                                .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
+                                .arg(bbToFirstAddr).arg(bbToLastAddr);
+            break;
+
+        default:
+            assert(false);
+            break;
+    }
+}
+
+void dumpEdgeReduced(QTextStream& ts, const TraceBranch* br)
+{
+    assert(br);
+
+    auto fromBB = br->fromBB();
+    assert(fromBB);
+
+    auto bbFromFirstAddr = fromBB->firstAddr().toString();
+    auto bbFromLastAddr = fromBB->lastAddr().toString();
+
+    auto toBB = br->toBB();
+    assert(toBB);
+
+    auto bbToFirstAddr = toBB->firstAddr().toString();
+    auto bbToLastAddr = toBB->lastAddr().toString();
+
+    switch (br->brType())
+    {
+        case TraceBranch::Type::true_:
+        case TraceBranch::Type::indirect:
+        case TraceBranch::Type::unconditional:
+        {
+            ts << QStringLiteral("  b%1b%2:w -> b%3b%4")
+                                .arg(bbFromFirstAddr).arg(bbFromLastAddr)
+                                .arg(bbToFirstAddr).arg(bbToLastAddr);
+            if (br->isCycle())
+                ts << QStringLiteral(":w [constraint=false, ");
+            else if (br->isBranchInside())
+                ts << QStringLiteral(" [");
+            else
+                ts << QStringLiteral(":n [");
+
+            ts << QStringLiteral("color=%1, label=\"%2 -> %3\", fontcolor=white]\n")
+                                .arg(getEdgeColor(br->brType()))
+                                .arg(br->fromInstr()->addr().toString())
+                                .arg(br->toInstr()->addr().toString());
+            break;
+        }
+
+        case TraceBranch::Type::false_:
+            ts << QStringLiteral("  b%1b%2:e -> b%3b%4:n")
+                                .arg(bbFromFirstAddr).arg(bbFromLastAddr)
+                                .arg(bbToFirstAddr).arg(bbToLastAddr);
+            ts << QStringLiteral("[color=red, label=\"%1 -> %2\", fontcolor=white]\n")
+                                .arg(br->fromInstr()->addr().toString())
+                                .arg(bbToFirstAddr);
+            break;
+
+        default:
+            assert(false);
+            break;
+    }
+}
+
+} // unnamed namespace
+
 void CFGExporter::dumpNodes(QTextStream& ts)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::dumpNodes()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    for (auto& node : _nodeMap)
+    if (_detailsLevel == DetailsLevel::full)
     {
-        TraceBasicBlock* bb = node.basicBlock();
-
-        ts << QStringLiteral("  b%1b%2 [shape=record, label=\"")
-                            .arg(bb->firstAddr().toString())
-                            .arg(bb->lastAddr().toString());
-
-        if (_layout == Layout::TopDown)
-            ts << '{';
-
-        auto lastInstrIt = std::prev(bb->end());
-
-        auto i = 0;
-        for (auto it = bb->begin(); it != lastInstrIt; ++it, ++i)
-        {
-            TraceInstr* instr = *it;
-            if (bb->existsJumpToInstr(instr))
-                ts << QStringLiteral("<I%1>").arg(instr->addr().toString());
-
-            ts << *std::next(node.begin(), i) << " | ";
-        }
-
-        ts << QStringLiteral("<I%1>").arg((*lastInstrIt)->addr().toString())
-           << *std::prev(node.end());
-
-        if (_layout == Layout::TopDown)
-            ts << '}';
-
-        ts << "\"]\n";
+        for (auto& node : _nodeMap)
+            dumpNodeExtended(ts, node, _layout);
+    }
+    else
+    {
+        for (auto& node : _nodeMap)
+            dumpNodeReduced(ts, node.basicBlock());
     }
 }
 
@@ -1420,81 +1567,25 @@ void CFGExporter::dumpEdges(QTextStream& ts)
     qDebug() << "\033[1;31m" << "CFGExporter::dumpEdges()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    for (auto& edge : _edgeMap)
+    if (_detailsLevel == DetailsLevel::full)
     {
-        TraceBranch* br = edge.branch();
-        assert(br);
-
-        TraceBasicBlock* fromBB = br->fromBB();
-        assert(fromBB);
-
-        auto bbFromFirstAddr = fromBB->firstAddr().toString();
-        auto bbFromLastAddr = fromBB->lastAddr().toString();
-
-        TraceBasicBlock* toBB = br->toBB();
-        assert(toBB);
-
-        auto bbToFirstAddr = toBB->firstAddr().toString();
-        auto bbToLastAddr = toBB->lastAddr().toString();
-
-        switch (br->brType())
-        {
-            case TraceBranch::Type::true_:
-            case TraceBranch::Type::indirect:
-            case TraceBranch::Type::unconditional:
-            {
-                auto color = [br]() -> const char *
-                {
-                    switch (br->brType())
-                    {
-                        case TraceBranch::Type::true_:
-                            return "blue";
-                        case TraceBranch::Type::unconditional:
-                            return "black";
-                        case TraceBranch::Type::indirect:
-                            return "green";
-                        default:
-                            assert(false);
-                            return nullptr;
-                    }
-                }();
-
-                ts << QStringLiteral("  b%1b%2:I%3:w -> b%4b%5")
-                                    .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
-                                    .arg(bbToFirstAddr).arg(bbToLastAddr);
-
-                if (br->isCycle())
-                    ts << QStringLiteral(":I%1:w [constraint=false, color=%2]\n")
-                                        .arg(br->toInstr()->addr().toString()).arg(color);
-                else if (br->isBranchInside())
-                    ts << QStringLiteral(":I%1 [color=%2]\n")
-                                        .arg(br->toInstr()->addr().toString()).arg(color);
-                else
-                    ts << QStringLiteral(":n [color=%1]\n").arg(color);
-
-                break;
-            }
-
-            case TraceBranch::Type::false_:
-                ts << QStringLiteral("  b%1b%2:I%3:e -> b%4b%5:n [color=red]\n")
-                                    .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
-                                    .arg(bbToFirstAddr).arg(bbToLastAddr);
-                break;
-
-            default:
-                assert(false);
-                break;
-        }
-
-        #if 0
-        ts << QStringLiteral("  B%1 -> B%2 [weight=%3, label=\"%4 (%5x)\"];\n")
-                            .arg(reinterpret_cast<std::ptrdiff_t>(edge.from()), 0, 16)
-                            .arg(reinterpret_cast<std::ptrdiff_t>(edge.to()), 0, 16)
-                            .arg(static_cast<long>(std::log(std::log(edge.cost))))
-                            .arg(SubCost{edge.cost}.pretty())
-                            .arg(SubCost{edge.count}.pretty());
-        #endif
+        for (auto& edge : _edgeMap)
+            dumpEdgeExtended(ts, edge.branch());
     }
+    else
+    {
+        for (auto& edge : _edgeMap)
+            dumpEdgeReduced(ts, edge.branch());
+    }
+
+    #if 0
+    ts << QStringLiteral("  B%1 -> B%2 [weight=%3, label=\"%4 (%5x)\"];\n")
+                        .arg(reinterpret_cast<std::ptrdiff_t>(edge.from()), 0, 16)
+                        .arg(reinterpret_cast<std::ptrdiff_t>(edge.to()), 0, 16)
+                        .arg(static_cast<long>(std::log(std::log(edge.cost))))
+                        .arg(SubCost{edge.cost}.pretty())
+                        .arg(SubCost{edge.count}.pretty());
+    #endif
 }
 
 CFGNode* CFGExporter::toCFGNode(QString s)
@@ -2629,6 +2720,16 @@ void ControlFlowGraphView::layoutTriggered(QAction* a)
     refresh();
 }
 
+void ControlFlowGraphView::detailsLevelTriggered(QAction* a)
+{
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::detailsLevelTriggered" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    _exporter.setDetailsLevel(static_cast<CFGExporter::DetailsLevel>(a->data().toInt()));
+    refresh();
+}
+
 void ControlFlowGraphView::resizeEvent(QResizeEvent* e)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
@@ -2837,6 +2938,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
     addBranchLimitMenu(graphMenu);
     graphMenu->addSeparator();
 
+    addDetailsMenu(std::addressof(popup));
     addLayoutMenu(std::addressof(popup));
     addZoomPosMenu(std::addressof(popup));
 
@@ -3527,6 +3629,21 @@ QAction* ControlFlowGraphView::addLayoutAction(QMenu* m, QString s, CFGExporter:
     return a;
 }
 
+QAction* ControlFlowGraphView::addDetailsAction(QMenu* m, QString s, CFGExporter::DetailsLevel level)
+{
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addDetailsAction" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    QAction* a = m->addAction(s);
+
+    a->setData(static_cast<int>(level));
+    a->setCheckable(true);
+    a->setChecked(_exporter.detailsLevel() == level);
+
+    return a;
+}
+
 QMenu* ControlFlowGraphView::addPredecessorDepthMenu(QMenu* menu)
 {
     QMenu* m = menu->addMenu(QObject::tr("Predecessor Depth"));
@@ -3647,6 +3764,23 @@ QMenu* ControlFlowGraphView::addLayoutMenu(QMenu* menu)
 
     connect(m, &QMenu::triggered,
             this, &ControlFlowGraphView::layoutTriggered);
+
+    return m;
+}
+
+QMenu* ControlFlowGraphView::addDetailsMenu(QMenu* menu)
+{
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addDetailsMenu" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    QMenu* m = menu->addMenu(QObject::tr("Visualization"));
+
+    addDetailsAction(m, QObject::tr("PC only"), CFGExporter::DetailsLevel::pcOnly);
+    addDetailsAction(m, QObject::tr("All instructions"), CFGExporter::DetailsLevel::full);
+
+    connect(m, &QMenu::triggered,
+            this, &ControlFlowGraphView::detailsLevelTriggered);
 
     return m;
 }
