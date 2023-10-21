@@ -3649,7 +3649,7 @@ void ControlFlowGraphView::refresh()
 
     auto process = _renderProcess;
     process->start(renderProgram, renderArgs);
-    _exporter.reset(_activeItem, _eventType, _groupType);
+    _exporter.reset(_selectedItem ? _selectedItem : _activeItem, _eventType, _groupType);
     _exporter.writeDot(process);
     process->closeWriteChannel();
 }
