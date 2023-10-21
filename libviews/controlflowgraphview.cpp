@@ -105,7 +105,7 @@ void CFGNode::sortSuccessorEdges()
         }
     };
 
-    if (_successors.size() > 2)
+    if (!_successors.empty() && _successors[0]->branch()->brType() == TraceBranch::Type::indirect)
         std::sort(_successors.begin(), _successors.end(), edgeComp);
 }
 
@@ -509,6 +509,12 @@ CFGExporter::CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Typ
         _tmpFile = nullptr;
         _dotName = filename;
     }
+
+    auto& basicBlocks = func->basicBlocks();
+    assert(!basicBlocks.empty());
+    _detailsMap.reserve(basicBlocks.size());
+    for (auto bb : basicBlocks)
+        _detailsMap.emplace(bb, DetailsLevel::full);
 }
 
 CFGExporter::~CFGExporter()
@@ -579,9 +585,15 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
         {
             case ProfileContext::Function:
             {
-                auto& BBs = static_cast<TraceFunction*>(i)->basicBlocks();
+                auto func = static_cast<TraceFunction*>(i);
+                auto& BBs = func->basicBlocks();
                 assert(!BBs.empty());
                 _item = BBs.front();
+
+                _detailsMap.clear();
+                _detailsMap.reserve(BBs.size());
+                for (auto bb : BBs)
+                    _detailsMap.emplace(bb, DetailsLevel::full);
                 break;
             }
             case ProfileContext::Call:
@@ -2519,12 +2531,12 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
         if (!edge)
             return activeEdge;
 
-        edge->setVisible(true);
-
         poly = getEdgePolygon(lineStream, lineno);
         if (poly.empty())
             return activeEdge;
     }
+
+    edge->setVisible(true);
 
     QColor arrowColor = getArrowColor(edge);
 
@@ -2929,26 +2941,51 @@ enum MenuActions
     stopLayout,
     exportAsDot,
     exportAsImage,
+    pcOnly,
+    allInstructions,
 
     // special value
     nActions
 };
 
-auto addNodesOrEdgesAction(QMenu& popup, QGraphicsItem* item,
-                          std::array<QAction*, MenuActions::nActions>& actions)
--> std::pair<TraceBasicBlock*, TraceBranch*>
+} // unnamed namespace
+
+void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 {
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::contextMenuEvent" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    _isMoving = false;
+
+    std::array<QAction*, MenuActions::nActions> actions;
+    actions[MenuActions::activateBasicBlock] = nullptr;
+    actions[MenuActions::activateBranch] = nullptr;
+
+    QMenu popup;
+    QGraphicsItem* item = itemAt(event->pos());
+
     TraceBasicBlock* bb = nullptr;
     TraceBranch* branch = nullptr;
-
     if (item)
     {
         if (item->type() == CanvasParts::Node)
         {
-            bb = static_cast<CanvasCFGNode*>(item)->node()->basicBlock();
+            CFGNode* node = static_cast<CanvasCFGNode*>(item)->node();
+            bb = node->basicBlock();
+
             actions[MenuActions::activateBasicBlock] =
-                    popup.addAction(QObject::tr("Go to \'%1\'")
-                                    .arg(GlobalConfig::shortenSymbol(bb->prettyName())));
+            popup.addAction(QObject::tr("Go to \'%1\'")
+                            .arg(GlobalConfig::shortenSymbol(node->basicBlock()->prettyName())));
+
+            popup.addSeparator();
+
+            QMenu* detailsMenu = popup.addMenu(QObject::tr("Visualization"));
+            actions[MenuActions::pcOnly] = addDetailsAction(detailsMenu, "PC only", node,
+                                                            CFGExporter::DetailsLevel::pcOnly);
+            actions[MenuActions::allInstructions] =
+                    addDetailsAction(detailsMenu, "All instructions", node,
+                                     CFGExporter::DetailsLevel::full);
 
             popup.addSeparator();
         }
@@ -2973,49 +3010,19 @@ auto addNodesOrEdgesAction(QMenu& popup, QGraphicsItem* item,
         }
     }
 
-    return std::pair{bb, branch};
-}
+    actions[MenuActions::stopLayout] = addStopLayoutAction(popup);
 
-QAction* addStopLayoutAction(QMenu& topLevel, QProcess* renderProcess)
-{
-    if (renderProcess)
-    {
-        QAction* stopLayout_ = topLevel.addAction(QObject::tr("Stop Layouting"));
-        topLevel.addSeparator();
-
-        return stopLayout_;
-    }
-    else
-        return nullptr;
-}
-
-} // unnamed namespace
-
-void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
-{
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::contextMenuEvent" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
-    _isMoving = false;
-
-    std::array<QAction*, MenuActions::nActions> actions;
-    actions[MenuActions::activateBasicBlock] = nullptr;
-    actions[MenuActions::activateBranch] = nullptr;
-
-    QMenu popup;
-    auto [bb, branch] = addNodesOrEdgesAction(popup, itemAt(event->pos()), actions);
-
-    actions[MenuActions::stopLayout] = addStopLayoutAction(popup, _renderProcess);
-
+    #if 0
     addGoMenu(std::addressof(popup));
     popup.addSeparator();
+    #endif
 
     auto exportMenu = popup.addMenu(QObject::tr("Export Graph"));
     actions[MenuActions::exportAsDot] = exportMenu->addAction(QObject::tr("As DOT file..."));
     actions[MenuActions::exportAsImage] = exportMenu->addAction(QObject::tr("As Image..."));
     popup.addSeparator();
 
+    #if 0
     auto graphMenu = popup.addMenu(QObject::tr("Graph"));
 
     addPredecessorDepthMenu(graphMenu);
@@ -3023,6 +3030,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
     addNodeLimitMenu(graphMenu);
     addBranchLimitMenu(graphMenu);
     graphMenu->addSeparator();
+    #endif
 
     addDetailsMenu(std::addressof(popup));
     addLayoutMenu(std::addressof(popup));
@@ -3032,7 +3040,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
     auto index = std::distance(actions.begin(),
                                std::find(actions.begin(), actions.end(), action));
 
-    switch(index)
+    switch (index)
     {
         case MenuActions::activateBasicBlock:
             activated(bb);
@@ -3055,9 +3063,42 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
             if (_scene)
                 exportGraphAsImage();
             break;
+        case MenuActions::pcOnly:
+            _exporter.setDetailsLevel(bb, CFGExporter::DetailsLevel::pcOnly);
+            refresh();
+            break;
+        case MenuActions::allInstructions:
+            _exporter.setDetailsLevel(bb, CFGExporter::DetailsLevel::full);
+            refresh();
+            break;
         default: // practically nActions
             break;
     }
+}
+
+QAction* ControlFlowGraphView::addDetailsAction(QMenu* m, const QString& descr, CFGNode* node,
+                                                CFGExporter::DetailsLevel level)
+{
+    QAction* a = m->addAction(descr);
+
+    a->setData(static_cast<int>(level));
+    a->setCheckable(true);
+    a->setChecked(_exporter.detailsLevel(node->basicBlock()) == level);
+
+    return a;
+}
+
+QAction* ControlFlowGraphView::addStopLayoutAction(QMenu& topLevel)
+{
+    if (_renderProcess)
+    {
+        QAction* stopLayout_ = topLevel.addAction(QObject::tr("Stop Layouting"));
+        topLevel.addSeparator();
+
+        return stopLayout_;
+    }
+    else
+        return nullptr;
 }
 
 void ControlFlowGraphView::exportGraphAsImage()
