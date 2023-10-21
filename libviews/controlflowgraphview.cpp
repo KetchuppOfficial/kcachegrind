@@ -1426,7 +1426,7 @@ void dumpNodeExtended(QTextStream& ts, const CFGNode& node, CFGExporter::Layout 
 void dumpNodeReduced(QTextStream& ts, const TraceBasicBlock* bb)
 {
     QString firstAddr = bb->firstAddr().toString();
-    ts << QStringLiteral("  b%1b%2 [shape=box, label=\"%3\"]")
+    ts << QStringLiteral("  b%1b%2 [shape=box, label=\"%3\"]\n")
                         .arg(firstAddr)
                         .arg(bb->lastAddr().toString())
                         .arg(firstAddr);
