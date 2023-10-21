@@ -1540,12 +1540,123 @@ void dumpEdgeReduced(QTextStream& ts, const TraceBranch* br)
         }
 
         case TraceBranch::Type::false_:
-            ts << QStringLiteral("  b%1b%2:e -> b%3b%4:n")
+            ts << QStringLiteral("  b%1b%2:e -> b%3b%4:n ")
                                 .arg(bbFromFirstAddr).arg(bbFromLastAddr)
                                 .arg(bbToFirstAddr).arg(bbToLastAddr);
             ts << QStringLiteral("[color=red, label=\"%1 %2\", fontcolor=white]\n")
                                 .arg(br->fromInstr()->addr().toString())
                                 .arg(bbToFirstAddr);
+            break;
+
+        default:
+            assert(false);
+            break;
+    }
+}
+
+void dumpEdgeReducedToExtended(QTextStream& ts, const TraceBranch* br)
+{
+    assert(br);
+
+    auto fromBB = br->fromBB();
+    assert(fromBB);
+
+    auto bbFromFirstAddr = fromBB->firstAddr().toString();
+    auto bbFromLastAddr = fromBB->lastAddr().toString();
+
+    auto toBB = br->toBB();
+    assert(toBB);
+
+    auto bbToFirstAddr = toBB->firstAddr().toString();
+    auto bbToLastAddr = toBB->lastAddr().toString();
+
+    switch (br->brType())
+    {
+        case TraceBranch::Type::true_:
+        case TraceBranch::Type::indirect:
+        case TraceBranch::Type::unconditional:
+        {
+            ts << QStringLiteral("  b%1b%2:w -> b%3b%4")
+                                .arg(bbFromFirstAddr).arg(bbFromLastAddr)
+                                .arg(bbToFirstAddr).arg(bbToLastAddr);
+
+            if (br->isCycle())
+                ts << QStringLiteral(":I%1:w [constraint=false, ")
+                                    .arg(br->toInstr()->addr().toString());
+            else if (br->isBranchInside())
+                ts << QStringLiteral(":I%1 [")
+                                    .arg(br->toInstr()->addr().toString());
+            else
+                ts << QStringLiteral(":n [");
+
+            ts << QStringLiteral("color=%1, label=\"%2\", fontcolor=white]\n")
+                                .arg(getEdgeColor(br->brType()))
+                                .arg(br->fromInstr()->addr().toString());
+
+            ts << QStringLiteral("color=%1]\n").arg(getEdgeColor(br->brType()));
+            break;
+        }
+
+        case TraceBranch::Type::false_:
+
+            ts << QStringLiteral("  b%1b%2:e -> b%3b%4:n ")
+                                .arg(bbFromFirstAddr).arg(bbFromLastAddr)
+                                .arg(bbToFirstAddr).arg(bbToLastAddr);
+
+            ts << QStringLiteral("[color=red, label=\"%1\", fontcolor=white]\n")
+                                .arg(bbFromLastAddr);
+            break;
+
+        default:
+            assert(false);
+            break;
+    }
+}
+
+void dumpEdgeExtendedToReduced(QTextStream& ts, const TraceBranch* br)
+{
+    assert(br);
+
+    auto fromBB = br->fromBB();
+    assert(fromBB);
+
+    auto bbFromFirstAddr = fromBB->firstAddr().toString();
+    auto bbFromLastAddr = fromBB->lastAddr().toString();
+
+    auto toBB = br->toBB();
+    assert(toBB);
+
+    auto bbToFirstAddr = toBB->firstAddr().toString();
+    auto bbToLastAddr = toBB->lastAddr().toString();
+
+    switch (br->brType())
+    {
+        case TraceBranch::Type::true_:
+        case TraceBranch::Type::indirect:
+        case TraceBranch::Type::unconditional:
+        {
+            ts << QStringLiteral("  b%1b%2:I%3:w -> b%4b%5")
+                                .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
+                                .arg(bbToFirstAddr).arg(bbToLastAddr);
+
+            if (br->isCycle())
+                ts << QStringLiteral(":w [constraint=false, ");
+            else if (br->isBranchInside())
+                ts << QStringLiteral(" [");
+            else
+                ts << QStringLiteral(":n [");
+
+            ts << QStringLiteral("color=%1, label=\"%2\", fontcolor=white]\n")
+                                .arg(getEdgeColor(br->brType()))
+                                .arg(br->toInstr()->addr().toString());
+            break;
+        }
+
+        case TraceBranch::Type::false_:
+
+            ts << QStringLiteral("  b%1b%2:I%3:e -> b%4b%5:n ")
+                                .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
+                                .arg(bbToFirstAddr).arg(bbToLastAddr);
             break;
 
         default:
@@ -1562,6 +1673,15 @@ void CFGExporter::dumpNodes(QTextStream& ts)
     qDebug() << "\033[1;31m" << "CFGExporter::dumpNodes()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
+    for (auto& node : _nodeMap)
+    {
+        if (detailsLevel(node.basicBlock()) == DetailsLevel::pcOnly)
+            dumpNodeReduced(ts, node.basicBlock());
+        else
+            dumpNodeExtended(ts, node, _layout);
+    }
+
+    #if 0
     if (_detailsLevel == DetailsLevel::full)
     {
         for (auto& node : _nodeMap)
@@ -1572,6 +1692,7 @@ void CFGExporter::dumpNodes(QTextStream& ts)
         for (auto& node : _nodeMap)
             dumpNodeReduced(ts, node.basicBlock());
     }
+    #endif
 }
 
 void CFGExporter::dumpEdges(QTextStream& ts)
@@ -1580,6 +1701,25 @@ void CFGExporter::dumpEdges(QTextStream& ts)
     qDebug() << "\033[1;31m" << "CFGExporter::dumpEdges()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
+    for (auto& edge : _edgeMap)
+    {
+        TraceBranch* br = edge.branch();
+        assert(br);
+
+        bool fromReduced = (detailsLevel(br->fromBB()) == DetailsLevel::pcOnly);
+        bool toReduced = (detailsLevel(br->toBB()) == DetailsLevel::pcOnly);
+
+        if (fromReduced && toReduced)
+            dumpEdgeReduced(ts, br);
+        else if (!fromReduced && toReduced)
+            dumpEdgeExtendedToReduced(ts, br);
+        else if (fromReduced && !toReduced)
+            dumpEdgeReducedToExtended(ts, br);
+        else
+            dumpEdgeExtended(ts, br);
+    }
+
+    #if 0
     if (_detailsLevel == DetailsLevel::full)
     {
         for (auto& edge : _edgeMap)
@@ -1590,6 +1730,7 @@ void CFGExporter::dumpEdges(QTextStream& ts)
         for (auto& edge : _edgeMap)
             dumpEdgeReduced(ts, edge.branch());
     }
+    #endif
 
     #if 0
     ts << QStringLiteral("  B%1 -> B%2 [weight=%3, label=\"%4 (%5x)\"];\n")
