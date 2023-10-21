@@ -105,7 +105,8 @@ void CFGNode::sortSuccessorEdges()
         }
     };
 
-    std::sort(_successors.begin(), _successors.end(), edgeComp);
+    if (_successors.size() > 2)
+        std::sort(_successors.begin(), _successors.end(), edgeComp);
 }
 
 void CFGNode::sortPredecessorEdges()
