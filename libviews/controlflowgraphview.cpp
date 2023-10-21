@@ -1519,7 +1519,7 @@ void dumpEdgeReduced(QTextStream& ts, const TraceBranch* br)
             else
                 ts << QStringLiteral(":n [");
 
-            ts << QStringLiteral("color=%1, label=\"%2 -> %3\", fontcolor=white]\n")
+            ts << QStringLiteral("color=%1, label=\"%2 %3\", fontcolor=white]\n")
                                 .arg(getEdgeColor(br->brType()))
                                 .arg(br->fromInstr()->addr().toString())
                                 .arg(br->toInstr()->addr().toString());
@@ -1530,7 +1530,7 @@ void dumpEdgeReduced(QTextStream& ts, const TraceBranch* br)
             ts << QStringLiteral("  b%1b%2:e -> b%3b%4:n")
                                 .arg(bbFromFirstAddr).arg(bbFromLastAddr)
                                 .arg(bbToFirstAddr).arg(bbToLastAddr);
-            ts << QStringLiteral("[color=red, label=\"%1 -> %2\", fontcolor=white]\n")
+            ts << QStringLiteral("[color=red, label=\"%1 %2\", fontcolor=white]\n")
                                 .arg(br->fromInstr()->addr().toString())
                                 .arg(bbToFirstAddr);
             break;
@@ -1658,7 +1658,8 @@ CFGEdge* CFGExporter::toCFGEdge(const QString& nodeFromName, const QString& node
 }
 
 bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
-                             EventType* eventType, ProfileContext::Type groupType, Layout layout)
+                             EventType* eventType, ProfileContext::Type groupType,
+                             Layout layout, DetailsLevel detailsLevel)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::savePrompt()" << "\033[0m";
@@ -1704,6 +1705,7 @@ bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
 
         CFGExporter ge{func, eventType, groupType, dotName};
         ge.setLayout(layout);
+        ge.setDetailsLevel(detailsLevel);
 
         bool wrote = ge.writeDot();
         if (wrote && mime != filter1)
@@ -1830,6 +1832,13 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
     {
         p->setPen(Qt::black);
         p->drawRect(rectangle);
+    }
+
+    if (_view->detailsLevel() == CFGExporter::DetailsLevel::pcOnly)
+    {
+        p->drawText(rectangle.x(), rectangle.y(), rectangle.width(), rectangle.height(),
+                    Qt::AlignCenter, _node->basicBlock()->firstAddr().toString());
+        return;
     }
 
     auto step = rectangle.height() / _node->instrNumber();
@@ -2488,38 +2497,32 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::parseEdge" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    QString node1Name, node2Name;
-    lineStream >> node1Name >> node2Name;
-
-    CFGEdge* edge = _exporter.toCFGEdge(node1Name, node2Name);
-
-    if (!edge)
+    CFGEdge* edge;
+    QPolygon poly;
+    if (_exporter.detailsLevel() == CFGExporter::DetailsLevel::pcOnly)
     {
-        qDebug() << "Unknown edge \'" << node1Name << "\'-\'" << node2Name << "\' from dot ("
-                << _exporter.filename() << ":" << lineno << ")";
+        QString node;
+        lineStream >> node >> node; // ignored
 
-        return activeEdge;
+        poly = getEdgePolygon(lineStream, lineno);
+        if (poly.empty())
+            return activeEdge;
+
+        edge = getEdgeFromDotReduced(lineStream, lineno);
+        if (!edge)
+            return activeEdge;
     }
-
-    edge->setVisible(true);
-
-    int nPoints;
-    lineStream >> nPoints;
-    assert(nPoints > 1);
-
-    QPolygon poly(nPoints);
-
-    for (auto i = 0; i != nPoints; ++i)
+    else
     {
-        if (lineStream.atEnd())
-        {
-            qDebug("ControlFlowGraphView: Can not read %d spline nPoints (%s:%d)",
-                    nPoints, qPrintable(_exporter.filename()), lineno);
-            return nullptr;
-        }
+        edge = getEdgeFromDot(lineStream, lineno);
+        if (!edge)
+            return activeEdge;
 
-        auto [xx, yy] = calculateSizes(lineStream);
-        poly.setPoint(i, xx, yy);
+        edge->setVisible(true);
+
+        poly = getEdgePolygon(lineStream, lineno);
+        if (poly.empty())
+            return activeEdge;
     }
 
     QColor arrowColor = getArrowColor(edge);
@@ -2579,6 +2582,88 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
     #endif
 
     return activeEdge;
+}
+
+CFGEdge* ControlFlowGraphView::getEdgeFromDot(QTextStream& lineStream, int lineno)
+{
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::getrEdgeFromDot" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    QString node1Name, node2Name;
+    lineStream >> node1Name >> node2Name;
+
+    CFGEdge* edge = _exporter.toCFGEdge(node1Name, node2Name);
+
+    if (!edge)
+    {
+        qDebug() << "Unknown edge \'" << node1Name << "\'-\'" << node2Name << "\' from dot ("
+                << _exporter.filename() << ":" << lineno << ")";
+    }
+
+    return edge;
+}
+
+CFGEdge* ControlFlowGraphView::getEdgeFromDotReduced(QTextStream& lineStream, int lineno)
+{
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::getEdgeFromDotReduced" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    QString addrFrom;
+    lineStream >> addrFrom;
+    addrFrom.remove(0, 1);
+
+    bool ok;
+    auto from = addrFrom.toULongLong(&ok, 16);
+    assert(ok);
+    Addr fromAddr{from};
+
+    QString addrTo;
+    lineStream >> addrTo;
+    addrTo.remove(addrTo.length() - 1, 1);
+
+    auto to = addrTo.toULongLong(&ok, 16);
+    assert(ok);
+    Addr toAddr{to};
+
+    CFGEdge* edge = _exporter.findEdge(fromAddr, toAddr);
+    if (!edge)
+    {
+        qDebug() << "Unknown edge \'" << addrFrom << "\'-\'" << addrTo << "\' from dot ("
+                << _exporter.filename() << ":" << lineno << ")";
+    }
+
+    return edge;
+}
+
+
+QPolygon ControlFlowGraphView::getEdgePolygon(QTextStream& lineStream, int lineno)
+{
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::getEdgePolygon" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    int nPoints;
+    lineStream >> nPoints;
+    assert(nPoints > 1);
+
+    QPolygon poly{nPoints};
+
+    for (auto i = 0; i != nPoints; ++i)
+    {
+        if (lineStream.atEnd())
+        {
+            qDebug("ControlFlowGraphView: Can not read %d spline nPoints (%s:%d)",
+                    nPoints, qPrintable(_exporter.filename()), lineno);
+            return QPolygon{};
+        }
+
+        auto [xx, yy] = calculateSizes(lineStream);
+        poly.setPoint(i, xx, yy);
+    }
+
+    return poly;
 }
 
 void ControlFlowGraphView::checkSceneAndActiveItems(CFGNode* activeNode, CFGEdge* activeEdge)
@@ -2961,7 +3046,8 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
         {
             TraceFunction* func = activeFunction();
             if (func)
-                CFGExporter::savePrompt(this, func, eventType(), groupType(), _exporter.layout());
+                CFGExporter::savePrompt(this, func, eventType(), groupType(),
+                                        _exporter.layout(), _exporter.detailsLevel());
             break;
         }
         case MenuActions::exportAsImage:
