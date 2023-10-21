@@ -241,7 +241,8 @@ public:
     CFGEdge* toCFGEdge(const QString& nodeFromName, const QString& nodeToName);
 
     static bool savePrompt(QWidget* parent, TraceFunction* func,
-                           EventType* eventType, ProfileContext::Type groupType, Layout layout);
+                           EventType* eventType, ProfileContext::Type groupType,
+                           Layout layout, DetailsLevel detailsLevel);
 
 private:
     bool createGraph();
@@ -401,6 +402,8 @@ public:
 
     QString whatsThis() const override;
 
+    CFGExporter::DetailsLevel detailsLevel() const { return _exporter.detailsLevel(); }
+
 public Q_SLOTS:
     void zoomRectMoved(qreal, qreal);
     void zoomRectMoveFinished();
@@ -451,6 +454,9 @@ private:
     std::pair<int, int> calculateSizes(QTextStream& lineStream);
     CFGNode* parseNode(CFGNode* activeNode, QTextStream& lineStream);
     CFGEdge* parseEdge(CFGEdge* activeEdge, QTextStream& lineStream, int lineno);
+    CFGEdge* getEdgeFromDot(QTextStream& lineStream, int lineno);
+    CFGEdge* getEdgeFromDotReduced(QTextStream& lineStream, int lineno);
+    QPolygon getEdgePolygon(QTextStream& lineStream, int lineno);
     void checkSceneAndActiveItems(CFGNode* activeNode, CFGEdge* activeEdge);
     void updateSelectedNodeOrEdge(CFGNode* activeNode, CFGEdge* activeEdge);
     void centerOnSelectedNodeOrEdge();
