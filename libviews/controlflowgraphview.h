@@ -215,7 +215,19 @@ public:
     void setLayout(Layout layout) { _layout = layout; }
 
     DetailsLevel detailsLevel() const { return _detailsLevel; }
+    DetailsLevel detailsLevel(TraceBasicBlock* bb) const
+    {
+        auto it = _detailsMap.find(bb);
+        return it == _detailsMap.end() ? DetailsLevel::full : it->second;
+    }
+
     void setDetailsLevel(DetailsLevel level) { _detailsLevel = level; }
+    void setDetailsLevel(TraceBasicBlock* bb, DetailsLevel level)
+    {
+        auto it = _detailsMap.find(bb);
+        if (it != _detailsMap.end())
+            it->second = level;
+    }
 
     size_type edgeCount() const { return _edgeMap.count(); }
     size_type nodeCount() const { return _nodeMap.count(); }
@@ -270,6 +282,8 @@ private:
 
     QMap<std::pair<Addr, Addr>, CFGNode> _nodeMap;
     QMap<std::pair<Addr, Addr>, CFGEdge> _edgeMap;
+
+    std::unordered_map<TraceBasicBlock*, DetailsLevel> _detailsMap;
 };
 
 enum CanvasParts : int
@@ -471,6 +485,9 @@ private:
     QAction* addZoomPosAction(QMenu*, QString, ControlFlowGraphView::ZoomPosition);
     QAction* addLayoutAction(QMenu*, QString, CFGExporter::Layout);
     QAction* addDetailsAction(QMenu*, QString, CFGExporter::DetailsLevel);
+    QAction* addStopLayoutAction(QMenu&);
+    QAction* addDetailsAction(QMenu* m, const QString& descr, CFGNode* node,
+                                                CFGExporter::DetailsLevel level);
 
     QMenu* addPredecessorDepthMenu(QMenu*);
     QMenu* addSuccessorDepthMenu(QMenu*);
