@@ -50,7 +50,7 @@ void CFGNode::addSuccessorEdge(CFGEdge* edge)
     if (edge)
     {
         _successors.append(edge);
-        edge->setPredecessorNode(this);
+        edge->setNodeFrom(this);
     }
 }
 
@@ -217,7 +217,7 @@ CFGEdge* CFGNode::keyboardNextEdge()
         edge = nullptr;
 
     if (edge)
-        edge->setVisitedFrom(CFGEdge::NodeType::nodeFrom);
+        edge->setVisitedFrom(CFGEdge::NodeType::nodeFrom_);
     else if (!_successors.isEmpty())
     {
         CFGEdge* maxEdge = _successors[0];
@@ -236,7 +236,7 @@ CFGEdge* CFGNode::keyboardNextEdge()
         }
 
         edge = maxEdge;
-        edge->setVisitedFrom(CFGEdge::NodeType::nodeFrom);
+        edge->setVisitedFrom(CFGEdge::NodeType::nodeFrom_);
     }
 
     return edge;
@@ -254,7 +254,7 @@ CFGEdge* CFGNode::keyboardPrevEdge()
         edge = nullptr;
 
     if (edge)
-        edge->setVisitedFrom(CFGEdge::NodeType::nodeTo);
+        edge->setVisitedFrom(CFGEdge::NodeType::nodeTo_);
     else if (!_predecessors.isEmpty())
     {
         CFGEdge* maxEdge = _predecessors[0];
@@ -273,7 +273,7 @@ CFGEdge* CFGNode::keyboardPrevEdge()
         }
 
         edge = maxEdge;
-        edge->setVisitedFrom(CFGEdge::NodeType::nodeTo);
+        edge->setVisitedFrom(CFGEdge::NodeType::nodeTo_);
     }
 
     return edge;
@@ -373,61 +373,61 @@ CFGEdge* CFGNode::priorVisiblePredecessorEdge(CFGEdge* edge)
 
 CFGEdge::CFGEdge(TraceBranch* branch) : _branch{branch} {}
 
-TraceBasicBlock* CFGEdge::from()
+TraceBasicBlock* CFGEdge::bbFrom()
 {
-    return _fromNode ? _fromNode->basicBlock() : nullptr;
+    return _nodeFrom ? _nodeFrom->basicBlock() : nullptr;
 }
 
-const TraceBasicBlock* CFGEdge::from() const
+const TraceBasicBlock* CFGEdge::bbFrom() const
 {
-    return _fromNode ? _fromNode->basicBlock() : nullptr;
+    return _nodeFrom ? _nodeFrom->basicBlock() : nullptr;
 }
 
-TraceBasicBlock* CFGEdge::to()
+TraceBasicBlock* CFGEdge::bbTo()
 {
-    return _toNode ? _toNode->basicBlock() : nullptr;
+    return _nodeTo ? _nodeTo->basicBlock() : nullptr;
 }
 
-const TraceBasicBlock* CFGEdge::to() const
+const TraceBasicBlock* CFGEdge::bbTo() const
 {
-    return _toNode ? _toNode->basicBlock() : nullptr;
+    return _nodeTo ? _nodeTo->basicBlock() : nullptr;
 }
 
 CFGNode* CFGEdge::keyboardNextNode()
 {
-    if (_toNode)
-        _toNode->selectPredecessorEdge(this);
+    if (_nodeTo)
+        _nodeTo->selectPredecessorEdge(this);
 
-    return _toNode;
+    return _nodeTo;
 }
 
 CFGNode* CFGEdge::keyboardPrevNode()
 {
-    if (_fromNode)
-        _fromNode->selectSuccessorEdge(this);
+    if (_nodeFrom)
+        _nodeFrom->selectSuccessorEdge(this);
 
-    return _fromNode;
+    return _nodeFrom;
 }
 
 CFGEdge* CFGEdge::nextVisibleEdge()
 {
-    if (_visitedFrom == NodeType::nodeTo)
+    if (_visitedFrom == NodeType::nodeTo_)
     {
-        assert(_toNode);
+        assert(_nodeTo);
 
-        CFGEdge* edge = _toNode->nextVisiblePredecessorEdge(this);
+        CFGEdge* edge = _nodeTo->nextVisiblePredecessorEdge(this);
         if (edge)
-            edge->setVisitedFrom(NodeType::nodeTo);
+            edge->setVisitedFrom(NodeType::nodeTo_);
 
         return edge;
     }
-    else if (_visitedFrom == NodeType::nodeFrom)
+    else if (_visitedFrom == NodeType::nodeFrom_)
     {
-        assert(_fromNode);
+        assert(_nodeFrom);
 
-        CFGEdge* edge = _fromNode->nextVisibleSuccessorEdge(this);
+        CFGEdge* edge = _nodeFrom->nextVisibleSuccessorEdge(this);
         if (edge)
-            edge->setVisitedFrom(NodeType::nodeFrom);
+            edge->setVisitedFrom(NodeType::nodeFrom_);
 
         return edge;
     }
@@ -437,23 +437,23 @@ CFGEdge* CFGEdge::nextVisibleEdge()
 
 CFGEdge* CFGEdge::priorVisibleEdge()
 {
-    if (_visitedFrom == NodeType::nodeTo)
+    if (_visitedFrom == NodeType::nodeTo_)
     {
-        assert(_toNode);
+        assert(_nodeTo);
 
-        CFGEdge* edge = _toNode->priorVisiblePredecessorEdge(this);
+        CFGEdge* edge = _nodeTo->priorVisiblePredecessorEdge(this);
         if (edge)
-            edge->setVisitedFrom(NodeType::nodeTo);
+            edge->setVisitedFrom(NodeType::nodeTo_);
 
         return edge;
     }
-    else if (_visitedFrom == NodeType::nodeFrom)
+    else if (_visitedFrom == NodeType::nodeFrom_)
     {
-        assert(_fromNode);
+        assert(_nodeFrom);
 
-        CFGEdge* edge = _fromNode->priorVisibleSuccessorEdge(this);
+        CFGEdge* edge = _nodeFrom->priorVisibleSuccessorEdge(this);
         if (edge)
-            edge->setVisitedFrom(NodeType::nodeFrom);
+            edge->setVisitedFrom(NodeType::nodeFrom_);
 
         return edge;
     }
@@ -463,16 +463,16 @@ CFGEdge* CFGEdge::priorVisibleEdge()
 
 QString CFGEdge::prettyName() const
 {
-    auto bbFrom = from();
+    const TraceBasicBlock* from = bbFrom();
 
     QString name;
-    if (bbFrom)
+    if (from)
     {
-        name = QObject::tr("Branch from %1").arg(bbFrom->prettyName());
+        name = QObject::tr("Branch from %1").arg(from->prettyName());
 
-        auto bbTo = to();
-        if (bbTo)
-            name += QObject::tr(" to %1").arg(bbTo->prettyName());
+        const TraceBasicBlock* to = bbTo();
+        if (to)
+            name += QObject::tr(" to %1").arg(to->prettyName());
     }
     else
         name = QObject::tr("(unknown branch)");
@@ -800,31 +800,31 @@ CFGNode* CFGExporter::buildNode(TraceBasicBlock* bb)
     return std::addressof(*nodeIt);
 }
 
-CFGEdge* CFGExporter::buildEdge(CFGNode* fromNode, TraceBranch* branch)
+CFGEdge* CFGExporter::buildEdge(CFGNode* nodeFrom, TraceBranch* branch)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::buildEdge()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    assert(fromNode);
+    assert(nodeFrom);
     assert(branch);
 
-    TraceInstr* toInstr = branch->toInstr();
-    if (toInstr)
+    TraceInstr* instrTo = branch->instrTo();
+    if (instrTo)
     {
-        TraceInstr* fromInstr = branch->fromInstr();
+        TraceInstr* instrFrom = branch->instrFrom();
 
-        std::pair key{fromInstr->addr(), toInstr->addr()};
+        std::pair key{instrFrom->addr(), instrTo->addr()};
         auto edgeIt = _edgeMap.find(key);
 
         if (edgeIt == _edgeMap.end())
         {
-            TraceBasicBlock* fromBB = fromInstr->basicBlock();
-            TraceBasicBlock* toBB = toInstr->basicBlock();
+            TraceBasicBlock* bbFrom = instrFrom->basicBlock();
+            TraceBasicBlock* bbTo = instrTo->basicBlock();
 
             auto edge = CFGEdge{branch};
-            edge.setPredecessorNode(fromNode);
-            edge.setSuccessorNode(fromBB == toBB ? fromNode : buildNode(toBB));
+            edge.setNodeFrom(nodeFrom);
+            edge.setNodeTo(bbFrom == bbTo ? nodeFrom : buildNode(bbTo));
             edgeIt = _edgeMap.insert(key, edge);
         }
 
@@ -838,8 +838,8 @@ void CFGExporter::addPredecessors()
 {
     for (auto &node : _nodeMap)
         for (auto branch : node.basicBlock()->predecessors())
-            node.addPredecessorEdge(findEdge(branch->fromInstr()->addr(),
-                                             branch->toInstr()->addr()));
+            node.addPredecessorEdge(findEdge(branch->instrFrom()->addr(),
+                                             branch->instrTo()->addr()));
 }
 
 int CFGExporter::transformKeyIfNeeded(int key)
@@ -1481,17 +1481,17 @@ void dumpEdgeExtended(QTextStream& ts, const TraceBranch* br)
 {
     assert(br);
 
-    auto fromBB = br->fromBB();
-    assert(fromBB);
+    auto bbFrom = br->bbFrom();
+    assert(bbFrom);
 
-    auto bbFromFirstAddr = fromBB->firstAddr().toString();
-    auto bbFromLastAddr = fromBB->lastAddr().toString();
+    auto bbFromFirstAddr = bbFrom->firstAddr().toString();
+    auto bbFromLastAddr = bbFrom->lastAddr().toString();
 
-    auto toBB = br->toBB();
-    assert(toBB);
+    auto bbTo = br->bbTo();
+    assert(bbTo);
 
-    auto bbToFirstAddr = toBB->firstAddr().toString();
-    auto bbToLastAddr = toBB->lastAddr().toString();
+    auto bbToFirstAddr = bbTo->firstAddr().toString();
+    auto bbToLastAddr = bbTo->lastAddr().toString();
 
     switch (br->brType())
     {
@@ -1505,10 +1505,10 @@ void dumpEdgeExtended(QTextStream& ts, const TraceBranch* br)
 
             if (br->isCycle())
                 ts << QStringLiteral(":I%1:w [constraint=false, ")
-                                    .arg(br->toInstr()->addr().toString());
+                                    .arg(br->instrTo()->addr().toString());
             else if (br->isBranchInside())
                 ts << QStringLiteral(":I%1 [")
-                                    .arg(br->toInstr()->addr().toString());
+                                    .arg(br->instrTo()->addr().toString());
             else
                 ts << QStringLiteral(":n [");
 
@@ -1529,25 +1529,25 @@ void dumpEdgeExtended(QTextStream& ts, const TraceBranch* br)
     }
 
     ts << QStringLiteral("label=\"%1 %2\", fontcolor=white]\n")
-                        .arg(br->fromInstr()->addr().toString())
-                        .arg(br->toInstr()->addr().toString());
+                        .arg(br->instrFrom()->addr().toString())
+                        .arg(br->instrTo()->addr().toString());
 }
 
 void dumpEdgeReduced(QTextStream& ts, const TraceBranch* br)
 {
     assert(br);
 
-    auto fromBB = br->fromBB();
-    assert(fromBB);
+    auto bbFrom = br->bbFrom();
+    assert(bbFrom);
 
-    auto bbFromFirstAddr = fromBB->firstAddr().toString();
-    auto bbFromLastAddr = fromBB->lastAddr().toString();
+    auto bbFromFirstAddr = bbFrom->firstAddr().toString();
+    auto bbFromLastAddr = bbFrom->lastAddr().toString();
 
-    auto toBB = br->toBB();
-    assert(toBB);
+    auto bbTo = br->bbTo();
+    assert(bbTo);
 
-    auto bbToFirstAddr = toBB->firstAddr().toString();
-    auto bbToLastAddr = toBB->lastAddr().toString();
+    auto bbToFirstAddr = bbTo->firstAddr().toString();
+    auto bbToLastAddr = bbTo->lastAddr().toString();
 
     switch (br->brType())
     {
@@ -1582,25 +1582,25 @@ void dumpEdgeReduced(QTextStream& ts, const TraceBranch* br)
     }
 
     ts << QStringLiteral("label=\"%1 %2\", fontcolor=white]\n")
-                        .arg(br->fromInstr()->addr().toString())
-                        .arg(br->toInstr()->addr().toString());
+                        .arg(br->instrFrom()->addr().toString())
+                        .arg(br->instrTo()->addr().toString());
 }
 
 void dumpEdgeReducedToExtended(QTextStream& ts, const TraceBranch* br)
 {
     assert(br);
 
-    auto fromBB = br->fromBB();
-    assert(fromBB);
+    auto bbFrom = br->bbFrom();
+    assert(bbFrom);
 
-    auto bbFromFirstAddr = fromBB->firstAddr().toString();
-    auto bbFromLastAddr = fromBB->lastAddr().toString();
+    auto bbFromFirstAddr = bbFrom->firstAddr().toString();
+    auto bbFromLastAddr = bbFrom->lastAddr().toString();
 
-    auto toBB = br->toBB();
-    assert(toBB);
+    auto bbTo = br->bbTo();
+    assert(bbTo);
 
-    auto bbToFirstAddr = toBB->firstAddr().toString();
-    auto bbToLastAddr = toBB->lastAddr().toString();
+    auto bbToFirstAddr = bbTo->firstAddr().toString();
+    auto bbToLastAddr = bbTo->lastAddr().toString();
 
     switch (br->brType())
     {
@@ -1614,10 +1614,10 @@ void dumpEdgeReducedToExtended(QTextStream& ts, const TraceBranch* br)
 
             if (br->isCycle())
                 ts << QStringLiteral(":I%1:w [constraint=false, ")
-                                    .arg(br->toInstr()->addr().toString());
+                                    .arg(br->instrTo()->addr().toString());
             else if (br->isBranchInside())
                 ts << QStringLiteral(":I%1 [")
-                                    .arg(br->toInstr()->addr().toString());
+                                    .arg(br->instrTo()->addr().toString());
             else
                 ts << QStringLiteral(":n [");
 
@@ -1639,25 +1639,25 @@ void dumpEdgeReducedToExtended(QTextStream& ts, const TraceBranch* br)
     }
 
     ts << QStringLiteral("label=\"%1 %2\", fontcolor=white]\n")
-                        .arg(br->fromInstr()->addr().toString())
-                        .arg(br->toInstr()->addr().toString());
+                        .arg(br->instrFrom()->addr().toString())
+                        .arg(br->instrTo()->addr().toString());
 }
 
 void dumpEdgeExtendedToReduced(QTextStream& ts, const TraceBranch* br)
 {
     assert(br);
 
-    auto fromBB = br->fromBB();
-    assert(fromBB);
+    auto bbFrom = br->bbFrom();
+    assert(bbFrom);
 
-    auto bbFromFirstAddr = fromBB->firstAddr().toString();
-    auto bbFromLastAddr = fromBB->lastAddr().toString();
+    auto bbFromFirstAddr = bbFrom->firstAddr().toString();
+    auto bbFromLastAddr = bbFrom->lastAddr().toString();
 
-    auto toBB = br->toBB();
-    assert(toBB);
+    auto bbTo = br->bbTo();
+    assert(bbTo);
 
-    auto bbToFirstAddr = toBB->firstAddr().toString();
-    auto bbToLastAddr = toBB->lastAddr().toString();
+    auto bbToFirstAddr = bbTo->firstAddr().toString();
+    auto bbToLastAddr = bbTo->lastAddr().toString();
 
     switch (br->brType())
     {
@@ -1693,8 +1693,8 @@ void dumpEdgeExtendedToReduced(QTextStream& ts, const TraceBranch* br)
     }
 
     ts << QStringLiteral("label=\"%1 %2\", fontcolor=white]\n")
-                        .arg(br->fromInstr()->addr().toString())
-                        .arg(br->toInstr()->addr().toString());
+                        .arg(br->instrFrom()->addr().toString())
+                        .arg(br->instrTo()->addr().toString());
 }
 
 } // unnamed namespace
@@ -1727,8 +1727,8 @@ void CFGExporter::dumpEdges(QTextStream& ts)
         TraceBranch* br = edge.branch();
         assert(br);
 
-        bool fromReduced = (detailsLevel(br->fromBB()) == DetailsLevel::pcOnly);
-        bool toReduced = (detailsLevel(br->toBB()) == DetailsLevel::pcOnly);
+        bool fromReduced = (detailsLevel(br->bbFrom()) == DetailsLevel::pcOnly);
+        bool toReduced = (detailsLevel(br->bbTo()) == DetailsLevel::pcOnly);
 
         if (fromReduced && toReduced)
             dumpEdgeReduced(ts, br);
@@ -1742,8 +1742,8 @@ void CFGExporter::dumpEdges(QTextStream& ts)
 
     #if 0
     ts << QStringLiteral("  B%1 -> B%2 [weight=%3, label=\"%4 (%5x)\"];\n")
-                        .arg(reinterpret_cast<std::ptrdiff_t>(edge.from()), 0, 16)
-                        .arg(reinterpret_cast<std::ptrdiff_t>(edge.to()), 0, 16)
+                        .arg(reinterpret_cast<std::ptrdiff_t>(edge.bbFrom()), 0, 16)
+                        .arg(reinterpret_cast<std::ptrdiff_t>(edge.bbTo()), 0, 16)
                         .arg(static_cast<long>(std::log(std::log(edge.cost))))
                         .arg(SubCost{edge.cost}.pretty())
                         .arg(SubCost{edge.count}.pretty());
@@ -2029,7 +2029,7 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
     else
         pixPos = 1;
 
-    if (e->to() && e->from() == e->to())
+    if (e->bbTo() && e->bbFrom() == e->bbTo())
     {
         QFontMetrics fm{font()};
         auto pixmap = QIcon::fromTheme(QStringLiteral("edit-undo")).pixmap(fm.height());
@@ -2829,11 +2829,11 @@ void ControlFlowGraphView::centerOnSelectedNodeOrEdge()
         sNode = _selectedNode->canvasNode();
     else if (_selectedEdge)
     {
-        if (_selectedEdge->fromNode())
-            sNode = _selectedEdge->fromNode()->canvasNode();
+        if (_selectedEdge->nodeFrom())
+            sNode = _selectedEdge->nodeFrom()->canvasNode();
 
-        if (!sNode && _selectedEdge->toNode())
-            sNode = _selectedEdge->toNode()->canvasNode();
+        if (!sNode && _selectedEdge->nodeTo())
+            sNode = _selectedEdge->nodeTo()->canvasNode();
     }
 
     if (sNode)
@@ -3544,8 +3544,8 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
             case ProfileContext::Branch:
             {
                 auto branch = static_cast<TraceBranch*>(_selectedItem);
-                CFGEdge* edge = _exporter.findEdge(branch->fromInstr()->addr(),
-                                                   branch->toInstr()->addr());
+                CFGEdge* edge = _exporter.findEdge(branch->instrFrom()->addr(),
+                                                   branch->instrTo()->addr());
                 if (edge == _selectedEdge)
                     return;
 

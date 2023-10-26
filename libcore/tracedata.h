@@ -1123,19 +1123,19 @@ public:
     Type brType() const { return _type; }
     void setType(Type type) { _type = type; }
 
-    TraceInstr* fromInstr() { return _from; }
-    const TraceInstr* fromInstr() const { return _from; }
-    void setFromInstr(TraceInstr* from) { _from = from; }
+    TraceInstr* instrFrom() { return _from; }
+    const TraceInstr* instrFrom() const { return _from; }
+    void setInstrFrom(TraceInstr* from) { _from = from; }
 
-    TraceBasicBlock* fromBB();
-    const TraceBasicBlock* fromBB() const;
+    TraceBasicBlock* bbFrom();
+    const TraceBasicBlock* bbFrom() const;
 
-    TraceInstr* toInstr() { return _to; }
-    const TraceInstr* toInstr() const { return _to; }
-    void setToInstr(TraceInstr* to) { _to = to; }
+    TraceInstr* instrTo() { return _to; }
+    const TraceInstr* instrTo() const { return _to; }
+    void setInstrTo(TraceInstr* to) { _to = to; }
 
-    TraceBasicBlock* toBB();
-    const TraceBasicBlock* toBB() const;
+    TraceBasicBlock* bbTo();
+    const TraceBasicBlock* bbTo() const;
 
     bool isCycle() const;
     bool isBranchInside() const;
