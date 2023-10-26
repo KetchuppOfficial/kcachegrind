@@ -564,6 +564,18 @@ void CFGExporter::switchDetailsLevel(TraceBasicBlock* bb)
     }
 }
 
+void CFGExporter::setDetailsLevel(TraceFunction* func, DetailsLevel level)
+{
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::setDetailsLevel()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
+    assert(func);
+    auto& BBs = func->basicBlocks();
+    for (auto bb : BBs)
+        _detailsMap[bb] = level;
+}
+
 const CFGNode* CFGExporter::findNode(TraceBasicBlock* bb) const
 {
     #ifdef CFGEXPORTER_DEBUG
@@ -628,10 +640,9 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
                 assert(!BBs.empty());
                 _item = BBs.front();
 
-                _detailsMap.clear();
-                _detailsMap.reserve(BBs.size());
                 for (auto bb : BBs)
                     _detailsMap.emplace(bb, DetailsLevel::full);
+
                 break;
             }
             case ProfileContext::Call:
@@ -1447,20 +1458,17 @@ void dumpNodeExtended(QTextStream& ts, const CFGNode& node, CFGExporter::Layout 
     if (layout == CFGExporter::Layout::TopDown)
         ts << '{';
 
+    auto it = bb->begin();
     auto lastInstrIt = std::prev(bb->end());
 
-    auto it = bb->begin();
     TraceInstr* instr = *it;
     if (bb->existsJumpToInstr(instr))
-    {
-        ts << QStringLiteral("<I%1>%2 | ").arg(instr->addr().toString())
-                                          .arg(bb->firstAddr().toString());
-    }
-    else
-        ts << QStringLiteral("%1 | ").arg(bb->firstAddr().toString());
+        ts << QStringLiteral("<I%1>").arg(instr->addr().toString());
 
-    ts << QStringLiteral("%1 | ").arg(*node.begin());
-    ++it;
+    ts << QStringLiteral("%1 | %2 | ").arg(bb->firstAddr().toString())
+                                      .arg(*node.begin());
+    if (it != lastInstrIt)
+        it++;
 
     auto i = 0;
     for (; it != lastInstrIt; ++it, ++i)
@@ -3041,6 +3049,26 @@ enum MenuActions
     nActions
 };
 
+TraceFunction* getFunction(CostItem* activeItem)
+{
+    assert(activeItem);
+
+    switch (activeItem->type())
+    {
+        case ProfileContext::BasicBlock:
+            return static_cast<TraceBasicBlock*>(activeItem)->function();
+        case ProfileContext::Branch:
+            return static_cast<TraceBranch*>(activeItem)->bbFrom()->function();
+        case ProfileContext::Call:
+            return static_cast<TraceCall*>(activeItem)->caller();
+        case ProfileContext::Function:
+            return static_cast<TraceFunction*>(activeItem);
+        default:
+            assert(false);
+            return nullptr;
+    }
+}
+
 } // unnamed namespace
 
 void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
@@ -3105,6 +3133,13 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
     actions[MenuActions::stopLayout] = addStopLayoutAction(popup);
 
+    popup.addSeparator();
+
+    actions[MenuActions::pcOnly] = popup.addAction(QObject::tr("PC only"));
+    actions[MenuActions::allInstructions] = popup.addAction(QObject::tr("All instructions"));
+
+    popup.addSeparator();
+
     #if 0
     addGoMenu(std::addressof(popup));
     popup.addSeparator();
@@ -3147,7 +3182,8 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
         {
             TraceFunction* func = activeFunction();
             if (func)
-                CFGExporter::savePrompt(this, func, eventType(), groupType(), _exporter.layout(), _exporter.detailsMap());
+                CFGExporter::savePrompt(this, func, eventType(), groupType(), _exporter.layout(),
+                                        _exporter.detailsMap());
             break;
         }
         case MenuActions::exportAsImage:
@@ -3155,11 +3191,11 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
                 exportGraphAsImage();
             break;
         case MenuActions::pcOnly:
-            _exporter.setDetailsLevel(bb, CFGExporter::DetailsLevel::pcOnly);
+            _exporter.setDetailsLevel(getFunction(_activeItem), CFGExporter::DetailsLevel::pcOnly);
             refresh();
             break;
         case MenuActions::allInstructions:
-            _exporter.setDetailsLevel(bb, CFGExporter::DetailsLevel::full);
+            _exporter.setDetailsLevel(getFunction(_activeItem), CFGExporter::DetailsLevel::full);
             refresh();
             break;
         default: // practically nActions
@@ -3699,6 +3735,7 @@ void ControlFlowGraphView::refresh()
     switch (_activeItem->type())
     {
         case ProfileContext::BasicBlock:
+        case ProfileContext::Branch:
         case ProfileContext::Function:
         case ProfileContext::Call:
             break;
