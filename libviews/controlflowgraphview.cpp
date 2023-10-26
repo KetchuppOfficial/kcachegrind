@@ -548,6 +548,22 @@ void CFGExporter::setDetailsLevel(TraceBasicBlock* bb, DetailsLevel level)
         it->second = level;
 }
 
+void CFGExporter::switchDetailsLevel(TraceBasicBlock* bb)
+{
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::switchDetailsLevel()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
+    auto it = _detailsMap.find(bb);
+    if (it != _detailsMap.end())
+    {
+        if (it->second == DetailsLevel::pcOnly)
+            it->second = DetailsLevel::full;
+        else
+            it->second = DetailsLevel::pcOnly;
+    }
+}
+
 const CFGNode* CFGExporter::findNode(TraceBasicBlock* bb) const
 {
     #ifdef CFGEXPORTER_DEBUG
@@ -2970,6 +2986,11 @@ void ControlFlowGraphView::mouseDoubleClickEvent(QMouseEvent* event)
         return;
 
     mouseEvent(&TraceItemView::activated, item);
+
+    assert(_selectedNode);
+    _exporter.switchDetailsLevel(_selectedNode->basicBlock());
+    refresh();
+
     centerOnSelectedNodeOrEdge();
 }
 

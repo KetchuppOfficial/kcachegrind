@@ -221,6 +221,7 @@ public:
 
     DetailsLevel detailsLevel(TraceBasicBlock* bb) const;
     void setDetailsLevel(TraceBasicBlock* bb, DetailsLevel level);
+    void switchDetailsLevel(TraceBasicBlock* bb);
 
     CFGNode* findNode(TraceBasicBlock* bb);
     const CFGNode* findNode(TraceBasicBlock* bb) const;
