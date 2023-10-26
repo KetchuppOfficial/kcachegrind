@@ -1433,10 +1433,23 @@ void dumpNodeExtended(QTextStream& ts, const CFGNode& node, CFGExporter::Layout 
 
     auto lastInstrIt = std::prev(bb->end());
 
-    auto i = 0;
-    for (auto it = bb->begin(); it != lastInstrIt; ++it, ++i)
+    auto it = bb->begin();
+    TraceInstr* instr = *it;
+    if (bb->existsJumpToInstr(instr))
     {
-        TraceInstr* instr = *it;
+        ts << QStringLiteral("<I%1>%2 | ").arg(instr->addr().toString())
+                                          .arg(bb->firstAddr().toString());
+    }
+    else
+        ts << QStringLiteral("%1 | ").arg(bb->firstAddr().toString());
+
+    ts << QStringLiteral("%1 | ").arg(*node.begin());
+    ++it;
+
+    auto i = 0;
+    for (; it != lastInstrIt; ++it, ++i)
+    {
+        instr = *it;
         if (bb->existsJumpToInstr(instr))
             ts << QStringLiteral("<I%1>").arg(instr->addr().toString());
 
@@ -1928,6 +1941,36 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
 
     QRectF rectangle = rect();
 
+    if (_view->isReduced(_node))
+    {
+        p->fillRect(rectangle.x() + 1, rectangle.y() + 1, rectangle.width(), rectangle.height(),
+                    Qt::gray);
+
+        p->drawText(rectangle.x(), rectangle.y(), rectangle.width(), rectangle.height(),
+                    Qt::AlignCenter, "0x" + _node->basicBlock()->firstAddr().toString());
+    }
+    else
+    {
+        auto step = rectangle.height() / (_node->instrNumber() + 1);
+        auto topLineY = rectangle.y();
+
+        p->fillRect(rectangle.x() + 1, topLineY + 1, rectangle.width(), step, Qt::gray);
+
+        p->drawText(rectangle.x(), topLineY, rectangle.width(), step,
+                    Qt::AlignCenter, "0x" + _node->basicBlock()->firstAddr().toString());
+        topLineY += step;
+
+        for (auto instrIt = _node->begin(), ite = _node->end(); instrIt != ite; ++instrIt)
+        {
+            p->drawText(rectangle.x(), topLineY, rectangle.width(), step,
+                        Qt::AlignCenter, *instrIt);
+            p->drawLine(rectangle.x(), topLineY,
+                        rectangle.x() + rectangle.width(), topLineY);
+
+            topLineY += step;
+        }
+    }
+
     if (StoredDrawParams::selected())
     {
         QPen pen{Qt::darkGreen};
@@ -1935,40 +1978,9 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
         p->setPen(pen);
 
         p->drawRect(rectangle);
-        p->setPen(Qt::black);
     }
     else
-    {
-        p->setPen(Qt::black);
         p->drawRect(rectangle);
-    }
-
-    if (_view->isReduced(_node))
-    {
-        p->drawText(rectangle.x(), rectangle.y(), rectangle.width(), rectangle.height(),
-                    Qt::AlignCenter, _node->basicBlock()->firstAddr().toString());
-        return;
-    }
-
-    auto step = rectangle.height() / _node->instrNumber();
-
-    auto topLineY = rectangle.y();
-
-    auto instrIt = _node->begin();
-    p->drawText(rectangle.x(), topLineY, rectangle.width(), step,
-                Qt::AlignCenter, *instrIt);
-    topLineY += step;
-    ++instrIt;
-
-    for (auto ite = _node->end(); instrIt != ite; ++instrIt)
-    {
-        p->drawText(rectangle.x(), topLineY, rectangle.width(), step,
-                    Qt::AlignCenter, *instrIt);
-        p->drawLine(rectangle.x(), topLineY,
-                    rectangle.x() + rectangle.width(), topLineY);
-
-        topLineY += step;
-    }
 }
 
 // ======================================================================================
