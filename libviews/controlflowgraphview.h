@@ -135,7 +135,7 @@ class CanvasCFGEdge;
 class CFGEdge final
 {
 public:
-    enum NodeType { none, nodeTo, nodeFrom };
+    enum NodeType { none, nodeTo_, nodeFrom_ };
 
     CFGEdge(TraceBranch* branch);
 
@@ -146,22 +146,22 @@ public:
     TraceBranch* branch() { return _branch; }
     const TraceBranch* branch() const { return _branch; }
 
-    CFGNode* fromNode() { return _fromNode; }
-    const CFGNode* fromNode() const { return _fromNode; }
-    void setPredecessorNode(CFGNode* n) { _fromNode = n; }
+    CFGNode* nodeFrom() { return _nodeFrom; }
+    const CFGNode* nodeFrom() const { return _nodeFrom; }
+    void setNodeFrom(CFGNode* node) { _nodeFrom = node; }
 
-    CFGNode* toNode() { return _toNode; }
-    const CFGNode* toNode() const { return _toNode; }
-    void setSuccessorNode(CFGNode* n) { _toNode = n; }
+    CFGNode* nodeTo() { return _nodeTo; }
+    const CFGNode* nodeTo() const { return _nodeTo; }
+    void setNodeTo(CFGNode* node) { _nodeTo = node; }
 
     bool isVisible() const { return _visible; }
     void setVisible(bool v) { _visible = v; }
 
-    TraceBasicBlock* from();
-    const TraceBasicBlock* from() const;
+    TraceBasicBlock* bbFrom();
+    const TraceBasicBlock* bbFrom() const;
 
-    TraceBasicBlock* to();
-    const TraceBasicBlock* to() const;
+    TraceBasicBlock* bbTo();
+    const TraceBasicBlock* bbTo() const;
 
     CFGNode* keyboardNextNode();
     CFGNode* keyboardPrevNode();
@@ -180,8 +180,8 @@ private:
 
     TraceBranch* _branch;
 
-    CFGNode* _fromNode = nullptr;
-    CFGNode* _toNode = nullptr;
+    CFGNode* _nodeFrom = nullptr;
+    CFGNode* _nodeTo = nullptr;
 
     CanvasCFGEdge* _ce = nullptr;
     bool _visible = false;
@@ -251,7 +251,7 @@ public:
 private:
     bool createGraph();
     CFGNode* buildNode(TraceBasicBlock* bb);
-    CFGEdge* buildEdge(CFGNode* fromNode, TraceBranch* branch);
+    CFGEdge* buildEdge(CFGNode* nodeFrom, TraceBranch* branch);
     void addPredecessors();
 
     bool fillInstrStrings(TraceFunction* func);
