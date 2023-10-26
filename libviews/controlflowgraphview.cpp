@@ -526,6 +526,28 @@ CFGExporter::~CFGExporter()
     delete _tmpFile;
 }
 
+CFGExporter::DetailsLevel CFGExporter::detailsLevel(TraceBasicBlock* bb) const
+{
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::detailsLevel()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
+    auto it = _detailsMap.find(bb);
+    assert(it != _detailsMap.end());
+    return it->second;
+}
+
+void CFGExporter::setDetailsLevel(TraceBasicBlock* bb, DetailsLevel level)
+{
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::setDetailsLevel()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
+    auto it = _detailsMap.find(bb);
+    if (it != _detailsMap.end())
+        it->second = level;
+}
+
 const CFGNode* CFGExporter::findNode(TraceBasicBlock* bb) const
 {
     #ifdef CFGEXPORTER_DEBUG
@@ -1483,13 +1505,13 @@ void dumpEdgeExtended(QTextStream& ts, const TraceBranch* br)
             else
                 ts << QStringLiteral(":n [");
 
-            ts << QStringLiteral("color=%1]\n").arg(getEdgeColor(br->brType()));
+            ts << QStringLiteral("color=%1, ").arg(getEdgeColor(br->brType()));
 
             break;
         }
 
         case TraceBranch::Type::false_:
-            ts << QStringLiteral("  b%1b%2:I%3:e -> b%4b%5:n [color=red]\n")
+            ts << QStringLiteral("  b%1b%2:I%3:e -> b%4b%5:n [color=red, ")
                                 .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
                                 .arg(bbToFirstAddr).arg(bbToLastAddr);
             break;
@@ -1498,6 +1520,10 @@ void dumpEdgeExtended(QTextStream& ts, const TraceBranch* br)
             assert(false);
             break;
     }
+
+    ts << QStringLiteral("label=\"%1 %2\", fontcolor=white]\n")
+                        .arg(br->fromInstr()->addr().toString())
+                        .arg(br->toInstr()->addr().toString());
 }
 
 void dumpEdgeReduced(QTextStream& ts, const TraceBranch* br)
@@ -1532,26 +1558,25 @@ void dumpEdgeReduced(QTextStream& ts, const TraceBranch* br)
             else
                 ts << QStringLiteral(":n [");
 
-            ts << QStringLiteral("color=%1, label=\"%2 %3\", fontcolor=white]\n")
-                                .arg(getEdgeColor(br->brType()))
-                                .arg(br->fromInstr()->addr().toString())
-                                .arg(br->toInstr()->addr().toString());
+            ts << QStringLiteral("color=%1, ").arg(getEdgeColor(br->brType()));
+
             break;
         }
 
         case TraceBranch::Type::false_:
-            ts << QStringLiteral("  b%1b%2:e -> b%3b%4:n ")
+            ts << QStringLiteral("  b%1b%2:e -> b%3b%4:n [color=red, ")
                                 .arg(bbFromFirstAddr).arg(bbFromLastAddr)
                                 .arg(bbToFirstAddr).arg(bbToLastAddr);
-            ts << QStringLiteral("[color=red, label=\"%1 %2\", fontcolor=white]\n")
-                                .arg(br->fromInstr()->addr().toString())
-                                .arg(bbToFirstAddr);
             break;
 
         default:
             assert(false);
             break;
     }
+
+    ts << QStringLiteral("label=\"%1 %2\", fontcolor=white]\n")
+                        .arg(br->fromInstr()->addr().toString())
+                        .arg(br->toInstr()->addr().toString());
 }
 
 void dumpEdgeReducedToExtended(QTextStream& ts, const TraceBranch* br)
@@ -1589,28 +1614,26 @@ void dumpEdgeReducedToExtended(QTextStream& ts, const TraceBranch* br)
             else
                 ts << QStringLiteral(":n [");
 
-            ts << QStringLiteral("color=%1, label=\"%2\", fontcolor=white]\n")
-                                .arg(getEdgeColor(br->brType()))
-                                .arg(br->fromInstr()->addr().toString());
+            ts << QStringLiteral("color=%1, ").arg(getEdgeColor(br->brType()));
 
-            ts << QStringLiteral("color=%1]\n").arg(getEdgeColor(br->brType()));
             break;
         }
 
         case TraceBranch::Type::false_:
 
-            ts << QStringLiteral("  b%1b%2:e -> b%3b%4:n ")
+            ts << QStringLiteral("  b%1b%2:e -> b%3b%4:n [color=red, ")
                                 .arg(bbFromFirstAddr).arg(bbFromLastAddr)
                                 .arg(bbToFirstAddr).arg(bbToLastAddr);
-
-            ts << QStringLiteral("[color=red, label=\"%1\", fontcolor=white]\n")
-                                .arg(bbFromLastAddr);
             break;
 
         default:
             assert(false);
             break;
     }
+
+    ts << QStringLiteral("label=\"%1 %2\", fontcolor=white]\n")
+                        .arg(br->fromInstr()->addr().toString())
+                        .arg(br->toInstr()->addr().toString());
 }
 
 void dumpEdgeExtendedToReduced(QTextStream& ts, const TraceBranch* br)
@@ -1646,15 +1669,13 @@ void dumpEdgeExtendedToReduced(QTextStream& ts, const TraceBranch* br)
             else
                 ts << QStringLiteral(":n [");
 
-            ts << QStringLiteral("color=%1, label=\"%2\", fontcolor=white]\n")
-                                .arg(getEdgeColor(br->brType()))
-                                .arg(br->toInstr()->addr().toString());
+            ts << QStringLiteral("color=%1, ").arg(getEdgeColor(br->brType()));
             break;
         }
 
         case TraceBranch::Type::false_:
 
-            ts << QStringLiteral("  b%1b%2:I%3:e -> b%4b%5:n ")
+            ts << QStringLiteral("  b%1b%2:I%3:e -> b%4b%5:n [color=red, ")
                                 .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
                                 .arg(bbToFirstAddr).arg(bbToLastAddr);
             break;
@@ -1663,6 +1684,10 @@ void dumpEdgeExtendedToReduced(QTextStream& ts, const TraceBranch* br)
             assert(false);
             break;
     }
+
+    ts << QStringLiteral("label=\"%1 %2\", fontcolor=white]\n")
+                        .arg(br->fromInstr()->addr().toString())
+                        .arg(br->toInstr()->addr().toString());
 }
 
 } // unnamed namespace
@@ -1675,24 +1700,13 @@ void CFGExporter::dumpNodes(QTextStream& ts)
 
     for (auto& node : _nodeMap)
     {
-        if (detailsLevel(node.basicBlock()) == DetailsLevel::pcOnly)
-            dumpNodeReduced(ts, node.basicBlock());
+        TraceBasicBlock* bb = node.basicBlock();
+
+        if (detailsLevel(bb) == DetailsLevel::pcOnly)
+            dumpNodeReduced(ts, bb);
         else
             dumpNodeExtended(ts, node, _layout);
     }
-
-    #if 0
-    if (_detailsLevel == DetailsLevel::full)
-    {
-        for (auto& node : _nodeMap)
-            dumpNodeExtended(ts, node, _layout);
-    }
-    else
-    {
-        for (auto& node : _nodeMap)
-            dumpNodeReduced(ts, node.basicBlock());
-    }
-    #endif
 }
 
 void CFGExporter::dumpEdges(QTextStream& ts)
@@ -1718,19 +1732,6 @@ void CFGExporter::dumpEdges(QTextStream& ts)
         else
             dumpEdgeExtended(ts, br);
     }
-
-    #if 0
-    if (_detailsLevel == DetailsLevel::full)
-    {
-        for (auto& edge : _edgeMap)
-            dumpEdgeExtended(ts, edge.branch());
-    }
-    else
-    {
-        for (auto& edge : _edgeMap)
-            dumpEdgeReduced(ts, edge.branch());
-    }
-    #endif
 
     #if 0
     ts << QStringLiteral("  B%1 -> B%2 [weight=%3, label=\"%4 (%5x)\"];\n")
@@ -1770,50 +1771,9 @@ CFGNode* CFGExporter::toCFGNode(QString s)
     return nullptr;
 }
 
-CFGEdge* CFGExporter::toCFGEdge(const QString& nodeFromName, const QString& nodeToName)
-{
-    auto i = nodeFromName.indexOf('I');
-    assert(i != -1);
-
-    auto colon_i = nodeFromName.indexOf(':', i);
-    assert(colon_i != -1);
-
-    bool ok;
-    auto from = nodeFromName.mid(i + 1, colon_i - i - 1).toULongLong(&ok, 16);
-    assert(ok);
-
-    auto fromAddr = Addr{from};
-    Addr toAddr;
-
-    i = nodeToName.indexOf('I');
-    if (i == -1)
-    {
-        colon_i = nodeToName.indexOf(':');
-        assert(colon_i != -1);
-
-        CFGNode* nodeTo = toCFGNode(nodeToName.mid(0, colon_i));
-        assert(nodeTo);
-
-        toAddr = nodeTo->basicBlock()->firstAddr();
-    }
-    else
-    {
-        auto pos = nodeToName.indexOf(QRegularExpression{"[^0-9a-fA-F]"}, i + 1);
-        if (pos != -1)
-            pos -= (i + 1);
-
-        auto to = nodeToName.mid(i + 1, pos).toULongLong(&ok, 16);
-        assert(ok);
-
-        toAddr = Addr{to};
-    }
-
-    return findEdge(fromAddr, toAddr);
-}
-
 bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
                              EventType* eventType, ProfileContext::Type groupType,
-                             Layout layout, DetailsLevel detailsLevel)
+                             Layout layout)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::savePrompt()" << "\033[0m";
@@ -1859,7 +1819,6 @@ bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
 
         CFGExporter ge{func, eventType, groupType, dotName};
         ge.setLayout(layout);
-        ge.setDetailsLevel(detailsLevel);
 
         bool wrote = ge.writeDot();
         if (wrote && mime != filter1)
@@ -1988,7 +1947,7 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
         p->drawRect(rectangle);
     }
 
-    if (_view->detailsLevel() == CFGExporter::DetailsLevel::pcOnly)
+    if (_view->isReduced(_node))
     {
         p->drawText(rectangle.x(), rectangle.y(), rectangle.width(), rectangle.height(),
                     Qt::AlignCenter, _node->basicBlock()->firstAddr().toString());
@@ -2274,10 +2233,19 @@ QString ControlFlowGraphView::whatsThis() const
     return QObject::tr("This is Control Flow Graph by dWX1268804");
 }
 
+bool ControlFlowGraphView::isReduced(CFGNode* node) const
+{
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::isReduced" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    return _exporter.detailsLevel(node->basicBlock()) == CFGExporter::DetailsLevel::pcOnly;
+}
+
 void ControlFlowGraphView::zoomRectMoved(qreal dx, qreal dy)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::zoomRectVoved" << "\033[0m";
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::zoomRectMoved" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
     //FIXME if (leftMargin()>0) dx = 0;
@@ -2651,31 +2619,16 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::parseEdge" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    CFGEdge* edge;
-    QPolygon poly;
-    if (_exporter.detailsLevel() == CFGExporter::DetailsLevel::pcOnly)
-    {
-        QString node;
-        lineStream >> node >> node; // ignored
+    QString node;
+    lineStream >> node >> node; // ignored
 
-        poly = getEdgePolygon(lineStream, lineno);
-        if (poly.empty())
-            return activeEdge;
+    QPolygon poly = getEdgePolygon(lineStream, lineno);
+    if (poly.empty())
+        return activeEdge;
 
-        edge = getEdgeFromDotReduced(lineStream, lineno);
-        if (!edge)
-            return activeEdge;
-    }
-    else
-    {
-        edge = getEdgeFromDot(lineStream, lineno);
-        if (!edge)
-            return activeEdge;
-
-        poly = getEdgePolygon(lineStream, lineno);
-        if (poly.empty())
-            return activeEdge;
-    }
+    CFGEdge* edge = getEdgeFromDot(lineStream, lineno);
+    if (!edge)
+        return activeEdge;
 
     edge->setVisible(true);
 
@@ -2739,26 +2692,6 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
 }
 
 CFGEdge* ControlFlowGraphView::getEdgeFromDot(QTextStream& lineStream, int lineno)
-{
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::getrEdgeFromDot" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
-    QString node1Name, node2Name;
-    lineStream >> node1Name >> node2Name;
-
-    CFGEdge* edge = _exporter.toCFGEdge(node1Name, node2Name);
-
-    if (!edge)
-    {
-        qDebug() << "Unknown edge \'" << node1Name << "\'-\'" << node2Name << "\' from dot ("
-                << _exporter.filename() << ":" << lineno << ")";
-    }
-
-    return edge;
-}
-
-CFGEdge* ControlFlowGraphView::getEdgeFromDotReduced(QTextStream& lineStream, int lineno)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::getEdgeFromDotReduced" << "\033[0m";
@@ -2956,16 +2889,6 @@ void ControlFlowGraphView::layoutTriggered(QAction* a)
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
     _exporter.setLayout(static_cast<CFGExporter::Layout>(a->data().toInt()));
-    refresh();
-}
-
-void ControlFlowGraphView::detailsLevelTriggered(QAction* a)
-{
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::detailsLevelTriggered" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
-    _exporter.setDetailsLevel(static_cast<CFGExporter::DetailsLevel>(a->data().toInt()));
     refresh();
 }
 
@@ -3173,7 +3096,6 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
     graphMenu->addSeparator();
     #endif
 
-    addDetailsMenu(std::addressof(popup));
     addLayoutMenu(std::addressof(popup));
     addZoomPosMenu(std::addressof(popup));
 
@@ -3196,8 +3118,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
         {
             TraceFunction* func = activeFunction();
             if (func)
-                CFGExporter::savePrompt(this, func, eventType(), groupType(),
-                                        _exporter.layout(), _exporter.detailsLevel());
+                CFGExporter::savePrompt(this, func, eventType(), groupType(), _exporter.layout());
             break;
         }
         case MenuActions::exportAsImage:
@@ -3898,21 +3819,6 @@ QAction* ControlFlowGraphView::addLayoutAction(QMenu* m, QString s, CFGExporter:
     return a;
 }
 
-QAction* ControlFlowGraphView::addDetailsAction(QMenu* m, QString s, CFGExporter::DetailsLevel level)
-{
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addDetailsAction" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
-    QAction* a = m->addAction(s);
-
-    a->setData(static_cast<int>(level));
-    a->setCheckable(true);
-    a->setChecked(_exporter.detailsLevel() == level);
-
-    return a;
-}
-
 QMenu* ControlFlowGraphView::addPredecessorDepthMenu(QMenu* menu)
 {
     QMenu* m = menu->addMenu(QObject::tr("Predecessor Depth"));
@@ -4033,23 +3939,6 @@ QMenu* ControlFlowGraphView::addLayoutMenu(QMenu* menu)
 
     connect(m, &QMenu::triggered,
             this, &ControlFlowGraphView::layoutTriggered);
-
-    return m;
-}
-
-QMenu* ControlFlowGraphView::addDetailsMenu(QMenu* menu)
-{
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addDetailsMenu" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
-    QMenu* m = menu->addMenu(QObject::tr("Visualization"));
-
-    addDetailsAction(m, QObject::tr("PC only"), CFGExporter::DetailsLevel::pcOnly);
-    addDetailsAction(m, QObject::tr("All instructions"), CFGExporter::DetailsLevel::full);
-
-    connect(m, &QMenu::triggered,
-            this, &ControlFlowGraphView::detailsLevelTriggered);
 
     return m;
 }

@@ -214,23 +214,11 @@ public:
     Layout layout() const { return _layout; }
     void setLayout(Layout layout) { _layout = layout; }
 
-    DetailsLevel detailsLevel() const { return _detailsLevel; }
-    DetailsLevel detailsLevel(TraceBasicBlock* bb) const
-    {
-        auto it = _detailsMap.find(bb);
-        return it == _detailsMap.end() ? DetailsLevel::full : it->second;
-    }
-
-    void setDetailsLevel(DetailsLevel level) { _detailsLevel = level; }
-    void setDetailsLevel(TraceBasicBlock* bb, DetailsLevel level)
-    {
-        auto it = _detailsMap.find(bb);
-        if (it != _detailsMap.end())
-            it->second = level;
-    }
-
     size_type edgeCount() const { return _edgeMap.count(); }
     size_type nodeCount() const { return _nodeMap.count(); }
+
+    DetailsLevel detailsLevel(TraceBasicBlock* bb) const;
+    void setDetailsLevel(TraceBasicBlock* bb, DetailsLevel level);
 
     CFGNode* findNode(TraceBasicBlock* bb);
     const CFGNode* findNode(TraceBasicBlock* bb) const;
@@ -250,11 +238,9 @@ public:
     // translates string "B<firstAddr>B<lastAddr>" into appropriate CFGNode*
     CFGNode* toCFGNode(QString s);
 
-    CFGEdge* toCFGEdge(const QString& nodeFromName, const QString& nodeToName);
-
     static bool savePrompt(QWidget* parent, TraceFunction* func,
                            EventType* eventType, ProfileContext::Type groupType,
-                           Layout layout, DetailsLevel detailsLevel);
+                           Layout layout);
 
 private:
     bool createGraph();
@@ -278,7 +264,6 @@ private:
 
     bool _graphCreated = false;
     Layout _layout = Layout::TopDown;
-    DetailsLevel _detailsLevel = DetailsLevel::full;
 
     QMap<std::pair<Addr, Addr>, CFGNode> _nodeMap;
     QMap<std::pair<Addr, Addr>, CFGEdge> _edgeMap;
@@ -416,7 +401,7 @@ public:
 
     QString whatsThis() const override;
 
-    CFGExporter::DetailsLevel detailsLevel() const { return _exporter.detailsLevel(); }
+    bool isReduced(CFGNode* node) const;
 
 public Q_SLOTS:
     void zoomRectMoved(qreal, qreal);
@@ -436,7 +421,6 @@ public Q_SLOTS:
 #endif
     void zoomPosTriggered(QAction*);
     void layoutTriggered(QAction*);
-    void detailsLevelTriggered(QAction*);
 
 protected:
     void resizeEvent(QResizeEvent*) override;
@@ -469,7 +453,6 @@ private:
     CFGNode* parseNode(CFGNode* activeNode, QTextStream& lineStream);
     CFGEdge* parseEdge(CFGEdge* activeEdge, QTextStream& lineStream, int lineno);
     CFGEdge* getEdgeFromDot(QTextStream& lineStream, int lineno);
-    CFGEdge* getEdgeFromDotReduced(QTextStream& lineStream, int lineno);
     QPolygon getEdgePolygon(QTextStream& lineStream, int lineno);
     void checkSceneAndActiveItems(CFGNode* activeNode, CFGEdge* activeEdge);
     void updateSelectedNodeOrEdge(CFGNode* activeNode, CFGEdge* activeEdge);
@@ -484,7 +467,6 @@ private:
     QAction* addBranchLimitAction(QMenu*, QString, double);
     QAction* addZoomPosAction(QMenu*, QString, ControlFlowGraphView::ZoomPosition);
     QAction* addLayoutAction(QMenu*, QString, CFGExporter::Layout);
-    QAction* addDetailsAction(QMenu*, QString, CFGExporter::DetailsLevel);
     QAction* addStopLayoutAction(QMenu&);
     QAction* addDetailsAction(QMenu* m, const QString& descr, CFGNode* node,
                                                 CFGExporter::DetailsLevel level);
@@ -495,7 +477,6 @@ private:
     QMenu* addBranchLimitMenu(QMenu*);
     QMenu* addZoomPosMenu(QMenu*);
     QMenu* addLayoutMenu(QMenu*);
-    QMenu* addDetailsMenu(QMenu*);
 
     QGraphicsScene* _scene = nullptr;
     QPoint _lastPos;
