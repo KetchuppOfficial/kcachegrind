@@ -756,7 +756,14 @@ bool CFGExporter::createGraph()
             break;
         }
         case ProfileContext::BasicBlock:
+        {
+            auto func = static_cast<TraceBasicBlock*>(_item)->function();
+            assert(func);
+            auto& BBs = func->basicBlocks();
+            assert(!BBs.empty());
+            _item = BBs.front();
             break;
+        }
         default:
             assert(!"Unsupported type of item");
     }
