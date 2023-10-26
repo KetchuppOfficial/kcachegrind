@@ -1780,7 +1780,7 @@ CFGNode* CFGExporter::toCFGNode(QString s)
 
 bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
                              EventType* eventType, ProfileContext::Type groupType,
-                             Layout layout)
+                             Layout layout, const details_map_type& map)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::savePrompt()" << "\033[0m";
@@ -1826,6 +1826,7 @@ bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
 
         CFGExporter ge{func, eventType, groupType, dotName};
         ge.setLayout(layout);
+        ge.setDetailsMap(map);
 
         bool wrote = ge.writeDot();
         if (wrote && mime != filter1)
@@ -3125,7 +3126,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
         {
             TraceFunction* func = activeFunction();
             if (func)
-                CFGExporter::savePrompt(this, func, eventType(), groupType(), _exporter.layout());
+                CFGExporter::savePrompt(this, func, eventType(), groupType(), _exporter.layout(), _exporter.detailsMap());
             break;
         }
         case MenuActions::exportAsImage:

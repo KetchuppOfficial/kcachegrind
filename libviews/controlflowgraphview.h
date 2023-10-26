@@ -201,6 +201,8 @@ public:
     enum Layout { TopDown, LeftRight };
     enum DetailsLevel { pcOnly, full };
 
+    using details_map_type = std::unordered_map<TraceBasicBlock*, DetailsLevel>;
+
     CFGExporter() = default;
     CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Type gt,
                 QString filename = QString{});
@@ -238,9 +240,13 @@ public:
     // translates string "B<firstAddr>B<lastAddr>" into appropriate CFGNode*
     CFGNode* toCFGNode(QString s);
 
+    details_map_type& detailsMap() { return _detailsMap; }
+    const details_map_type& detailsMap() const { return _detailsMap; }
+    void setDetailsMap(const details_map_type& map) { _detailsMap = map; }
+
     static bool savePrompt(QWidget* parent, TraceFunction* func,
                            EventType* eventType, ProfileContext::Type groupType,
-                           Layout layout);
+                           Layout layout, const details_map_type& map);
 
 private:
     bool createGraph();
@@ -268,7 +274,7 @@ private:
     QMap<std::pair<Addr, Addr>, CFGNode> _nodeMap;
     QMap<std::pair<Addr, Addr>, CFGEdge> _edgeMap;
 
-    std::unordered_map<TraceBasicBlock*, DetailsLevel> _detailsMap;
+    details_map_type _detailsMap;
 };
 
 enum CanvasParts : int
