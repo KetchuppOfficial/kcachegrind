@@ -1527,10 +1527,6 @@ void dumpEdgeExtended(QTextStream& ts, const TraceBranch* br)
             assert(false);
             break;
     }
-
-    ts << QStringLiteral("label=\"%1 %2\", fontcolor=white]\n")
-                        .arg(br->instrFrom()->addr().toString())
-                        .arg(br->instrTo()->addr().toString());
 }
 
 void dumpEdgeReduced(QTextStream& ts, const TraceBranch* br)
@@ -1580,10 +1576,6 @@ void dumpEdgeReduced(QTextStream& ts, const TraceBranch* br)
             assert(false);
             break;
     }
-
-    ts << QStringLiteral("label=\"%1 %2\", fontcolor=white]\n")
-                        .arg(br->instrFrom()->addr().toString())
-                        .arg(br->instrTo()->addr().toString());
 }
 
 void dumpEdgeReducedToExtended(QTextStream& ts, const TraceBranch* br)
@@ -1637,10 +1629,6 @@ void dumpEdgeReducedToExtended(QTextStream& ts, const TraceBranch* br)
             assert(false);
             break;
     }
-
-    ts << QStringLiteral("label=\"%1 %2\", fontcolor=white]\n")
-                        .arg(br->instrFrom()->addr().toString())
-                        .arg(br->instrTo()->addr().toString());
 }
 
 void dumpEdgeExtendedToReduced(QTextStream& ts, const TraceBranch* br)
@@ -1691,10 +1679,6 @@ void dumpEdgeExtendedToReduced(QTextStream& ts, const TraceBranch* br)
             assert(false);
             break;
     }
-
-    ts << QStringLiteral("label=\"%1 %2\", fontcolor=white]\n")
-                        .arg(br->instrFrom()->addr().toString())
-                        .arg(br->instrTo()->addr().toString());
 }
 
 } // unnamed namespace
@@ -1738,6 +1722,10 @@ void CFGExporter::dumpEdges(QTextStream& ts)
             dumpEdgeReducedToExtended(ts, br);
         else
             dumpEdgeExtended(ts, br);
+
+        ts << QStringLiteral("label=\"%1 %2\", fontcolor=white]\n")
+                        .arg(br->instrFrom()->addr().toString())
+                        .arg(br->instrTo()->addr().toString());
     }
 
     #if 0
