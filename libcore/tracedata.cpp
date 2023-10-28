@@ -2633,6 +2633,38 @@ std::vector<TraceBasicBlock*>& TraceFunction::basicBlocks()
     return _basicBlocks;
 }
 
+#if 0
+namespace
+{
+
+void calcInclusiveCosts(TraceBasicBlock* bb)
+{
+    static std::vector<TraceBasicBlock*> stack;
+
+    if (_branches.empty())
+        return;
+    else
+    {
+        auto accumulator = [](uint64 cost, TraceBranch& br){ return cost + br.executedCount().v; };
+        uint64 nJumps = std::accumulate(_branches.begin(), _branches.end(), 0, accumulator);
+
+        stack.push_back(bb);
+        for (auto& br : _branches)
+        {
+            TraceBasicBlock* bbTo = br.bbTo();
+            if (std::find(stack.begin(), stack.end(), bbTo) == stack.end())
+            {
+                calcInclusiveCosts(bbTo);
+                bb->addInclusive(bbTo);
+            }
+        }
+        stack.pop_back(bb);
+    }
+}
+
+} // unnamed namespace
+#endif
+
 void TraceFunction::constructBasicBlocks()
 {
     auto instructions = instrMap();
@@ -3843,15 +3875,20 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
         assert(jump);
         TraceInstr* from = jump->instrFrom();
 
+        SubCost exec = jump->executedCount();
+
         if (jump->isCondJump())
         {
-            if (jump->executedCount().v == jump->followedCount().v)
+            SubCost followed = jump->followedCount();
+
+            if (exec.v == followed.v)
                 _branches.resize(1);
             else
             {
                 _branches.resize(2);
                 _branches[1].setInstrFrom(from);
                 _branches[1].setType(TraceBranch::Type::false_);
+                _branches[1].addExecutedCount(followed);
             }
 
             _branches[0].setType(TraceBranch::Type::true_);
@@ -3864,6 +3901,7 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
 
         _branches[0].setInstrFrom(from);
         _branches[0].setInstrTo(jump->instrTo());
+        _branches[0].addExecutedCount(exec);
     }
     else if (nJumps > 1)
     {
@@ -3877,11 +3915,15 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
             _branches[i].setInstrFrom(jump->instrFrom());
             _branches[i].setInstrTo(jump->instrTo());
             _branches[i].setType(TraceBranch::Type::indirect);
+            _branches[i].addExecutedCount(jump->executedCount());
         }
     }
 
     for (; first != last; ++first)
+    {
         first->setBasicBlock(this);
+        addCost(std::addressof(*first));
+    }
 }
 
 QString TraceBasicBlock::prettyName() const
@@ -3965,7 +4007,7 @@ std::vector<TraceBranch*> TraceBasicBlock::predecessors() const
 // TraceBranch
 //
 
-TraceBranch::TraceBranch() : TraceCostItem{ProfileContext::context(ProfileContext::Branch)} {}
+TraceBranch::TraceBranch() : TraceJumpCost{ProfileContext::context(ProfileContext::Branch)} {}
 
 TraceBasicBlock* TraceBranch::bbFrom()
 {
