@@ -450,7 +450,7 @@ private:
     void unselectEdge();
     void selectNode(CFGNode* node);
     void selectEdge(CFGEdge* edge);
-    void refresh();
+    void refresh(bool reset = true);
     void clear();
     void showText(const QString &);
 

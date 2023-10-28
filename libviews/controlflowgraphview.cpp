@@ -2921,7 +2921,7 @@ void ControlFlowGraphView::layoutTriggered(QAction* a)
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
     _exporter.setLayout(static_cast<CFGExporter::Layout>(a->data().toInt()));
-    refresh();
+    refresh(false);
 }
 
 void ControlFlowGraphView::resizeEvent(QResizeEvent* e)
@@ -2997,7 +2997,7 @@ void ControlFlowGraphView::mouseDoubleClickEvent(QMouseEvent* event)
 
     assert(_selectedNode);
     _exporter.switchDetailsLevel(_selectedNode->basicBlock());
-    refresh();
+    refresh(false);
 
     centerOnSelectedNodeOrEdge();
 }
@@ -3195,19 +3195,19 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
             break;
         case MenuActions::pcOnlyLocal:
             _exporter.setDetailsLevel(bb, CFGExporter::DetailsLevel::pcOnly);
-            refresh();
+            refresh(false);
             break;
         case MenuActions::pcOnlyGlobal:
             _exporter.setDetailsLevel(getFunction(_activeItem), CFGExporter::DetailsLevel::pcOnly);
-            refresh();
+            refresh(false);
             break;
         case MenuActions::allInstructionsLocal:
             _exporter.setDetailsLevel(bb, CFGExporter::DetailsLevel::full);
-            refresh();
+            refresh(false);
             break;
         case MenuActions::allInstructionsGlobal:
             _exporter.setDetailsLevel(getFunction(_activeItem), CFGExporter::DetailsLevel::full);
-            refresh();
+            refresh(false);
             break;
         default: // practically nActions
             break;
@@ -3714,7 +3714,7 @@ void ControlFlowGraphView::selectEdge(CFGEdge* edge)
     }
 }
 
-void ControlFlowGraphView::refresh()
+void ControlFlowGraphView::refresh(bool reset)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::refresh()" << "\033[0m";
@@ -3788,7 +3788,8 @@ void ControlFlowGraphView::refresh()
 
     auto process = _renderProcess;
     process->start(renderProgram, renderArgs);
-    _exporter.reset(_selectedItem ? _selectedItem : _activeItem, _eventType, _groupType);
+    if (reset)
+        _exporter.reset(_selectedItem ? _selectedItem : _activeItem, _eventType, _groupType);
     _exporter.writeDot(process);
     process->closeWriteChannel();
 }
