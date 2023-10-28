@@ -3042,8 +3042,10 @@ enum MenuActions
     stopLayout,
     exportAsDot,
     exportAsImage,
-    pcOnly,
-    allInstructions,
+    pcOnlyLocal,
+    pcOnlyGlobal,
+    allInstructionsLocal,
+    allInstructionsGlobal,
 
     // special value
     nActions
@@ -3102,10 +3104,11 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
             popup.addSeparator();
 
             QMenu* detailsMenu = popup.addMenu(QObject::tr("Visualization"));
-            actions[MenuActions::pcOnly] = addDetailsAction(detailsMenu, "PC only", node,
-                                                            CFGExporter::DetailsLevel::pcOnly);
-            actions[MenuActions::allInstructions] =
-                    addDetailsAction(detailsMenu, "All instructions", node,
+            actions[MenuActions::pcOnlyLocal] =
+                    addDetailsAction(detailsMenu, QObject::tr("PC only"), node,
+                                     CFGExporter::DetailsLevel::pcOnly);
+            actions[MenuActions::allInstructionsGlobal] =
+                    addDetailsAction(detailsMenu, QObject::tr("All instructions"), node,
                                      CFGExporter::DetailsLevel::full);
 
             popup.addSeparator();
@@ -3135,8 +3138,8 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
     popup.addSeparator();
 
-    actions[MenuActions::pcOnly] = popup.addAction(QObject::tr("PC only"));
-    actions[MenuActions::allInstructions] = popup.addAction(QObject::tr("All instructions"));
+    actions[MenuActions::pcOnlyGlobal] = popup.addAction(QObject::tr("PC only"));
+    actions[MenuActions::allInstructionsGlobal] = popup.addAction(QObject::tr("All instructions"));
 
     popup.addSeparator();
 
@@ -3190,11 +3193,19 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
             if (_scene)
                 exportGraphAsImage();
             break;
-        case MenuActions::pcOnly:
+        case MenuActions::pcOnlyLocal:
+            _exporter.setDetailsLevel(bb, CFGExporter::DetailsLevel::pcOnly);
+            refresh();
+            break;
+        case MenuActions::pcOnlyGlobal:
             _exporter.setDetailsLevel(getFunction(_activeItem), CFGExporter::DetailsLevel::pcOnly);
             refresh();
             break;
-        case MenuActions::allInstructions:
+        case MenuActions::allInstructionsLocal:
+            _exporter.setDetailsLevel(bb, CFGExporter::DetailsLevel::full);
+            refresh();
+            break;
+        case MenuActions::allInstructionsGlobal:
             _exporter.setDetailsLevel(getFunction(_activeItem), CFGExporter::DetailsLevel::full);
             refresh();
             break;
