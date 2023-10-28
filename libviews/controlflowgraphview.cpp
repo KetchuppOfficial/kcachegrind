@@ -818,6 +818,8 @@ CFGNode* CFGExporter::buildNode(TraceBasicBlock* bb)
     {
         nodeIt = _nodeMap.insert(key, CFGNode{bb});
         auto nodePtr = std::addressof(*nodeIt);
+        nodePtr->incl = bb->inclusive()->subCost(_eventType);
+        nodePtr->self = bb->subCost(_eventType);
 
         auto nBranches = bb->nBranches();
         for (decltype(nBranches) i = 0; i != nBranches; ++i)
@@ -1882,35 +1884,6 @@ bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
 // CanvasCFGNode
 //
 
-#if 0
-namespace
-{
-
-double calculateTotalInclusiveCost (ControlFlowGraphView* view)
-{
-    ProfileCostArray* totalCost;
-    if (GlobalConfig::showExpanded())
-    {
-        auto activeBB = view->activeBasicBlock();
-        if (activeBB)
-        {
-             if (activeBB->cycle())
-                totalCost = activeBB->cycle()->inclusive();
-            else
-                totalCost = activeBB->inclusive();
-        }
-        else
-            totalCost = static_cast<ProfileCostArray*>(view->activeItem());
-    }
-    else
-        totalCost = static_cast<TraceItemView*>(view)->data();
-
-    return totalCost->subCost(view->eventType());
-}
-
-} // unnamed namespace
-#endif
-
 CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
                              qreal x, qreal y, qreal w, qreal h) :
     QGraphicsRectItem{x, y, w, h}, _node{node}, _view{view}
@@ -1925,26 +1898,21 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     setBackColor(Qt::white);
     update();
 
-    #if 0
-    if (_node->basicBlock())
-        setText(0, _node->basicBlock()->prettyName()); // set BB's name
-
-    auto total = calculateTotalInclusiveCost(_view);
-    auto inclPercentage = 100.0 * _node->incl / total;
+    auto total = node->basicBlock()->function()->subCost(view->eventType());
+    auto selfPercentage = 100.0 * _node->self / total;
 
     // set inclusive cost
     if (GlobalConfig::showPercentage())
-        setText(1, QStringLiteral("%1 %")
-                                 .arg(inclPercentage, 0, 'f', GlobalConfig::percentPrecision()));
+        setText(0, QStringLiteral("%1 %")
+                                 .arg(selfPercentage, 0, 'f', GlobalConfig::percentPrecision()));
     else
-        setText(1, SubCost(_node->incl).pretty());
+        setText(0, SubCost(_node->self).pretty());
 
     // set percentage bar
-    setPixmap(1, percentagePixmap(25, 10, static_cast<int>(inclPercentage + 0.5), Qt::blue, true));
+    setPixmap(0, percentagePixmap(25, 10, static_cast<int>(selfPercentage + 0.5), Qt::blue, true));
 
     // set tool tip (balloon help) with the name of a basic block and percentage
-    setToolTip(QStringLiteral("%1 (%2)").arg(text(0)).arg(text(1)));
-    #endif
+    setToolTip(QStringLiteral("%1").arg(text(0)));
 }
 
 void CanvasCFGNode::setSelected(bool s)
@@ -2005,6 +1973,9 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
     }
     else
         p->drawRect(rectangle);
+
+    RectDrawing d{rectangle.toRect()};
+    d.drawField(p, 0, this);
 }
 
 // ======================================================================================

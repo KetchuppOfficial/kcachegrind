@@ -1112,7 +1112,7 @@ protected:
     bool _valid;
 };
 
-class TraceBranch : public TraceCostItem
+class TraceBranch : public TraceJumpCost
 {
 public:
     enum class Type {invalid, unconditional, indirect, true_, false_};
