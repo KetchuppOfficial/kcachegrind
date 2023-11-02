@@ -3785,6 +3785,7 @@ void ControlFlowGraphView::showText(const QString& text)
     _panningView->hide();
 }
 
+#if 0
 QAction* ControlFlowGraphView::addPredecessorDepthAction(QMenu* m, QString s, int depth)
 {
     QAction* a = m->addAction(s);
@@ -3828,6 +3829,7 @@ QAction* ControlFlowGraphView::addBranchLimitAction(QMenu* m, QString s, double 
 
     return a;
 }
+#endif
 
 QAction* ControlFlowGraphView::addZoomPosAction(QMenu* m, QString s, ZoomPosition pos)
 {
@@ -3855,6 +3857,7 @@ QAction* ControlFlowGraphView::addLayoutAction(QMenu* m, QString s, CFGExporter:
     return a;
 }
 
+#if 0
 QMenu* ControlFlowGraphView::addPredecessorDepthMenu(QMenu* menu)
 {
     QMenu* m = menu->addMenu(QObject::tr("Predecessor Depth"));
@@ -3870,10 +3873,8 @@ QMenu* ControlFlowGraphView::addPredecessorDepthMenu(QMenu* menu)
     addPredecessorDepthAction(m, QObject::tr("max. 10"), 10);
     addPredecessorDepthAction(m, QObject::tr("max. 15"), 15);
 
-    #if 0
     connect(m, &QMenu::triggered,
             this, &ControlFlowGraphView::predecessorDepthTriggered);
-    #endif
 
     return m;
 }
@@ -3893,10 +3894,8 @@ QMenu* ControlFlowGraphView::addSuccessorDepthMenu(QMenu* menu)
     addSuccessorDepthAction(m, QObject::tr("max. 10"), 10);
     addSuccessorDepthAction(m, QObject::tr("max. 15"), 15);
 
-    #if 0
     connect(m, &QMenu::triggered,
             this, &ControlFlowGraphView::successorDepthTriggered);
-    #endif
 
     return m;
 }
@@ -3916,10 +3915,8 @@ QMenu* ControlFlowGraphView::addNodeLimitMenu(QMenu* menu)
     addNodeLimitAction(m, QObject::tr("2 %"), 0.02);
     addNodeLimitAction(m, QObject::tr("1 %"), 0.01);
 
-    #if 0
     connect(m, &QMenu::triggered,
             this, &ControlFlowGraphView::nodeLimitTriggered);
-    #endif
 
     return m;
 }
@@ -3933,13 +3930,12 @@ QMenu* ControlFlowGraphView::addBranchLimitMenu(QMenu* menu)
     addBranchLimitAction(m, QObject::tr("20 % of Node"), 0.2);
     addBranchLimitAction(m, QObject::tr("10 % of Node"), 0.1);
 
-    #if 0
     connect(m, &QMenu::triggered,
             this, &ControlFlowGraphView::branchLimitTriggered);
-    #endif
 
     return m;
 }
+#endif
 
 QMenu* ControlFlowGraphView::addZoomPosMenu(QMenu* menu)
 {
