@@ -3876,11 +3876,10 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
         TraceInstr* from = jump->instrFrom();
 
         SubCost followed = jump->followedCount();
+        SubCost exec = jump->executedCount();
 
         if (jump->isCondJump())
         {
-            SubCost exec = jump->executedCount();
-
             if (exec.v == followed.v)
                 _branches.resize(1);
             else
@@ -3892,16 +3891,17 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
             }
 
             _branches[0].setType(TraceBranch::Type::true_);
+            _branches[0].addExecutedCount(followed);
         }
         else
         {
             _branches.resize(1);
             _branches[0].setType(TraceBranch::Type::unconditional);
+            _branches[0].addExecutedCount(exec);
         }
 
         _branches[0].setInstrFrom(from);
         _branches[0].setInstrTo(jump->instrTo());
-        _branches[0].addExecutedCount(followed);
     }
     else if (nJumps > 1)
     {
