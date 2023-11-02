@@ -694,7 +694,7 @@ void CFGExporter::sortEdges()
     }
 }
 
-bool CFGExporter::writeDot(QIODevice* device)
+bool CFGExporter::writeDot(DumpType type, QIODevice* device)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::writeDot()" << "\033[0m";
@@ -732,7 +732,7 @@ bool CFGExporter::writeDot(QIODevice* device)
             *stream << QStringLiteral("  rankdir=LR;\n");
 
         dumpNodes(*stream);
-        dumpEdges(*stream);
+        dumpEdges(*stream, type);
 
         *stream << "}\n";
     }
@@ -1467,7 +1467,7 @@ void dumpNodeExtended(QTextStream& ts, const CFGNode& node, CFGExporter::Layout 
     if (bb->existsJumpToInstr(instr))
         ts << QStringLiteral("<I%1>").arg(instr->addr().toString());
 
-    ts << QStringLiteral("%1 | %2 | ").arg(bb->firstAddr().toString())
+    ts << QStringLiteral("%1 | %2 | ").arg("0x" + bb->firstAddr().toString())
                                       .arg(*node.begin());
     if (it != lastInstrIt)
         it++;
@@ -1739,7 +1739,7 @@ void CFGExporter::dumpNodes(QTextStream& ts)
     }
 }
 
-void CFGExporter::dumpEdges(QTextStream& ts)
+void CFGExporter::dumpEdges(QTextStream& ts, DumpType type)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::dumpEdges()" << "\033[0m";
@@ -1762,9 +1762,14 @@ void CFGExporter::dumpEdges(QTextStream& ts)
         else
             dumpEdgeExtended(ts, br);
 
-        ts << QStringLiteral("label=\"%1 %2\", fontcolor=white]\n")
-                        .arg(br->instrFrom()->addr().toString())
-                        .arg(br->instrTo()->addr().toString());
+        if (type == DumpType::internal)
+        {
+            ts << QStringLiteral("label=\"%1 %2\"]\n")
+                            .arg(br->instrFrom()->addr().toString())
+                            .arg(br->instrTo()->addr().toString());
+        }
+        else
+            ts << QStringLiteral("label=\"%1\"]\n").arg(br->executedCount().v);
     }
 
     #if 0
@@ -1855,7 +1860,7 @@ bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
         ge.setLayout(layout);
         ge.setDetailsMap(map);
 
-        bool wrote = ge.writeDot();
+        bool wrote = ge.writeDot(DumpType::external);
         if (wrote && mime != filter1)
         {
             QProcess proc;
@@ -3761,7 +3766,7 @@ void ControlFlowGraphView::refresh(bool reset)
     process->start(renderProgram, renderArgs);
     if (reset)
         _exporter.reset(_selectedItem ? _selectedItem : _activeItem, _eventType, _groupType);
-    _exporter.writeDot(process);
+    _exporter.writeDot(CFGExporter::DumpType::internal, process);
     process->closeWriteChannel();
 }
 

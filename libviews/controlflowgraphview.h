@@ -200,6 +200,7 @@ public:
 
     enum Layout { TopDown, LeftRight };
     enum DetailsLevel { pcOnly, full };
+    enum DumpType { internal, external };
 
     using details_map_type = std::unordered_map<TraceBasicBlock*, DetailsLevel>;
 
@@ -233,7 +234,7 @@ public:
     void reset(CostItem* i, EventType* et, ProfileContext::Type gt,
                QString filename = QString{});
 
-    bool writeDot(QIODevice* device = nullptr);
+    bool writeDot(DumpType type, QIODevice* device = nullptr);
 
     void sortEdges();
 
@@ -259,7 +260,7 @@ private:
     bool fillInstrStrings(TraceFunction* func);
 
     void dumpNodes(QTextStream& ts);
-    void dumpEdges(QTextStream& ts);
+    void dumpEdges(QTextStream& ts, DumpType type);
 
     QString _dotName;
     QTemporaryFile* _tmpFile;
