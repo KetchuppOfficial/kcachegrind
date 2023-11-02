@@ -2989,9 +2989,11 @@ void ControlFlowGraphView::mouseDoubleClickEvent(QMouseEvent* event)
 
     mouseEvent(&TraceItemView::activated, item);
 
-    assert(_selectedNode);
-    _exporter.switchDetailsLevel(_selectedNode->basicBlock());
-    refresh(false);
+    if (_selectedNode)
+    {
+        _exporter.switchDetailsLevel(_selectedNode->basicBlock());
+        refresh(false);
+    }
 
     centerOnSelectedNodeOrEdge();
 }
