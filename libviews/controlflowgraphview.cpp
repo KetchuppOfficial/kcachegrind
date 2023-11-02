@@ -2667,7 +2667,7 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
 
     auto [xx, yy] = calculateSizes(lineStream);
     auto lItem = new CanvasCFGEdgeLabel{this, sItem,
-                                        static_cast<qreal>(xx - 50),
+                                        static_cast<qreal>(xx - 60),
                                         static_cast<qreal>(yy - 10),
                                         100.0, 20.0};
     _scene->addItem(lItem);
