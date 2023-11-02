@@ -3078,7 +3078,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
             actions[MenuActions::pcOnlyLocal] =
                     addDetailsAction(detailsMenu, QObject::tr("PC only"), node,
                                      CFGExporter::DetailsLevel::pcOnly);
-            actions[MenuActions::allInstructionsGlobal] =
+            actions[MenuActions::allInstructionsLocal] =
                     addDetailsAction(detailsMenu, QObject::tr("All instructions"), node,
                                      CFGExporter::DetailsLevel::full);
 
