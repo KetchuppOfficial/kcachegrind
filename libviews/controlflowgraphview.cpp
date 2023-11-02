@@ -631,13 +631,20 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
 
     if (i)
     {
+        auto message = QObject::tr("Control-flow graph requires running "
+                                    "callgrind with option --dump-instr=yes");
         switch (i->type())
         {
             case ProfileContext::Function:
             {
                 auto func = static_cast<TraceFunction*>(i);
                 auto& BBs = func->basicBlocks();
-                assert(!BBs.empty());
+                if (BBs.empty())
+                {
+                    _errorMessage = message;
+                    return;
+                }
+
                 _item = BBs.front();
 
                 for (auto bb : BBs)
@@ -649,8 +656,14 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
             {
                 auto caller = static_cast<TraceCall*>(i)->caller(true);
                 auto& BBs = caller->basicBlocks();
-                assert(!BBs.empty());
+                if (BBs.empty())
+                {
+                    _errorMessage = message;
+                    return;
+                }
+
                 _item = BBs.front();
+
                 break;
             }
             case ProfileContext::BasicBlock:
