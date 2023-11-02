@@ -2676,44 +2676,6 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
 
     lItem->show();
 
-    // Useless till costs of branches aren't calculated
-    #if 0
-    if (!lineStream.atEnd())
-    {
-        lineStream.skipWhiteSpace();
-
-        QChar c;
-        lineStream >> c;
-
-        QString label;
-        if (c == '\"')
-        {
-            lineStream >> c;
-            while (!c.isNull() && c != '\"')
-            {
-                label.append(c);
-                lineStream >> c;
-            }
-        }
-        else
-        {
-            lineStream >> label;
-            label.prepend(c);
-        }
-
-        auto [xx, yy] = calculateSizes(lineStream);
-        auto lItem = new CanvasCFGEdgeLabel{this, sItem,
-                                            static_cast<qreal>(xx - 50),
-                                            static_cast<qreal>(yy - 10),
-                                            100.0, 20.0};
-        _scene->addItem(lItem);
-        lItem->setZValue(1.5);
-        sItem->setLabel(lItem);
-
-        lItem->show();
-    }
-    #endif
-
     return activeEdge;
 }
 
