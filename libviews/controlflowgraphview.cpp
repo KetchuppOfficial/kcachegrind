@@ -2001,9 +2001,10 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
     if (!e)
         return;
 
-    #if 0
-    setPosition(1, DrawParams::BottomCenter);
+    #if 1
+    setPosition(0, DrawParams::TopCenter);
 
+    #if 0
     auto total = calculateTotalInclusiveCost(_view);
     auto inclPercentage = 100.0 * e->cost / total;
 
@@ -2014,7 +2015,12 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
                                  .arg(inclPercentage, 0, 'f', GlobalConfig::percentPrecision()));
     else
         setText(1, SubCost(e->cost).pretty());
+    #endif
 
+    auto count = e->branch()->executedCount();
+    setText(0, QString::number(count));
+
+    #if 0
     int pixPos;
     if (static_cast<TraceItemView*>(_view)->data()->maxCallCount() > 0)
     {
@@ -2028,16 +2034,16 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
     }
     else
         pixPos = 1;
+    #endif
 
     if (e->bbTo() && e->bbFrom() == e->bbTo())
     {
         QFontMetrics fm{font()};
         auto pixmap = QIcon::fromTheme(QStringLiteral("edit-undo")).pixmap(fm.height());
-        setPixmap(pixPos, pixmap);
+        setPixmap(0, pixmap);
     }
     else
-        setPixmap(pixPos, percentagePixmap(25, 10, static_cast<int>(inclPercentage + 0.5),
-                                           Qt::blue, true));
+        setPixmap(0, percentagePixmap(25, 10, count, Qt::blue, true));
     #endif
 }
 
@@ -2046,7 +2052,7 @@ void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem* opti
     #ifdef CANVASCFGEDGELABEL_DEBUG
     qDebug() << "\033[1;31m" << "CanvasCFGEdgeLabel::paint()" << "\033[0m";
     #endif // CANVASCFGEDGELABEL_DEBUG
-
+#if 0
 #if QT_VERSION >= 0x040600
     if (option->levelOfDetailFromTransform(p->transform()) < 0.5)
         return;
@@ -2054,11 +2060,12 @@ void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem* opti
     if (option->levelOfDetail < 0.5)
         return;
 #endif
+#endif
 
     RectDrawing drawer{rect().toRect()};
 
-    #if 0
     drawer.drawField(p, 0, this);
+    #if 0
     drawer.drawField(p, 1, this);
     #endif
 }
@@ -2657,6 +2664,17 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
 
     if (edge->branch() == activeItem())
         activeEdge = edge;
+
+    auto [xx, yy] = calculateSizes(lineStream);
+    auto lItem = new CanvasCFGEdgeLabel{this, sItem,
+                                        static_cast<qreal>(xx - 50),
+                                        static_cast<qreal>(yy - 10),
+                                        100.0, 20.0};
+    _scene->addItem(lItem);
+    lItem->setZValue(1.5);
+    sItem->setLabel(lItem);
+
+    lItem->show();
 
     // Useless till costs of branches aren't calculated
     #if 0
