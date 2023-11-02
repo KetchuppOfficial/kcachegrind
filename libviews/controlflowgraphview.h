@@ -470,20 +470,24 @@ private:
     // called from keyPressEvent
     void movePointOfView(QKeyEvent* e);
 
+    #if 0
     QAction* addPredecessorDepthAction(QMenu*, QString, int);
     QAction* addSuccessorDepthAction(QMenu*, QString, int);
     QAction* addNodeLimitAction(QMenu*, QString, double);
     QAction* addBranchLimitAction(QMenu*, QString, double);
+    #endif
     QAction* addZoomPosAction(QMenu*, QString, ControlFlowGraphView::ZoomPosition);
     QAction* addLayoutAction(QMenu*, QString, CFGExporter::Layout);
     QAction* addStopLayoutAction(QMenu&);
     QAction* addDetailsAction(QMenu* m, const QString& descr, CFGNode* node,
                                                 CFGExporter::DetailsLevel level);
 
+    #if 0
     QMenu* addPredecessorDepthMenu(QMenu*);
     QMenu* addSuccessorDepthMenu(QMenu*);
     QMenu* addNodeLimitMenu(QMenu*);
     QMenu* addBranchLimitMenu(QMenu*);
+    #endif
     QMenu* addZoomPosMenu(QMenu*);
     QMenu* addLayoutMenu(QMenu*);
 
