@@ -2409,9 +2409,8 @@ void ControlFlowGraphView::dotExited()
     viewport()->setUpdatesEnabled(false);
     clear();
 
-    auto [activeNode, activeEdge] = parseDot();
-
-    checkSceneAndActiveItems(activeNode, activeEdge);
+    parseDot();
+    checkScene();
 
     _exporter.sortEdges();
 
@@ -2419,7 +2418,6 @@ void ControlFlowGraphView::dotExited()
     _panningView->setScene(_scene);
     setScene(_scene);
 
-    updateSelectedNodeOrEdge(activeNode, activeEdge);
     centerOnSelectedNodeOrEdge();
 
     updateSizes();
@@ -2433,7 +2431,7 @@ void ControlFlowGraphView::dotExited()
     #endif
 }
 
-std::pair<CFGNode*, CFGEdge*> ControlFlowGraphView::parseDot()
+void ControlFlowGraphView::parseDot()
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::parseDot" << "\033[0m";
@@ -2443,8 +2441,6 @@ std::pair<CFGNode*, CFGEdge*> ControlFlowGraphView::parseDot()
     _scaleY = 8 + 3 * fontMetrics().height();
 
     QString cmd;
-    CFGNode* activeNode = nullptr;
-    CFGEdge* activeEdge = nullptr;
     for (auto lineno = 1; ; lineno++)
     {
         auto line = dotStream.readLine();
@@ -2464,13 +2460,11 @@ std::pair<CFGNode*, CFGEdge*> ControlFlowGraphView::parseDot()
                 qDebug() << "Ignoring \'" << cmd << "\' without \'graph\' form dot ("
                             << _exporter.filename() << ":" << lineno << ")";
             else if (cmd == QLatin1String("node"))
-                activeNode = parseNode(activeNode, lineStream);
+                parseNode(lineStream);
             else if (cmd == QLatin1String("edge"))
-                activeEdge = parseEdge(activeEdge, lineStream, lineno);
+                parseEdge(lineStream, lineno);
         }
     }
-
-    return std::pair{activeNode, activeEdge};
 }
 
 void ControlFlowGraphView::setupScreen(QTextStream& lineStream, int lineno)
@@ -2522,7 +2516,7 @@ std::pair<int, int> ControlFlowGraphView::calculateSizes(QTextStream& lineStream
     return std::pair{xx, yy};
 }
 
-CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream& lineStream)
+void ControlFlowGraphView::parseNode(QTextStream& lineStream)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::parseNode" << "\033[0m";
@@ -2553,9 +2547,6 @@ CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream& lineS
 
         _scene->addItem(rItem);
 
-        if (node->basicBlock() == activeItem())
-            activeNode = node;
-
         if (node->basicBlock() == selectedItem())
         {
             _selectedNode = node;
@@ -2566,8 +2557,6 @@ CFGNode* ControlFlowGraphView::parseNode(CFGNode* activeNode, QTextStream& lineS
     }
     else
         qDebug("Warning: Unknown basic block \'%s\' ?!", qPrintable(nodeName));
-
-    return activeNode;
 }
 
 namespace
@@ -2641,7 +2630,7 @@ CanvasCFGEdgeArrow* createArrow(CanvasCFGEdge* sItem, const QPolygon& poly, QCol
 
 } // unnamed namespace
 
-CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineStream, int lineno)
+void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::parseEdge" << "\033[0m";
@@ -2652,11 +2641,11 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
 
     QPolygon poly = getEdgePolygon(lineStream, lineno);
     if (poly.empty())
-        return activeEdge;
+        return;
 
     CFGEdge* edge = getEdgeFromDot(lineStream, lineno);
     if (!edge)
-        return activeEdge;
+        return;
 
     edge->setVisible(true);
 
@@ -2675,9 +2664,6 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
     else
         sItem->setSelected(edge == _selectedEdge);
 
-    if (edge->branch() == activeItem())
-        activeEdge = edge;
-
     auto [xx, yy] = calculateSizes(lineStream);
     auto lItem = new CanvasCFGEdgeLabel{this, sItem,
                                         static_cast<qreal>(xx - 60),
@@ -2688,8 +2674,6 @@ CFGEdge* ControlFlowGraphView::parseEdge(CFGEdge* activeEdge, QTextStream& lineS
     sItem->setLabel(lItem);
 
     lItem->show();
-
-    return activeEdge;
 }
 
 CFGEdge* ControlFlowGraphView::getEdgeFromDot(QTextStream& lineStream, int lineno)
@@ -2754,7 +2738,7 @@ QPolygon ControlFlowGraphView::getEdgePolygon(QTextStream& lineStream, int linen
     return poly;
 }
 
-void ControlFlowGraphView::checkSceneAndActiveItems(CFGNode* activeNode, CFGEdge* activeEdge)
+void ControlFlowGraphView::checkScene()
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::checkSceneAndActiveItems" << "\033[0m";
@@ -2775,39 +2759,6 @@ void ControlFlowGraphView::checkSceneAndActiveItems(CFGNode* activeNode, CFGEdge
             _scene->addSimpleText(_exporter.errorMessage());
 
         centerOn(0, 0);
-    }
-    else if (!activeNode && !activeEdge)
-    {
-        auto message = QObject::tr("There is no control-flow graph available for basic block\n"
-                                   "    \'%1\'\n"
-                                   "because it has no cost of the selected event type.")
-                                  .arg(_activeItem->name());
-        _scene->addSimpleText(message);
-        centerOn(0, 0);
-    }
-}
-
-void ControlFlowGraphView::updateSelectedNodeOrEdge(CFGNode* activeNode, CFGEdge* activeEdge)
-{
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::updateSelectedNodeOrEdge" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
-    if ((!_selectedNode || !_selectedNode->canvasNode()) &&
-        (!_selectedEdge || !_selectedEdge->canvasEdge()))
-    {
-        if (activeNode)
-        {
-            _selectedNode = activeNode;
-
-            auto cn = _selectedNode->canvasNode();
-            cn->setSelected(true);
-        }
-        else if (activeEdge)
-        {
-            _selectedEdge = activeEdge;
-            _selectedEdge->canvasEdge()->setSelected(true);
-        }
     }
 }
 
