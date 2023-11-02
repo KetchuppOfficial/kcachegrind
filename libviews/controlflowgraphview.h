@@ -456,14 +456,14 @@ private:
     void showText(const QString &);
 
     // called from dotExited
-    std::pair<CFGNode*, CFGEdge*> parseDot();
+    void parseDot();
     void setupScreen(QTextStream& lineStream, int lineno);
     std::pair<int, int> calculateSizes(QTextStream& lineStream);
-    CFGNode* parseNode(CFGNode* activeNode, QTextStream& lineStream);
-    CFGEdge* parseEdge(CFGEdge* activeEdge, QTextStream& lineStream, int lineno);
+    void parseNode(QTextStream& lineStream);
+    void parseEdge(QTextStream& lineStream, int lineno);
     CFGEdge* getEdgeFromDot(QTextStream& lineStream, int lineno);
     QPolygon getEdgePolygon(QTextStream& lineStream, int lineno);
-    void checkSceneAndActiveItems(CFGNode* activeNode, CFGEdge* activeEdge);
+    void checkScene();
     void updateSelectedNodeOrEdge(CFGNode* activeNode, CFGEdge* activeEdge);
     void centerOnSelectedNodeOrEdge();
 
