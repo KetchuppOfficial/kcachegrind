@@ -1497,7 +1497,7 @@ void dumpNodeReduced(QTextStream& ts, const TraceBasicBlock* bb)
     ts << QStringLiteral("  b%1b%2 [shape=box, label=\"%3\"]\n")
                         .arg(firstAddr)
                         .arg(bb->lastAddr().toString())
-                        .arg(firstAddr);
+                        .arg("0x" + firstAddr);
 }
 
 const char* getEdgeColor(TraceBranch::Type type)
