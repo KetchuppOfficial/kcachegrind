@@ -576,6 +576,23 @@ void CFGExporter::setDetailsLevel(TraceFunction* func, DetailsLevel level)
         _detailsMap[bb] = level;
 }
 
+int CFGExporter::containsMaximizedNodeWithCostLessThan(uint64 minimalCost)
+{
+    auto f = [this, minimalCost](CFGNode& node)
+    {
+        return node.self < minimalCost && _detailsMap[node.basicBlock()] == DetailsLevel::full;
+    };
+
+    return std::find_if(_nodeMap.begin(), _nodeMap.end(), f) != _nodeMap.end();
+}
+
+void CFGExporter::minimize(uint64 minimalCost)
+{
+    for (auto& node : _nodeMap)
+        if (node.self <= minimalCost)
+            _detailsMap[node.basicBlock()] = DetailsLevel::pcOnly;
+}
+
 const CFGNode* CFGExporter::findNode(TraceBasicBlock* bb) const
 {
     #ifdef CFGEXPORTER_DEBUG
@@ -3010,6 +3027,8 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
     QMenu popup;
     QGraphicsItem* item = itemAt(event->pos());
 
+    TraceFunction* func = getFunction(_activeItem);
+
     TraceBasicBlock* bb = nullptr;
     TraceBranch* branch = nullptr;
     if (item)
@@ -3062,6 +3081,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
     actions[MenuActions::pcOnlyGlobal] = popup.addAction(QObject::tr("PC only"));
     actions[MenuActions::allInstructionsGlobal] = popup.addAction(QObject::tr("All instructions"));
+    addMinimizationMenu(std::addressof(popup), func);
 
     popup.addSeparator();
 
@@ -3120,7 +3140,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
             refresh(false);
             break;
         case MenuActions::pcOnlyGlobal:
-            _exporter.setDetailsLevel(getFunction(_activeItem), CFGExporter::DetailsLevel::pcOnly);
+            _exporter.setDetailsLevel(func, CFGExporter::DetailsLevel::pcOnly);
             refresh(false);
             break;
         case MenuActions::allInstructionsLocal:
@@ -3128,7 +3148,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
             refresh(false);
             break;
         case MenuActions::allInstructionsGlobal:
-            _exporter.setDetailsLevel(getFunction(_activeItem), CFGExporter::DetailsLevel::full);
+            _exporter.setDetailsLevel(func, CFGExporter::DetailsLevel::full);
             refresh(false);
             break;
         default: // practically nActions
@@ -3937,4 +3957,46 @@ QMenu* ControlFlowGraphView::addLayoutMenu(QMenu* menu)
             this, &ControlFlowGraphView::layoutTriggered);
 
     return m;
+}
+
+QMenu* ControlFlowGraphView::addMinimizationMenu(QMenu* menu, TraceFunction* func)
+{
+    assert(menu);
+    assert(func);
+
+    QMenu* m = menu->addMenu(QObject::tr("Minimization"));
+    uint64 totalCost = func->subCost(_eventType).v;
+
+    addMinimizationAction(m, QObject::tr("10%"), 10, totalCost);
+    addMinimizationAction(m, QObject::tr("20%"), 20, totalCost);
+    addMinimizationAction(m, QObject::tr("30%"), 30, totalCost);
+    addMinimizationAction(m, QObject::tr("40%"), 40, totalCost);
+    addMinimizationAction(m, QObject::tr("50%"), 50, totalCost);
+    addMinimizationAction(m, QObject::tr("60%"), 60, totalCost);
+    addMinimizationAction(m, QObject::tr("70%"), 70, totalCost);
+
+    connect(m, &QMenu::triggered,
+            this, &ControlFlowGraphView::minimizationTriggered);
+
+    return m;
+}
+
+QAction* ControlFlowGraphView::addMinimizationAction(QMenu* m, QString s, int percentage, uint64 totalCost)
+{
+    QAction* a = m->addAction(s);
+
+    uint64 minimalCost = percentage * totalCost / 100;
+
+    a->setData(minimalCost);
+    a->setCheckable(true);
+    a->setChecked(!_exporter.containsMaximizedNodeWithCostLessThan(minimalCost));
+
+    return a;
+}
+
+void ControlFlowGraphView::minimizationTriggered(QAction* a)
+{
+    int minimalCost = a->data().toInt();
+    _exporter.minimize(minimalCost);
+    refresh(false);
 }

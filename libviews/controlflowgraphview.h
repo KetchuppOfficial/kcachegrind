@@ -224,6 +224,8 @@ public:
     void setDetailsLevel(TraceBasicBlock* bb, DetailsLevel level);
     void switchDetailsLevel(TraceBasicBlock* bb);
     void setDetailsLevel(TraceFunction* func, DetailsLevel level);
+    int containsMaximizedNodeWithCostLessThan(uint64 minimalCost);
+    void minimize(uint64 minimalCost);
 
     CFGNode* findNode(TraceBasicBlock* bb);
     const CFGNode* findNode(TraceBasicBlock* bb) const;
@@ -278,6 +280,8 @@ private:
     QMap<std::pair<Addr, Addr>, CFGEdge> _edgeMap;
 
     details_map_type _detailsMap;
+public:
+    int _minimalCostPercentage = 0;
 };
 
 enum CanvasParts : int
@@ -430,6 +434,7 @@ public Q_SLOTS:
 #endif
     void zoomPosTriggered(QAction*);
     void layoutTriggered(QAction*);
+    void minimizationTriggered(QAction*);
 
 protected:
     void resizeEvent(QResizeEvent*) override;
@@ -481,6 +486,7 @@ private:
     QAction* addStopLayoutAction(QMenu&);
     QAction* addDetailsAction(QMenu* m, const QString& descr, CFGNode* node,
                                                 CFGExporter::DetailsLevel level);
+    QAction* addMinimizationAction(QMenu* m, QString s, int percentage, uint64 totalCost);
 
     #if 0
     QMenu* addPredecessorDepthMenu(QMenu*);
@@ -490,6 +496,7 @@ private:
     #endif
     QMenu* addZoomPosMenu(QMenu*);
     QMenu* addLayoutMenu(QMenu*);
+    QMenu* addMinimizationMenu(QMenu*, TraceFunction*);
 
     QGraphicsScene* _scene = nullptr;
     QPoint _lastPos;
