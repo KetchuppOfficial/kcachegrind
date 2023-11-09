@@ -82,8 +82,8 @@ void CFGNode::sortSuccessorEdges()
 
     auto edgeComp = [canvasNode = _cn](const CFGEdge* ge1, const CFGEdge* ge2)
     {
-        auto ce1 = ge1->canvasEdge();
-        auto ce2 = ge2->canvasEdge();
+        const CanvasCFGEdge* ce1 = ge1->canvasEdge();
+        const CanvasCFGEdge* ce2 = ge2->canvasEdge();
 
         if (!ce1 && !ce2)
             return ce1 > ce2;
@@ -98,8 +98,8 @@ void CFGNode::sortSuccessorEdges()
             QPointF d1 = ce1->controlPoints().back() - center;
             QPointF d2 = ce2->controlPoints().back() - center;
 
-            auto angle1 = std::atan2(d1.y(), d1.x());
-            auto angle2 = std::atan2(d2.y(), d2.x());
+            qreal angle1 = std::atan2(d1.y(), d1.x());
+            qreal angle2 = std::atan2(d2.y(), d2.x());
 
             return angle1 > angle2;
         }
@@ -117,8 +117,8 @@ void CFGNode::sortPredecessorEdges()
 
     auto edgeComp = [canvasNode = _cn](const CFGEdge* ge1, const CFGEdge* ge2)
     {
-        auto ce1 = ge1->canvasEdge();
-        auto ce2 = ge2->canvasEdge();
+        const CanvasCFGEdge* ce1 = ge1->canvasEdge();
+        const CanvasCFGEdge* ce2 = ge2->canvasEdge();
 
         if (!ce1 && !ce2)
             return ce1 > ce2;
@@ -137,8 +137,8 @@ void CFGNode::sortPredecessorEdges()
 
             /* y coordinate is negated to change orientation of the coordinate system
                from positive to negative */
-            auto angle1 = std::atan2(-d1.y(), d1.x());
-            auto angle2 = std::atan2(-d2.y(), d2.x());
+            qreal angle1 = std::atan2(-d1.y(), d1.x());
+            qreal angle2 = std::atan2(-d2.y(), d2.x());
 
             return angle1 > angle2;
         }
@@ -211,7 +211,7 @@ CFGEdge* CFGNode::keyboardNextEdge()
     qDebug() << "\033[1;31m" << "CFGNode::keyboardNextEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    auto edge = _successors.value(_lastSuccessorIndex);
+    CFGEdge* edge = _successors.value(_lastSuccessorIndex);
 
     if (edge && !edge->isVisible())
         edge = nullptr;
@@ -223,7 +223,7 @@ CFGEdge* CFGNode::keyboardNextEdge()
         CFGEdge* maxEdge = _successors[0];
         double maxCost = maxEdge->cost;
 
-        for (auto i = 1; i < _successors.size(); ++i)
+        for (decltype(_successors.size()) i = 1; i < _successors.size(); ++i)
         {
             edge = _successors[i];
 
@@ -248,7 +248,7 @@ CFGEdge* CFGNode::keyboardPrevEdge()
     qDebug() << "\033[1;31m" << "CFGNode::keyboardPrevEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    auto edge = _predecessors.value(_lastPredecessorIndex);
+    CFGEdge* edge = _predecessors.value(_lastPredecessorIndex);
 
     if (edge && !edge->isVisible())
         edge = nullptr;
@@ -260,7 +260,7 @@ CFGEdge* CFGNode::keyboardPrevEdge()
         CFGEdge* maxEdge = _predecessors[0];
         double maxCost = maxEdge->cost;
 
-        for (auto i = 1; i < _predecessors.size(); ++i)
+        for (decltype(_predecessors.size()) i = 1; i < _predecessors.size(); ++i)
         {
             edge = _predecessors[i];
 
@@ -285,7 +285,7 @@ CFGEdge* CFGNode::nextVisibleSuccessorEdge(CFGEdge* edge)
     qDebug() << "\033[1;31m" << "CFGNode::nextVisibleSuccessorEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    auto shift = edge ? _successors.indexOf(edge) : _lastSuccessorIndex;
+    int shift = edge ? _successors.indexOf(edge) : _lastSuccessorIndex;
     auto begin = std::next(_successors.begin(), shift + 1);
     auto end = _successors.end();
 
@@ -306,7 +306,7 @@ CFGEdge* CFGNode::nextVisiblePredecessorEdge(CFGEdge* edge)
     qDebug() << "\033[1;31m" << "CFGNode::nextVisiblePredecessorEdge()" << "\033[0m";
     #endif // CFGNODE_DEBUG
 
-    auto shift = edge ? _predecessors.indexOf(edge) : _lastPredecessorIndex;
+    int shift = edge ? _predecessors.indexOf(edge) : _lastPredecessorIndex;
     auto begin = std::next(_predecessors.begin(), shift + 1);
     auto end = _predecessors.end();
 
@@ -627,8 +627,8 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
 
     if (i)
     {
-        auto message = QObject::tr("Control-flow graph requires running "
-                                    "callgrind with option --dump-instr=yes");
+        QString message = QObject::tr("Control-flow graph requires running "
+                                      "callgrind with option --dump-instr=yes");
         switch (i->type())
         {
             case ProfileContext::Function:
@@ -785,7 +785,7 @@ bool CFGExporter::createGraph()
         }
         case ProfileContext::Call:
         {
-            auto f = static_cast<TraceCall*>(_item)->caller(false);
+            TraceFunction* f = static_cast<TraceCall*>(_item)->caller(false);
             auto& BBs = f->basicBlocks();
             assert(!BBs.empty());
             _item = BBs.front();
@@ -793,7 +793,7 @@ bool CFGExporter::createGraph()
         }
         case ProfileContext::BasicBlock:
         {
-            auto func = static_cast<TraceBasicBlock*>(_item)->function();
+            TraceFunction* func = static_cast<TraceBasicBlock*>(_item)->function();
             assert(func);
             auto& BBs = func->basicBlocks();
             assert(!BBs.empty());
@@ -830,7 +830,7 @@ CFGNode* CFGExporter::buildNode(TraceBasicBlock* bb)
         nodePtr->incl = bb->inclusive()->subCost(_eventType);
         nodePtr->self = bb->subCost(_eventType);
 
-        auto nBranches = bb->nBranches();
+        TraceBasicBlock::size_type nBranches = bb->nBranches();
         for (decltype(nBranches) i = 0; i != nBranches; ++i)
             nodeIt->addSuccessorEdge(buildEdge(nodePtr, std::addressof(bb->branch(i))));
     }
@@ -860,7 +860,7 @@ CFGEdge* CFGExporter::buildEdge(CFGNode* nodeFrom, TraceBranch* branch)
             TraceBasicBlock* bbFrom = instrFrom->basicBlock();
             TraceBasicBlock* bbTo = instrTo->basicBlock();
 
-            auto edge = CFGEdge{branch};
+            CFGEdge edge{branch};
             edge.setNodeFrom(nodeFrom);
             edge.setNodeTo(bbFrom == bbTo ? nodeFrom : buildNode(bbTo));
             edgeIt = _edgeMap.insert(key, edge);
@@ -1064,9 +1064,9 @@ bool ObjdumpParser::runObjdump(TraceFunction* func)
         if (objdumpFormat.isEmpty())
             objdumpFormat = getObjDump();
 
-        auto margin = _isArm ? 4 : 20;
+        int margin = _isArm ? 4 : 20;
 
-        auto args = QStringList{"-C", "-d"};
+        QStringList args{"-C", "-d"};
         args << QStringLiteral("--start-address=0x%1").arg(_dumpStartAddr.toString()),
         args << QStringLiteral("--stop-address=0x%1").arg((_dumpEndAddr + margin).toString()),
         args << _objFile;
@@ -1298,7 +1298,7 @@ void ObjdumpParser::getObjAddr()
     _needObjAddr = false;
     while (true)
     {
-        auto readBytes = _objdump.readLine(_line.absData(), _line.capacity());
+        qint64 readBytes = _objdump.readLine(_line.absData(), _line.capacity());
         if (readBytes <= 0)
         {
             _objAddr = Addr{0};
@@ -1307,7 +1307,7 @@ void ObjdumpParser::getObjAddr()
         else
         {
             _objdumpLineno++;
-            if (readBytes == static_cast<qsizetype>(_line.capacity()))
+            if (readBytes == static_cast<qint64>(_line.capacity()))
                 qDebug("ERROR: Line %d is too long\n", _objdumpLineno);
             else if (_line.absData()[readBytes - 1] == '\n')
                 _line.setElem(readBytes - 1, '\0');
@@ -1352,7 +1352,7 @@ Addr ObjdumpParser::parseAddress()
     _line.skipWhitespaces();
 
     Addr addr;
-    auto digits = addr.set(_line.relData());
+    int digits = addr.set(_line.relData());
     _line.advance(digits);
 
     return (digits == 0 || _line.elem() != ':') ? Addr{0} : addr;
@@ -1365,7 +1365,7 @@ QString ObjdumpParser::parseEncoding()
     #endif // OBJDUMP_PARSER_DEBUG
 
     _line.skipWhitespaces();
-    auto start = _line.getPos();
+    LineBuffer::pos_type start = _line.getPos();
 
     while (true)
     {
@@ -1400,7 +1400,7 @@ QString ObjdumpParser::parseMnemonic()
     #endif // OBJDUMP_PARSER_DEBUG
 
     _line.skipWhitespaces();
-    auto start = _line.getPos();
+    LineBuffer::pos_type start = _line.getPos();
 
     while (_line.elem() && _line.elem() != ' ' && _line.elem() != '\t')
         _line.advance(1);
@@ -1416,7 +1416,7 @@ QString ObjdumpParser::parseOperands()
 
     _line.skipWhitespaces();
 
-    auto operandsPos = _line.relData();
+    char* operandsPos = _line.relData();
     auto operandsLen = std::min<std::size_t>(std::strlen(operandsPos),
                                              std::strchr(operandsPos, '#') - operandsPos);
     if (operandsLen > 0 && _line.elem(operandsLen - 1) == '\n')
@@ -1537,17 +1537,17 @@ void dumpEdgeExtended(QTextStream& ts, const TraceBranch* br)
 {
     assert(br);
 
-    auto bbFrom = br->bbFrom();
+    const TraceBasicBlock* bbFrom = br->bbFrom();
     assert(bbFrom);
 
-    auto bbFromFirstAddr = bbFrom->firstAddr().toString();
-    auto bbFromLastAddr = bbFrom->lastAddr().toString();
+    QString bbFromFirstAddr = bbFrom->firstAddr().toString();
+    QString bbFromLastAddr = bbFrom->lastAddr().toString();
 
-    auto bbTo = br->bbTo();
+    const TraceBasicBlock* bbTo = br->bbTo();
     assert(bbTo);
 
-    auto bbToFirstAddr = bbTo->firstAddr().toString();
-    auto bbToLastAddr = bbTo->lastAddr().toString();
+    QString bbToFirstAddr = bbTo->firstAddr().toString();
+    QString bbToLastAddr = bbTo->lastAddr().toString();
 
     switch (br->brType())
     {
@@ -1589,17 +1589,17 @@ void dumpEdgeReduced(QTextStream& ts, const TraceBranch* br)
 {
     assert(br);
 
-    auto bbFrom = br->bbFrom();
+    const TraceBasicBlock* bbFrom = br->bbFrom();
     assert(bbFrom);
 
-    auto bbFromFirstAddr = bbFrom->firstAddr().toString();
-    auto bbFromLastAddr = bbFrom->lastAddr().toString();
+    QString bbFromFirstAddr = bbFrom->firstAddr().toString();
+    QString bbFromLastAddr = bbFrom->lastAddr().toString();
 
-    auto bbTo = br->bbTo();
+    const TraceBasicBlock* bbTo = br->bbTo();
     assert(bbTo);
 
-    auto bbToFirstAddr = bbTo->firstAddr().toString();
-    auto bbToLastAddr = bbTo->lastAddr().toString();
+    QString bbToFirstAddr = bbTo->firstAddr().toString();
+    QString bbToLastAddr = bbTo->lastAddr().toString();
 
     switch (br->brType())
     {
@@ -1638,17 +1638,17 @@ void dumpEdgeReducedToExtended(QTextStream& ts, const TraceBranch* br)
 {
     assert(br);
 
-    auto bbFrom = br->bbFrom();
+    const TraceBasicBlock* bbFrom = br->bbFrom();
     assert(bbFrom);
 
-    auto bbFromFirstAddr = bbFrom->firstAddr().toString();
-    auto bbFromLastAddr = bbFrom->lastAddr().toString();
+    QString bbFromFirstAddr = bbFrom->firstAddr().toString();
+    QString bbFromLastAddr = bbFrom->lastAddr().toString();
 
-    auto bbTo = br->bbTo();
+    const TraceBasicBlock* bbTo = br->bbTo();
     assert(bbTo);
 
-    auto bbToFirstAddr = bbTo->firstAddr().toString();
-    auto bbToLastAddr = bbTo->lastAddr().toString();
+    QString bbToFirstAddr = bbTo->firstAddr().toString();
+    QString bbToLastAddr = bbTo->lastAddr().toString();
 
     switch (br->brType())
     {
@@ -1691,17 +1691,17 @@ void dumpEdgeExtendedToReduced(QTextStream& ts, const TraceBranch* br)
 {
     assert(br);
 
-    auto bbFrom = br->bbFrom();
+    const TraceBasicBlock* bbFrom = br->bbFrom();
     assert(bbFrom);
 
-    auto bbFromFirstAddr = bbFrom->firstAddr().toString();
-    auto bbFromLastAddr = bbFrom->lastAddr().toString();
+    QString bbFromFirstAddr = bbFrom->firstAddr().toString();
+    QString bbFromLastAddr = bbFrom->lastAddr().toString();
 
-    auto bbTo = br->bbTo();
+    const TraceBasicBlock* bbTo = br->bbTo();
     assert(bbTo);
 
-    auto bbToFirstAddr = bbTo->firstAddr().toString();
-    auto bbToLastAddr = bbTo->lastAddr().toString();
+    QString bbToFirstAddr = bbTo->firstAddr().toString();
+    QString bbToLastAddr = bbTo->lastAddr().toString();
 
     switch (br->brType())
     {
@@ -1807,14 +1807,14 @@ CFGNode* CFGExporter::toCFGNode(QString s)
 
     if (s[0] == 'b')
     {
-        auto i = s.indexOf('b', 1);
+        qsizetype i = s.indexOf('b', 1);
         if (i != -1)
         {
             bool ok;
-            auto from = s.mid(1, i - 1).toULongLong(&ok, 16);
+            qulonglong from = s.mid(1, i - 1).toULongLong(&ok, 16);
             if (ok)
             {
-                auto to = s.mid(i + 1).toULongLong(&ok, 16);
+                qulonglong to = s.mid(i + 1).toULongLong(&ok, 16);
                 if (ok)
                 {
                     auto it = _nodeMap.find(std::make_pair(Addr{from}, Addr{to}));
@@ -1856,7 +1856,7 @@ bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
         QString dotName;
         QString dotRenderType;
 
-        auto mime = saveDialog.selectedMimeTypeFilter();
+        QString mime = saveDialog.selectedMimeTypeFilter();
         if (mime == filter1)
         {
             dotName = intendedName;
@@ -1920,8 +1920,8 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     setBackColor(Qt::white);
     update();
 
-    auto total = node->basicBlock()->function()->subCost(view->eventType());
-    auto selfPercentage = 100.0 * _node->self / total;
+    SubCost total = node->basicBlock()->function()->subCost(view->eventType());
+    double selfPercentage = 100.0 * _node->self / total;
 
     // set inclusive cost
     if (GlobalConfig::showPercentage())
@@ -1965,8 +1965,8 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
     }
     else
     {
-        auto step = rectangle.height() / (_node->instrNumber() + 1);
-        auto topLineY = rectangle.y();
+        qreal step = rectangle.height() / (_node->instrNumber() + 1);
+        qreal topLineY = rectangle.y();
 
         p->fillRect(rectangle.x() + 1, topLineY + 1, rectangle.width(), step, Qt::gray);
 
@@ -2014,7 +2014,7 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
     qDebug() << "\033[1;31m" << "CanvasCFGEdgeLabel::CanvasCFGEdgeLabel()" << "\033[0m";
     #endif // CANVASCFGEDGELABEL_DEBUG
 
-    auto e = _ce->edge();
+    CFGEdge* e = _ce->edge();
     if (!e)
         return;
 
@@ -2034,7 +2034,7 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
         setText(1, SubCost(e->cost).pretty());
     #endif
 
-    auto count = e->branch()->executedCount();
+    SubCost count = e->branch()->executedCount();
     setText(0, QString::number(count));
 
     #if 0
@@ -2056,7 +2056,7 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
     if (e->bbTo() && e->bbFrom() == e->bbTo())
     {
         QFontMetrics fm{font()};
-        auto pixmap = QIcon::fromTheme(QStringLiteral("edit-undo")).pixmap(fm.height());
+        QPixmap pixmap = QIcon::fromTheme(QStringLiteral("edit-undo")).pixmap(fm.height());
         setPixmap(0, pixmap);
     }
     else
@@ -2136,7 +2136,7 @@ void CanvasCFGEdge::setLabel(CanvasCFGEdgeLabel* l)
 
     if (_label)
     {
-        auto tip = QStringLiteral("%1 (%2)").arg(l->text(0)).arg(l->text(1));
+        QString tip = QStringLiteral("%1 (%2)").arg(l->text(0)).arg(l->text(1));
 
         setToolTip(tip);
         if (_arrow)
@@ -2169,7 +2169,7 @@ void CanvasCFGEdge::setControlPoints(const QPolygon& p)
 
     QPainterPath path;
     path.moveTo(p[0]);
-    for (auto i = 1; i < p.size(); i += 3)
+    for (decltype(p.size()) i = 1; i < p.size(); i += 3)
         path.cubicTo(p[i], p[(i + 1) % p.size()], p[(i + 2) % p.size()]);
 
     setPath(path);
@@ -2194,12 +2194,12 @@ void CanvasCFGEdge::paint(QPainter* p, const QStyleOptionGraphicsItem* option, Q
     p->setRenderHint(QPainter::Antialiasing);
 
 #if QT_VERSION >= 0x040600
-    auto levelOfDetail = option->levelOfDetailFromTransform(p->transform());
+    qreal levelOfDetail = option->levelOfDetailFromTransform(p->transform());
 #else
-    auto levelOfDetail = option->levelOfDetail;
+    qreal levelOfDetail = option->levelOfDetail;
 #endif
 
-    auto mypen = pen();
+    QPen mypen = pen();
 
     mypen.setWidthF(isSelected() ? 2.0 : 1.0 / levelOfDetail * _thickness);
     p->setPen(mypen);
@@ -2307,8 +2307,8 @@ void ControlFlowGraphView::zoomRectMoved(qreal dx, qreal dy)
     //FIXME if (leftMargin()>0) dx = 0;
     //FIXME if (topMargin()>0) dy = 0;
 
-    auto hBar = horizontalScrollBar();
-    auto vBar = verticalScrollBar();
+    QScrollBar* hBar = horizontalScrollBar();
+    QScrollBar* vBar = verticalScrollBar();
     hBar->setValue(hBar->value() + static_cast<int>(dx));
     vBar->setValue(vBar->value() + static_cast<int>(dy));
 }
@@ -2348,7 +2348,7 @@ void ControlFlowGraphView::showRenderError(const QString& text)
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::showRenderError" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    auto err = QObject::tr("No graph available because the layouting process failed.\n");
+    QString err = QObject::tr("No graph available because the layouting process failed.\n");
     if (_renderProcess)
         err += QObject::tr("Trying to run the following command did not work:\n"
                            "'%1'\n").arg(_renderProcessCmdLine);
@@ -2471,7 +2471,7 @@ void ControlFlowGraphView::parseDot()
     QString cmd;
     for (auto lineno = 1; ; lineno++)
     {
-        auto line = dotStream.readLine();
+        QString line = dotStream.readLine();
 
         if (line.isNull())
             break;
@@ -2679,7 +2679,7 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
 
     QColor arrowColor = getArrowColor(edge);
 
-    auto sItem = createEdge(edge, poly, arrowColor);
+    CanvasCFGEdge* sItem = createEdge(edge, poly, arrowColor);
 
     _scene->addItem(sItem);
     _scene->addItem(createArrow(sItem, poly, arrowColor));
@@ -2715,7 +2715,7 @@ CFGEdge* ControlFlowGraphView::getEdgeFromDot(QTextStream& lineStream, int linen
     addrFrom.remove(0, 1);
 
     bool ok;
-    auto from = addrFrom.toULongLong(&ok, 16);
+    qulonglong from = addrFrom.toULongLong(&ok, 16);
     assert(ok);
     Addr fromAddr{from};
 
@@ -2723,7 +2723,7 @@ CFGEdge* ControlFlowGraphView::getEdgeFromDot(QTextStream& lineStream, int linen
     lineStream >> addrTo;
     addrTo.remove(addrTo.length() - 1, 1);
 
-    auto to = addrTo.toULongLong(&ok, 16);
+    qulonglong to = addrTo.toULongLong(&ok, 16);
     assert(ok);
     Addr toAddr{to};
 
@@ -2951,8 +2951,8 @@ void ControlFlowGraphView::mouseMoveEvent(QMouseEvent* event)
     if (_isMoving)
     {
         QPoint delta = event->pos() - _lastPos;
-        auto hBar = horizontalScrollBar();
-        auto vBar = verticalScrollBar();
+        QScrollBar* hBar = horizontalScrollBar();
+        QScrollBar* vBar = verticalScrollBar();
 
         hBar->setValue(hBar->value() - delta.x());
         vBar->setValue(vBar->value() - delta.y());
@@ -3036,15 +3036,16 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
     popup.addSeparator();
 
-    auto exportMenu = popup.addMenu(QObject::tr("Export Graph"));
+    QMenu* exportMenu = popup.addMenu(QObject::tr("Export Graph"));
     actions[MenuActions::exportAsDot] = exportMenu->addAction(QObject::tr("As DOT file..."));
     actions[MenuActions::exportAsImage] = exportMenu->addAction(QObject::tr("As Image..."));
+
     popup.addSeparator();
 
     addLayoutMenu(popup);
     addZoomPosMenu(popup);
 
-    auto action = popup.exec(event->globalPos());
+    QAction* action = popup.exec(event->globalPos());
     auto index = std::distance(actions.begin(),
                                std::find(actions.begin(), actions.end(), action));
 
@@ -3098,13 +3099,13 @@ void ControlFlowGraphView::exportGraphAsImage()
 
     assert(_scene);
 
-    auto fileName = QFileDialog::getSaveFileName(this,
-                                                 QObject::tr("Export Graph as Image"),
-                                                 QString{},
-                                                 QObject::tr("Images (*.png *.jpg)"));
+    QString fileName = QFileDialog::getSaveFileName(this,
+                                                    QObject::tr("Export Graph as Image"),
+                                                    QString{},
+                                                    QObject::tr("Images (*.png *.jpg)"));
     if (!fileName.isEmpty())
     {
-        auto rect = _scene->sceneRect().toRect();
+        QRect rect = _scene->sceneRect().toRect();
         QPixmap pix{rect.width(), rect.height()};
         QPainter painter{std::addressof(pix)};
         _scene->render(std::addressof(painter));
@@ -3170,7 +3171,7 @@ void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
     {
         if (_selectedNode)
         {
-            auto key = _exporter.transformKeyIfNeeded(e->key());
+            int key = _exporter.transformKeyIfNeeded(e->key());
             CFGEdge* edge = getEdgeToSelect(_selectedNode, key);
 
             if (edge && edge->branch())
@@ -3178,7 +3179,7 @@ void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
         }
         else if (_selectedEdge)
         {
-            auto key = _exporter.transformKeyIfNeeded(e->key());
+            int key = _exporter.transformKeyIfNeeded(e->key());
             auto [node, edge] = getNodeOrEdgeToSelect(_selectedEdge, key);
 
             if (node && node->basicBlock())
@@ -3200,7 +3201,7 @@ void ControlFlowGraphView::movePointOfView(QKeyEvent* e)
     auto dx = [this]{ return mapToScene(width(), 0) - mapToScene(0, 0); };
     auto dy = [this]{ return mapToScene(0, height()) - mapToScene(0, 0); };
 
-    auto center = mapToScene(viewport()->rect().center());
+    QPointF center = mapToScene(viewport()->rect().center());
     switch(e->key())
     {
         case Qt::Key_Home:
@@ -3211,37 +3212,37 @@ void ControlFlowGraphView::movePointOfView(QKeyEvent* e)
             break;
         case Qt::Key_PageUp:
         {
-            auto delta = dy();
+            QPointF delta = dy();
             centerOn(center + QPointF(-delta.x() / 2.0, -delta.y() / 2.0));
             break;
         }
         case Qt::Key_PageDown:
         {
-            auto delta = dy();
+            QPointF delta = dy();
             centerOn(center + QPointF(delta.x() / 2.0, delta.y() / 2.0));
             break;
         }
         case Qt::Key_Left:
         {
-            auto delta = dx();
+            QPointF delta = dx();
             centerOn(center + QPointF(-delta.x() / 10.0, -delta.y() / 10.0));
             break;
         }
         case Qt::Key_Right:
         {
-            auto delta = dx();
+            QPointF delta = dx();
             centerOn(center + QPointF(delta.x() / 10.0, delta.y() / 10.0));
             break;
         }
         case Qt::Key_Down:
         {
-            auto delta = dy();
+            QPointF delta = dy();
             centerOn(center + QPointF(delta.x() / 10.0, delta.y() / 10.0));
             break;
         }
         case Qt::Key_Up:
         {
-            auto delta = dy();
+            QPointF delta = dy();
             centerOn(center + QPointF(-delta.x() / 10, -delta.y() / 10));
             break;
         }
@@ -3261,8 +3262,8 @@ void ControlFlowGraphView::scrollContentsBy(int dx, int dy)
     // call QGraphicsView implementation
     QGraphicsView::scrollContentsBy(dx, dy);
 
-    auto topLeft = mapToScene(QPoint(0, 0));
-    auto bottomRight = mapToScene(QPoint(width(), height()));
+    QPointF topLeft = mapToScene(QPoint(0, 0));
+    QPointF bottomRight = mapToScene(QPoint(width(), height()));
 
     QRectF z{topLeft, bottomRight};
     _panningView->setZoomRect(z);
@@ -3274,8 +3275,8 @@ namespace
 double calculate_zoom (QSize s, int cWidth, int cHeight)
 {
     // first, assume use of 1/3 of width/height (possible larger)
-    auto zoom = (s.width() * cHeight < s.height() * cWidth) ? .33 * s.height() / cHeight
-                                                            : .33 * s.width()  / cWidth;
+    qreal zoom = (s.width() * cHeight < s.height() * cWidth) ? .33 * s.height() / cHeight
+                                                             : .33 * s.width()  / cWidth;
 
     // fit to widget size
     if (cWidth * zoom > s.width())
@@ -3318,7 +3319,7 @@ void ControlFlowGraphView::updateSizes(QSize s)
         return;
     }
 
-    auto zoom = calculate_zoom (s, cWidth, cHeight);
+    double zoom = calculate_zoom (s, cWidth, cHeight);
 
     /* Comparing floating point values??? WTF??? */
     if (zoom != _panningZoom) {
@@ -3337,12 +3338,12 @@ void ControlFlowGraphView::updateSizes(QSize s)
 
     _panningView->centerOn(_scene->width()/2, _scene->height()/2);
 
-    auto cvW = _panningView->width();
-    auto cvH = _panningView->height();
-    auto x = width() - cvW - verticalScrollBar()->width() - 2;
-    auto y = height() - cvH - horizontalScrollBar()->height() - 2;
+    int cvW = _panningView->width();
+    int cvH = _panningView->height();
+    int x = width() - cvW - verticalScrollBar()->width() - 2;
+    int y = height() - cvH - horizontalScrollBar()->height() - 2;
 
-    auto zp = _zoomPosition;
+    ZoomPosition zp = _zoomPosition;
     if (zp == ZoomPosition::Auto) {
         auto tlCols = items(QRect(0, 0, cvW, cvH)).count();
         auto trCols = items(QRect(x, 0, cvW, cvH)).count();
@@ -3386,7 +3387,7 @@ void ControlFlowGraphView::updateSizes(QSize s)
         zp = _lastAutoPosition;
     }
 
-    auto newZoomPos = QPoint{0, 0};
+    QPoint newZoomPos{0, 0};
     switch (zp) {
         break;
     case ZoomPosition::TopRight:
@@ -3577,7 +3578,7 @@ void ControlFlowGraphView::refresh(bool reset)
     _prevSelectedNode = _selectedNode;
     if (_selectedNode)
     {
-        auto center = _selectedNode->canvasNode()->rect().center();
+        QPointF center = _selectedNode->canvasNode()->rect().center();
         _prevSelectedPos = mapFromScene(center);
     }
     else
@@ -3637,7 +3638,7 @@ void ControlFlowGraphView::refresh(bool reset)
     qDebug("ControlFlowGraphView::refresh: Starting process %p, \'%s\'",
            _renderProcess, qPrintable(_renderProcessCmdLine));
 
-    auto process = _renderProcess;
+    QProcess* process = _renderProcess;
     process->start(renderProgram, renderArgs);
     if (reset)
         _exporter.reset(_selectedItem ? _selectedItem : _activeItem, _eventType, _groupType);

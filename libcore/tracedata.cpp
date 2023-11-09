@@ -2688,7 +2688,7 @@ void TraceFunction::constructBasicBlocks()
     for (auto it = _basicBlocks.begin(), ite = _basicBlocks.end(); it != ite; ++it)
     {
         TraceBasicBlock* bbPtr = *it;
-        auto nBranches = bbPtr->nBranches();
+        TraceBasicBlock::size_type nBranches = bbPtr->nBranches();
 
         if (nBranches == 0)
             continue;
@@ -2697,7 +2697,7 @@ void TraceFunction::constructBasicBlocks()
             auto nextBBIt = std::next(it);
             if (nextBBIt != ite)
             {
-                auto& falseBr = bbPtr->branch(1);
+                TraceBranch& falseBr = bbPtr->branch(1);
                 falseBr.setInstrTo((*nextBBIt)->firstInstr());
             }
         }
@@ -3907,7 +3907,7 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
     {
         _branches.resize(nJumps);
 
-        for (auto i = 0; i != nJumps; ++i)
+        for (decltype(nJumps) i = 0; i != nJumps; ++i)
         {
             TraceInstrJump* jump = jumps[i];
             assert(jump);
