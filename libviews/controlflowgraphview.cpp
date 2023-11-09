@@ -578,11 +578,17 @@ void CFGExporter::setDetailsLevel(TraceFunction* func, DetailsLevel level)
 
 void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
 {
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::minimizeBBsWithCostLessThan()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
     for (auto& node : _nodeMap)
+    {
         if (node.self <= minimalCost)
             _detailsMap[node.basicBlock()] = DetailsLevel::pcOnly;
         else
             _detailsMap[node.basicBlock()] = DetailsLevel::full;
+    }
 }
 
 const CFGNode* CFGExporter::findNode(TraceBasicBlock* bb) const
@@ -887,6 +893,10 @@ CFGEdge* CFGExporter::buildEdge(CFGNode* nodeFrom, TraceBranch* branch)
 
 void CFGExporter::addPredecessors()
 {
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::addPredecessors()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
     for (auto &node : _nodeMap)
         for (auto branch : node.basicBlock()->predecessors())
             node.addPredecessorEdge(findEdge(branch->instrFrom()->addr(),
@@ -895,6 +905,10 @@ void CFGExporter::addPredecessors()
 
 int CFGExporter::transformKeyIfNeeded(int key)
 {
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::transformKeyIfNeeded()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
     if (_layout == Layout::LeftRight)
     {
         switch (key)
@@ -2281,6 +2295,10 @@ bool ControlFlowGraphView::isReduced(CFGNode* node) const
 
 TraceFunction* ControlFlowGraphView::getFunction()
 {
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::getFunction" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
     assert(_activeItem);
 
     switch (_activeItem->type())
@@ -2849,6 +2867,10 @@ void ControlFlowGraphView::layoutTriggered(QAction* a)
 
 void ControlFlowGraphView::minimizationTriggered(QAction* a)
 {
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::minimizationTriggered" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
     TraceFunction* func = getFunction();
     uint64 totalCost = func->subCost(_eventType).v;
     int percentage = a->data().toInt();
@@ -3090,6 +3112,10 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 QAction* ControlFlowGraphView::addDetailsAction(QMenu* m, const QString& descr, CFGNode* node,
                                                 CFGExporter::DetailsLevel level)
 {
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addDetailsAction" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
     QAction* a = m->addAction(descr);
 
     a->setData(static_cast<int>(level));
@@ -3101,6 +3127,10 @@ QAction* ControlFlowGraphView::addDetailsAction(QMenu* m, const QString& descr, 
 
 QAction* ControlFlowGraphView::addStopLayoutAction(QMenu& topLevel)
 {
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addStopLayoutAction" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
     if (_renderProcess)
     {
         QAction* stopLayout_ = topLevel.addAction(QObject::tr("Stop Layouting"));
@@ -3114,6 +3144,10 @@ QAction* ControlFlowGraphView::addStopLayoutAction(QMenu& topLevel)
 
 QAction* ControlFlowGraphView::addMinimizationAction(QMenu* m, const QString& descr, int percentage)
 {
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addMinimizationAction" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
     QAction* a = m->addAction(descr);
 
     a->setData(percentage);
@@ -3715,6 +3749,10 @@ void ControlFlowGraphView::showText(const QString& text)
 
 QAction* ControlFlowGraphView::addZoomPosAction(QMenu* m, QString s, ZoomPosition pos)
 {
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addZoomPosAction" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
     QAction* a = m->addAction(s);
 
     a->setData(static_cast<int>(pos));
@@ -3779,6 +3817,10 @@ QMenu* ControlFlowGraphView::addLayoutMenu(QMenu* menu)
 
 QMenu* ControlFlowGraphView::addMinimizationMenu(QMenu* menu)
 {
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addMinimizationMenu" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
     assert(menu);
 
     QMenu* m = menu->addMenu(QObject::tr("Minimization"));
