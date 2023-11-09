@@ -468,8 +468,8 @@ private:
     // called from keyPressEvent
     void movePointOfView(QKeyEvent* e);
 
-    QAction* addZoomPosAction(QMenu*, QString, ControlFlowGraphView::ZoomPosition);
-    QAction* addLayoutAction(QMenu*, QString, CFGExporter::Layout);
+    QAction* addZoomPosAction(QMenu* m, const QString& descr, ZoomPosition pos);
+    QAction* addLayoutAction(QMenu* m, const QString& descr, CFGExporter::Layout);
     QAction* addStopLayoutAction(QMenu&);
     QAction* addDetailsAction(QMenu* m, const QString& descr, CFGNode* node,
                                                 CFGExporter::DetailsLevel level);
