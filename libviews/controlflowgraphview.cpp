@@ -2974,8 +2974,6 @@ namespace
 
 enum MenuActions
 {
-    activateBasicBlock,
-    activateBranch,
     stopLayout,
     exportAsDot,
     exportAsImage,
@@ -2999,8 +2997,6 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
     _isMoving = false;
 
     std::array<QAction*, MenuActions::nActions> actions;
-    actions[MenuActions::activateBasicBlock] = nullptr;
-    actions[MenuActions::activateBranch] = nullptr;
 
     QMenu popup;
     QGraphicsItem* item = itemAt(event->pos());
@@ -3008,19 +3004,12 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
     TraceFunction* func = getFunction();
 
     TraceBasicBlock* bb = nullptr;
-    TraceBranch* branch = nullptr;
     if (item)
     {
         if (item->type() == CanvasParts::Node)
         {
             CFGNode* node = static_cast<CanvasCFGNode*>(item)->node();
             bb = node->basicBlock();
-
-            actions[MenuActions::activateBasicBlock] =
-            popup.addAction(QObject::tr("Go to \'%1\'")
-                            .arg(GlobalConfig::shortenSymbol(node->basicBlock()->prettyName())));
-
-            popup.addSeparator();
 
             QMenu* detailsMenu = popup.addMenu(QObject::tr("Visualization"));
             actions[MenuActions::pcOnlyLocal] =
@@ -3031,25 +3020,6 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
                                      CFGExporter::DetailsLevel::full);
 
             popup.addSeparator();
-        }
-        else
-        {
-            if (item->type() == CanvasParts::EdgeLabel)
-                item = static_cast<CanvasCFGEdgeLabel*>(item)->canvasEdge();
-            else if (item->type() == CanvasParts::EdgeArrow)
-                item = static_cast<CanvasCFGEdgeArrow*>(item)->canvasEdge();
-
-            if (item->type() == CanvasParts::Edge)
-            {
-                branch = static_cast<CanvasCFGEdge*>(item)->edge()->branch();
-                if (branch)
-                {
-                    actions[MenuActions::activateBranch] =
-                            popup.addAction(QObject::tr("Go to \'%1\'")
-                                            .arg(GlobalConfig::shortenSymbol(branch->prettyName())));
-                    popup.addSeparator();
-                }
-            }
         }
     }
 
@@ -3077,12 +3047,6 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
     switch (index)
     {
-        case MenuActions::activateBasicBlock:
-            activated(bb);
-            break;
-        case MenuActions::activateBranch:
-            activated(branch);
-            break;
         case MenuActions::stopLayout:
             stopRendering();
             break;
