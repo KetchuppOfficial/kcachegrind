@@ -470,10 +470,10 @@ private:
 
     QAction* addZoomPosAction(QMenu* m, const QString& descr, ZoomPosition pos);
     QAction* addLayoutAction(QMenu* m, const QString& descr, CFGExporter::Layout);
-    QAction* addStopLayoutAction(QMenu&);
-    QAction* addDetailsAction(QMenu* m, const QString& descr, CFGNode* node,
-                                                CFGExporter::DetailsLevel level);
-    QAction* addMinimizationAction(QMenu* m, const QString& descr, int percentage);
+    QAction* addStopLayoutAction(QMenu& menu);
+    QAction* addDetailsAction(QMenu* menu, const QString& descr, CFGNode* node,
+                              CFGExporter::DetailsLevel level);
+    QAction* addMinimizationAction(QMenu* menu, const QString& descr, int percentage);
 
     QMenu* addZoomPosMenu(QMenu& menu);
     QMenu* addLayoutMenu(QMenu& menu);

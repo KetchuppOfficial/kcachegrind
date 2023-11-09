@@ -3678,13 +3678,13 @@ void ControlFlowGraphView::showText(const QString& text)
     _panningView->hide();
 }
 
-QAction* ControlFlowGraphView::addZoomPosAction(QMenu* m, const QString& descr, ZoomPosition pos)
+QAction* ControlFlowGraphView::addZoomPosAction(QMenu* menu, const QString& descr, ZoomPosition pos)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addZoomPosAction" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    QAction* a = m->addAction(descr);
+    QAction* a = menu->addAction(descr);
 
     a->setData(static_cast<int>(pos));
     a->setCheckable(true);
@@ -3693,14 +3693,14 @@ QAction* ControlFlowGraphView::addZoomPosAction(QMenu* m, const QString& descr, 
     return a;
 }
 
-QAction* ControlFlowGraphView::addLayoutAction(QMenu* m, const QString& descr,
+QAction* ControlFlowGraphView::addLayoutAction(QMenu* menu, const QString& descr,
                                                CFGExporter::Layout layout)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addLayoutAction" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    QAction* a = m->addAction(descr);
+    QAction* a = menu->addAction(descr);
 
     a->setData(static_cast<int>(layout));
     a->setCheckable(true);
@@ -3709,7 +3709,7 @@ QAction* ControlFlowGraphView::addLayoutAction(QMenu* m, const QString& descr,
     return a;
 }
 
-QAction* ControlFlowGraphView::addStopLayoutAction(QMenu& topLevel)
+QAction* ControlFlowGraphView::addStopLayoutAction(QMenu& menu)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addStopLayoutAction" << "\033[0m";
@@ -3717,8 +3717,8 @@ QAction* ControlFlowGraphView::addStopLayoutAction(QMenu& topLevel)
 
     if (_renderProcess)
     {
-        QAction* stopLayout_ = topLevel.addAction(QObject::tr("Stop Layouting"));
-        topLevel.addSeparator();
+        QAction* stopLayout_ = menu.addAction(QObject::tr("Stop Layouting"));
+        menu.addSeparator();
 
         return stopLayout_;
     }
@@ -3726,14 +3726,14 @@ QAction* ControlFlowGraphView::addStopLayoutAction(QMenu& topLevel)
         return nullptr;
 }
 
-QAction* ControlFlowGraphView::addDetailsAction(QMenu* m, const QString& descr, CFGNode* node,
+QAction* ControlFlowGraphView::addDetailsAction(QMenu* menu, const QString& descr, CFGNode* node,
                                                 CFGExporter::DetailsLevel level)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addDetailsAction" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    QAction* a = m->addAction(descr);
+    QAction* a = menu->addAction(descr);
 
     a->setData(static_cast<int>(level));
     a->setCheckable(true);
@@ -3742,13 +3742,14 @@ QAction* ControlFlowGraphView::addDetailsAction(QMenu* m, const QString& descr, 
     return a;
 }
 
-QAction* ControlFlowGraphView::addMinimizationAction(QMenu* m, const QString& descr, int percentage)
+QAction* ControlFlowGraphView::addMinimizationAction(QMenu* menu, const QString& descr,
+                                                     int percentage)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addMinimizationAction" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    QAction* a = m->addAction(descr);
+    QAction* a = menu->addAction(descr);
 
     a->setData(percentage);
     a->setCheckable(true);
@@ -3765,19 +3766,19 @@ QMenu* ControlFlowGraphView::addZoomPosMenu(QMenu& menu)
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addZoomPosMenu" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    QMenu* m = menu.addMenu(QObject::tr("Birds-eye View"));
+    QMenu* submenu = menu.addMenu(QObject::tr("Birds-eye View"));
 
-    addZoomPosAction(m, QObject::tr("Top Left"), ZoomPosition::TopLeft);
-    addZoomPosAction(m, QObject::tr("Top Right"), ZoomPosition::TopRight);
-    addZoomPosAction(m, QObject::tr("Bottom Left"), ZoomPosition::BottomLeft);
-    addZoomPosAction(m, QObject::tr("Bottom Right"), ZoomPosition::BottomRight);
-    addZoomPosAction(m, QObject::tr("Automatic"), ZoomPosition::Auto);
-    addZoomPosAction(m, QObject::tr("Hide"), ZoomPosition::Hide);
+    addZoomPosAction(submenu, QObject::tr("Top Left"), ZoomPosition::TopLeft);
+    addZoomPosAction(submenu, QObject::tr("Top Right"), ZoomPosition::TopRight);
+    addZoomPosAction(submenu, QObject::tr("Bottom Left"), ZoomPosition::BottomLeft);
+    addZoomPosAction(submenu, QObject::tr("Bottom Right"), ZoomPosition::BottomRight);
+    addZoomPosAction(submenu, QObject::tr("Automatic"), ZoomPosition::Auto);
+    addZoomPosAction(submenu, QObject::tr("Hide"), ZoomPosition::Hide);
 
-    connect(m, &QMenu::triggered,
+    connect(submenu, &QMenu::triggered,
             this, &ControlFlowGraphView::zoomPosTriggered);
 
-    return m;
+    return submenu;
 }
 
 QMenu* ControlFlowGraphView::addLayoutMenu(QMenu& menu)
@@ -3786,15 +3787,15 @@ QMenu* ControlFlowGraphView::addLayoutMenu(QMenu& menu)
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addLayoutMenu" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    QMenu* m = menu.addMenu(QObject::tr("Layout"));
+    QMenu* submenu = menu.addMenu(QObject::tr("Layout"));
 
-    addLayoutAction(m, QObject::tr("Top to Down"), CFGExporter::Layout::TopDown);
-    addLayoutAction(m, QObject::tr("Left to Right"), CFGExporter::Layout::LeftRight);
+    addLayoutAction(submenu, QObject::tr("Top to Down"), CFGExporter::Layout::TopDown);
+    addLayoutAction(submenu, QObject::tr("Left to Right"), CFGExporter::Layout::LeftRight);
 
-    connect(m, &QMenu::triggered,
+    connect(submenu, &QMenu::triggered,
             this, &ControlFlowGraphView::layoutTriggered);
 
-    return m;
+    return submenu;
 }
 
 QMenu* ControlFlowGraphView::addMinimizationMenu(QMenu& menu)
@@ -3803,15 +3804,15 @@ QMenu* ControlFlowGraphView::addMinimizationMenu(QMenu& menu)
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addMinimizationMenu" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    QMenu* m = menu.addMenu(QObject::tr("Minimization"));
+    QMenu* submenu = menu.addMenu(QObject::tr("Minimization"));
 
-    addMinimizationAction(m, QObject::tr("Undefined"), -1);
-    m->addSeparator();
+    addMinimizationAction(submenu, QObject::tr("Undefined"), -1);
+    submenu->addSeparator();
     for (auto percentage = 0; percentage <= 100; percentage += 10)
-        addMinimizationAction(m, QObject::tr("%1%").arg(percentage), percentage);
+        addMinimizationAction(submenu, QObject::tr("%1%").arg(percentage), percentage);
 
-    connect(m, &QMenu::triggered,
+    connect(submenu, &QMenu::triggered,
             this, &ControlFlowGraphView::minimizationTriggered);
 
-    return m;
+    return submenu;
 }
