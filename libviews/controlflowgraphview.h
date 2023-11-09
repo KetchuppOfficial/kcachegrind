@@ -252,10 +252,6 @@ public:
 
 private:
     bool createGraph();
-    CFGNode* buildNode(TraceBasicBlock* bb);
-    CFGEdge* buildEdge(CFGNode* nodeFrom, TraceBranch* branch);
-    void addPredecessors();
-
     bool fillInstrStrings(TraceFunction* func);
 
     void dumpNodes(QTextStream& ts);
