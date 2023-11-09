@@ -827,7 +827,6 @@ CFGNode* CFGExporter::buildNode(TraceBasicBlock* bb)
     {
         nodeIt = _nodeMap.insert(key, CFGNode{bb});
         CFGNode* nodePtr = std::addressof(*nodeIt);
-        nodePtr->incl = bb->inclusive()->subCost(_eventType);
         nodePtr->self = bb->subCost(_eventType);
 
         TraceBasicBlock::size_type nBranches = bb->nBranches();
