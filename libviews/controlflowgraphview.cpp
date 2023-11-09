@@ -839,7 +839,7 @@ CFGNode* CFGExporter::buildNode(TraceBasicBlock* bb)
     if (nodeIt == _nodeMap.end())
     {
         nodeIt = _nodeMap.insert(key, CFGNode{bb});
-        auto nodePtr = std::addressof(*nodeIt);
+        CFGNode* nodePtr = std::addressof(*nodeIt);
         nodePtr->incl = bb->inclusive()->subCost(_eventType);
         nodePtr->self = bb->subCost(_eventType);
 
@@ -2807,32 +2807,6 @@ void ControlFlowGraphView::centerOnSelectedNodeOrEdge()
     }
 }
 
-#if 0
-void ControlFlowGraphView::predecessorDepthTriggered(QAction* a)
-{
-    _maxCallerDepth = a->data().toInt(nullptr);
-    refresh();
-}
-
-void ControlFlowGraphView::successorDepthTriggered(QAction* a)
-{
-    _maxCalleeDepth = a->data().toInt(nullptr);
-    refresh();
-}
-
-void ControlFlowGraphView::nodeLimitTriggered(QAction* a)
-{
-    _funcLimit = a->data().toInt(nullptr);
-    refresh();
-}
-
-void ControlFlowGraphView::branchLimitTriggered(QAction* a)
-{
-    _callLimit = a->data().toInt(nullptr);
-    refresh();
-}
-#endif
-
 void ControlFlowGraphView::zoomPosTriggered(QAction* a)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
@@ -3766,52 +3740,6 @@ void ControlFlowGraphView::showText(const QString& text)
     _panningView->hide();
 }
 
-#if 0
-QAction* ControlFlowGraphView::addPredecessorDepthAction(QMenu* m, QString s, int depth)
-{
-    QAction* a = m->addAction(s);
-
-    a->setData(depth);
-    a->setCheckable(true);
-    a->setChecked(_maxCallerDepth == depth);
-
-    return a;
-}
-
-QAction* ControlFlowGraphView::addSuccessorDepthAction(QMenu* m, QString s, int depth)
-{
-    QAction* a = m->addAction(s);
-
-    a->setData(depth);
-    a->setCheckable(true);
-    a->setChecked(_maxCalleeDepth == depth);
-
-    return a;
-}
-
-QAction* ControlFlowGraphView::addNodeLimitAction(QMenu* m, QString s, double limit)
-{
-    QAction* a = m->addAction(s);
-
-    a->setData(limit);
-    a->setCheckable(true);
-    a->setChecked(_funcLimit == limit);
-
-    return a;
-}
-
-QAction* ControlFlowGraphView::addBranchLimitAction(QMenu* m, QString s, double limit)
-{
-    QAction* a = m->addAction(s);
-
-    a->setData(limit);
-    a->setCheckable(true);
-    a->setChecked(_callLimit == limit);
-
-    return a;
-}
-#endif
-
 QAction* ControlFlowGraphView::addZoomPosAction(QMenu* m, QString s, ZoomPosition pos)
 {
     QAction* a = m->addAction(s);
@@ -3837,86 +3765,6 @@ QAction* ControlFlowGraphView::addLayoutAction(QMenu* m, QString s, CFGExporter:
 
     return a;
 }
-
-#if 0
-QMenu* ControlFlowGraphView::addPredecessorDepthMenu(QMenu* menu)
-{
-    QMenu* m = menu->addMenu(QObject::tr("Predecessor Depth"));
-    QAction* a = addPredecessorDepthAction(m, QObject::tr("Unlimited"), -1);
-
-    a->setEnabled(_funcLimit > 0.005);
-    m->addSeparator();
-
-    addPredecessorDepthAction(m, QObject::tr("Depth 0", "None"), 0);
-    addPredecessorDepthAction(m, QObject::tr("max. 1"), 1);
-    addPredecessorDepthAction(m, QObject::tr("max. 2"), 2);
-    addPredecessorDepthAction(m, QObject::tr("max. 5"), 5);
-    addPredecessorDepthAction(m, QObject::tr("max. 10"), 10);
-    addPredecessorDepthAction(m, QObject::tr("max. 15"), 15);
-
-    connect(m, &QMenu::triggered,
-            this, &ControlFlowGraphView::predecessorDepthTriggered);
-
-    return m;
-}
-
-QMenu* ControlFlowGraphView::addSuccessorDepthMenu(QMenu* menu)
-{
-    QMenu* m = menu->addMenu(QObject::tr("Successor Depth"));
-    QAction* a = addSuccessorDepthAction(m, QObject::tr("Unlimited"), -1);
-
-    a->setEnabled(_funcLimit > 0.005);
-    m->addSeparator();
-
-    addSuccessorDepthAction(m, QObject::tr("Depth 0", "None"), 0);
-    addSuccessorDepthAction(m, QObject::tr("max. 1"), 1);
-    addSuccessorDepthAction(m, QObject::tr("max. 2"), 2);
-    addSuccessorDepthAction(m, QObject::tr("max. 5"), 5);
-    addSuccessorDepthAction(m, QObject::tr("max. 10"), 10);
-    addSuccessorDepthAction(m, QObject::tr("max. 15"), 15);
-
-    connect(m, &QMenu::triggered,
-            this, &ControlFlowGraphView::successorDepthTriggered);
-
-    return m;
-}
-
-QMenu* ControlFlowGraphView::addNodeLimitMenu(QMenu* menu)
-{
-    QMenu* m = menu->addMenu(QObject::tr("Min. Node Cost"));
-    QAction* a = addNodeLimitAction(m, QObject::tr("No Minimum"), 0.0);
-
-    a->setEnabled(_maxCallerDepth >= 0 && _maxCalleeDepth >= 0);
-    m->addSeparator();
-
-    addNodeLimitAction(m, QObject::tr("50 %"), 0.5);
-    addNodeLimitAction(m, QObject::tr("20 %"), 0.2);
-    addNodeLimitAction(m, QObject::tr("10 %"), 0.1);
-    addNodeLimitAction(m, QObject::tr("5 %"), 0.05);
-    addNodeLimitAction(m, QObject::tr("2 %"), 0.02);
-    addNodeLimitAction(m, QObject::tr("1 %"), 0.01);
-
-    connect(m, &QMenu::triggered,
-            this, &ControlFlowGraphView::nodeLimitTriggered);
-
-    return m;
-}
-
-QMenu* ControlFlowGraphView::addBranchLimitMenu(QMenu* menu)
-{
-    QMenu* m = menu->addMenu(QObject::tr("Min. Branch Cost"));
-
-    addBranchLimitAction(m, QObject::tr("Same as Node"), 1.0);
-    addBranchLimitAction(m, QObject::tr("50 % of Node"), 0.5);
-    addBranchLimitAction(m, QObject::tr("20 % of Node"), 0.2);
-    addBranchLimitAction(m, QObject::tr("10 % of Node"), 0.1);
-
-    connect(m, &QMenu::triggered,
-            this, &ControlFlowGraphView::branchLimitTriggered);
-
-    return m;
-}
-#endif
 
 QMenu* ControlFlowGraphView::addZoomPosMenu(QMenu* menu)
 {

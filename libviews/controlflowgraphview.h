@@ -426,12 +426,6 @@ public Q_SLOTS:
     void readDotOutput();
     void dotError();
     void dotExited();
-#if 0
-    void predecessorDepthTriggered(QAction*);
-    void successorDepthTriggered(QAction*);
-    void nodeLimitTriggered(QAction*);
-    void branchLimitTriggered(QAction*);
-#endif
     void zoomPosTriggered(QAction*);
     void layoutTriggered(QAction*);
     void minimizationTriggered(QAction*);
@@ -475,12 +469,6 @@ private:
     // called from keyPressEvent
     void movePointOfView(QKeyEvent* e);
 
-    #if 0
-    QAction* addPredecessorDepthAction(QMenu*, QString, int);
-    QAction* addSuccessorDepthAction(QMenu*, QString, int);
-    QAction* addNodeLimitAction(QMenu*, QString, double);
-    QAction* addBranchLimitAction(QMenu*, QString, double);
-    #endif
     QAction* addZoomPosAction(QMenu*, QString, ControlFlowGraphView::ZoomPosition);
     QAction* addLayoutAction(QMenu*, QString, CFGExporter::Layout);
     QAction* addStopLayoutAction(QMenu&);
@@ -488,12 +476,6 @@ private:
                                                 CFGExporter::DetailsLevel level);
     QAction* addMinimizationAction(QMenu* m, const QString& descr, int percentage);
 
-    #if 0
-    QMenu* addPredecessorDepthMenu(QMenu*);
-    QMenu* addSuccessorDepthMenu(QMenu*);
-    QMenu* addNodeLimitMenu(QMenu*);
-    QMenu* addBranchLimitMenu(QMenu*);
-    #endif
     QMenu* addZoomPosMenu(QMenu*);
     QMenu* addLayoutMenu(QMenu*);
     QMenu* addMinimizationMenu(QMenu*);
