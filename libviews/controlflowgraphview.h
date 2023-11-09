@@ -415,6 +415,7 @@ public:
     QString whatsThis() const override;
 
     bool isReduced(CFGNode* node) const;
+    TraceFunction* getFunction();
 
 public Q_SLOTS:
     void zoomRectMoved(qreal, qreal);

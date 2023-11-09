@@ -2279,6 +2279,26 @@ bool ControlFlowGraphView::isReduced(CFGNode* node) const
     return _exporter.detailsLevel(node->basicBlock()) == CFGExporter::DetailsLevel::pcOnly;
 }
 
+TraceFunction* ControlFlowGraphView::getFunction()
+{
+    assert(_activeItem);
+
+    switch (_activeItem->type())
+    {
+        case ProfileContext::BasicBlock:
+            return static_cast<TraceBasicBlock*>(_activeItem)->function();
+        case ProfileContext::Branch:
+            return static_cast<TraceBranch*>(_activeItem)->bbFrom()->function();
+        case ProfileContext::Call:
+            return static_cast<TraceCall*>(_activeItem)->caller();
+        case ProfileContext::Function:
+            return static_cast<TraceFunction*>(_activeItem);
+        default:
+            assert(false);
+            return nullptr;
+    }
+}
+
 void ControlFlowGraphView::zoomRectMoved(qreal dx, qreal dy)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
@@ -2829,7 +2849,7 @@ void ControlFlowGraphView::layoutTriggered(QAction* a)
 
 void ControlFlowGraphView::minimizationTriggered(QAction* a)
 {
-    TraceFunction* func = getFunction(_activeItem);
+    TraceFunction* func = getFunction();
     uint64 totalCost = func->subCost(_eventType).v;
     int percentage = a->data().toInt();
 
@@ -2968,26 +2988,6 @@ enum MenuActions
     nActions
 };
 
-TraceFunction* getFunction(CostItem* activeItem)
-{
-    assert(activeItem);
-
-    switch (activeItem->type())
-    {
-        case ProfileContext::BasicBlock:
-            return static_cast<TraceBasicBlock*>(activeItem)->function();
-        case ProfileContext::Branch:
-            return static_cast<TraceBranch*>(activeItem)->bbFrom()->function();
-        case ProfileContext::Call:
-            return static_cast<TraceCall*>(activeItem)->caller();
-        case ProfileContext::Function:
-            return static_cast<TraceFunction*>(activeItem);
-        default:
-            assert(false);
-            return nullptr;
-    }
-}
-
 } // unnamed namespace
 
 void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
@@ -3005,7 +3005,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
     QMenu popup;
     QGraphicsItem* item = itemAt(event->pos());
 
-    TraceFunction* func = getFunction(_activeItem);
+    TraceFunction* func = getFunction();
 
     TraceBasicBlock* bb = nullptr;
     TraceBranch* branch = nullptr;
