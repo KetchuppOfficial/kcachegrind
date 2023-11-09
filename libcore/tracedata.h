@@ -1153,7 +1153,7 @@ private:
     Type _type = Type::invalid;
 };
 
-class TraceBasicBlock : public TraceCostItem
+class TraceBasicBlock : public TraceListCost
 {
 public:
 
