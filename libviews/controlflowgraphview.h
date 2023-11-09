@@ -475,9 +475,9 @@ private:
                                                 CFGExporter::DetailsLevel level);
     QAction* addMinimizationAction(QMenu* m, const QString& descr, int percentage);
 
-    QMenu* addZoomPosMenu(QMenu*);
-    QMenu* addLayoutMenu(QMenu*);
-    QMenu* addMinimizationMenu(QMenu*);
+    QMenu* addZoomPosMenu(QMenu& menu);
+    QMenu* addLayoutMenu(QMenu& menu);
+    QMenu* addMinimizationMenu(QMenu& menu);
 
     QGraphicsScene* _scene = nullptr;
     QPoint _lastPos;
