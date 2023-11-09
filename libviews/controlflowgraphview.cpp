@@ -2827,6 +2827,17 @@ void ControlFlowGraphView::layoutTriggered(QAction* a)
     refresh(false);
 }
 
+void ControlFlowGraphView::minimizationTriggered(QAction* a)
+{
+    TraceFunction* func = getFunction(_activeItem);
+    uint64 totalCost = func->subCost(_eventType).v;
+    int percentage = a->data().toInt();
+
+    _exporter.setMinimalCostPercentage(percentage);
+    _exporter.minimizeBBsWithCostLessThan(percentage * totalCost / 100);
+    refresh(false);
+}
+
 void ControlFlowGraphView::resizeEvent(QResizeEvent* e)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
@@ -3150,6 +3161,19 @@ QAction* ControlFlowGraphView::addStopLayoutAction(QMenu& topLevel)
     }
     else
         return nullptr;
+}
+
+QAction* ControlFlowGraphView::addMinimizationAction(QMenu* m, const QString& descr, int percentage)
+{
+    QAction* a = m->addAction(descr);
+
+    a->setData(percentage);
+    a->setCheckable(true);
+    a->setChecked(percentage == _exporter.minimalCostPercentage());
+    if (percentage == -1)
+        a->setEnabled(false);
+
+    return a;
 }
 
 void ControlFlowGraphView::exportGraphAsImage()
@@ -3819,28 +3843,4 @@ QMenu* ControlFlowGraphView::addMinimizationMenu(QMenu* menu)
             this, &ControlFlowGraphView::minimizationTriggered);
 
     return m;
-}
-
-QAction* ControlFlowGraphView::addMinimizationAction(QMenu* m, const QString& descr, int percentage)
-{
-    QAction* a = m->addAction(descr);
-
-    a->setData(percentage);
-    a->setCheckable(true);
-    a->setChecked(percentage == _exporter.minimalCostPercentage());
-    if (percentage == -1)
-        a->setEnabled(false);
-
-    return a;
-}
-
-void ControlFlowGraphView::minimizationTriggered(QAction* a)
-{
-    TraceFunction* func = getFunction(_activeItem);
-    uint64 totalCost = func->subCost(_eventType).v;
-    int percentage = a->data().toInt();
-
-    _exporter.setMinimalCostPercentage(percentage);
-    _exporter.minimizeBBsWithCostLessThan(percentage * totalCost / 100);
-    refresh(false);
 }
