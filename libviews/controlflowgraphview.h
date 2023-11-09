@@ -134,7 +134,7 @@ class CanvasCFGEdge;
 class CFGEdge final
 {
 public:
-    enum NodeType { none, nodeTo_, nodeFrom_ };
+    enum class NodeType { none, nodeTo_, nodeFrom_ };
 
     CFGEdge(TraceBranch* branch);
 
@@ -195,9 +195,9 @@ class CFGExporter final
 public:
     using size_type = typename QMap<TraceBasicBlock*, CFGNode>::size_type;
 
-    enum Layout { TopDown, LeftRight };
-    enum DetailsLevel { pcOnly, full };
-    enum DumpType { internal, external };
+    enum class Layout { TopDown, LeftRight };
+    enum class DetailsLevel { pcOnly, full };
+    enum class DumpType { internal, external };
 
     using details_map_type = std::unordered_map<TraceBasicBlock*, DetailsLevel>;
 
