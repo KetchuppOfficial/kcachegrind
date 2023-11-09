@@ -3063,25 +3063,10 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
     popup.addSeparator();
 
-    #if 0
-    addGoMenu(std::addressof(popup));
-    popup.addSeparator();
-    #endif
-
     auto exportMenu = popup.addMenu(QObject::tr("Export Graph"));
     actions[MenuActions::exportAsDot] = exportMenu->addAction(QObject::tr("As DOT file..."));
     actions[MenuActions::exportAsImage] = exportMenu->addAction(QObject::tr("As Image..."));
     popup.addSeparator();
-
-    #if 0
-    auto graphMenu = popup.addMenu(QObject::tr("Graph"));
-
-    addPredecessorDepthMenu(graphMenu);
-    addSuccessorDepthMenu(graphMenu);
-    addNodeLimitMenu(graphMenu);
-    addBranchLimitMenu(graphMenu);
-    graphMenu->addSeparator();
-    #endif
 
     addLayoutMenu(std::addressof(popup));
     addZoomPosMenu(std::addressof(popup));
