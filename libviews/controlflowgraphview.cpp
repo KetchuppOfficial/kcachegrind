@@ -884,7 +884,7 @@ void CFGExporter::addPredecessors()
                                              branch->instrTo()->addr()));
 }
 
-int CFGExporter::transformKeyIfNeeded(int key)
+int CFGExporter::transformKeyIfNeeded(int key) const
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::transformKeyIfNeeded()" << "\033[0m";
