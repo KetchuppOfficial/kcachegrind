@@ -773,114 +773,56 @@ bool CFGExporter::createGraph()
 
     _graphCreated = true;
 
+    TraceFunction* func;
     switch(_item->type())
     {
         case ProfileContext::Function:
-        case ProfileContext::FunctionCycle:
-        {
-            auto& BBs = static_cast<TraceFunction*>(_item)->basicBlocks();
-            assert(!BBs.empty());
-            _item = BBs.front();
+            func = static_cast<TraceFunction*>(_item);
             break;
-        }
         case ProfileContext::Call:
-        {
-            TraceFunction* f = static_cast<TraceCall*>(_item)->caller(false);
-            auto& BBs = f->basicBlocks();
-            assert(!BBs.empty());
-            _item = BBs.front();
+            func = static_cast<TraceCall*>(_item)->caller(false);
             break;
-        }
         case ProfileContext::BasicBlock:
-        {
-            TraceFunction* func = static_cast<TraceBasicBlock*>(_item)->function();
-            assert(func);
-            auto& BBs = func->basicBlocks();
-            assert(!BBs.empty());
-            _item = BBs.front();
+            func = static_cast<TraceBasicBlock*>(_item)->function();
             break;
-        }
         default:
             assert(!"Unsupported type of item");
     }
 
-    auto bb = static_cast<TraceBasicBlock*>(_item);
-
-    buildNode(bb);
-    addPredecessors();
-
-    return fillInstrStrings(bb->function());
-}
-
-CFGNode* CFGExporter::buildNode(TraceBasicBlock* bb)
-{
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::buildNode()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
-    assert(bb);
-
-    std::pair key{bb->firstAddr(), bb->lastAddr()};
-    auto nodeIt = _nodeMap.find(key);
-
-    if (nodeIt == _nodeMap.end())
+    auto& BBs = func->basicBlocks();
+    for (auto bb : BBs)
     {
-        nodeIt = _nodeMap.insert(key, CFGNode{bb});
-        CFGNode* nodePtr = std::addressof(*nodeIt);
-        nodePtr->self = bb->subCost(_eventType);
-
-        TraceBasicBlock::size_type nBranches = bb->nBranches();
-        for (decltype(nBranches) i = 0; i != nBranches; ++i)
-            nodeIt->addSuccessorEdge(buildEdge(nodePtr, std::addressof(bb->branch(i))));
+        auto nodeIt = _nodeMap.insert(std::make_pair(bb->firstAddr(), bb->lastAddr()), CFGNode{bb});
+        nodeIt->self = bb->subCost(_eventType);
     }
 
-    return std::addressof(*nodeIt);
-}
-
-CFGEdge* CFGExporter::buildEdge(CFGNode* nodeFrom, TraceBranch* branch)
-{
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::buildEdge()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
-    assert(nodeFrom);
-    assert(branch);
-
-    TraceInstr* instrTo = branch->instrTo();
-    if (instrTo)
+    for (auto& node : _nodeMap)
     {
-        TraceInstr* instrFrom = branch->instrFrom();
+        TraceBasicBlock* bbFrom = node.basicBlock();
+        TraceBasicBlock::size_type nBranches = bbFrom->nBranches();
 
-        std::pair key{instrFrom->addr(), instrTo->addr()};
-        auto edgeIt = _edgeMap.find(key);
-
-        if (edgeIt == _edgeMap.end())
+        for (decltype(nBranches) i = 0; i != nBranches; ++i)
         {
-            TraceBasicBlock* bbFrom = instrFrom->basicBlock();
+            TraceBranch& br = bbFrom->branch(i);
+            TraceInstr* instrTo = br.instrTo();
             TraceBasicBlock* bbTo = instrTo->basicBlock();
 
-            CFGEdge edge{branch};
-            edge.setNodeFrom(nodeFrom);
-            edge.setNodeTo(bbFrom == bbTo ? nodeFrom : buildNode(bbTo));
-            edgeIt = _edgeMap.insert(key, edge);
+            CFGEdge edge{std::addressof(br)};
+            edge.setNodeFrom(std::addressof(node));
+            edge.setNodeTo(findNode(bbTo));
+
+            std::pair key{br.instrFrom()->addr(), instrTo->addr()};
+            auto edgeIt = _edgeMap.insert(key, edge);
+            node.addSuccessorEdge(std::addressof(*edgeIt));
         }
-
-        return std::addressof(*edgeIt);
     }
-    else
-        return nullptr;
-}
-
-void CFGExporter::addPredecessors()
-{
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::addPredecessors()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
 
     for (auto &node : _nodeMap)
         for (auto branch : node.basicBlock()->predecessors())
             node.addPredecessorEdge(findEdge(branch->instrFrom()->addr(),
                                              branch->instrTo()->addr()));
+
+    return fillInstrStrings(func);
 }
 
 int CFGExporter::transformKeyIfNeeded(int key) const
