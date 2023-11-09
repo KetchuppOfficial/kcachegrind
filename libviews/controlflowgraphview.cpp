@@ -3090,56 +3090,6 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
     }
 }
 
-QAction* ControlFlowGraphView::addDetailsAction(QMenu* m, const QString& descr, CFGNode* node,
-                                                CFGExporter::DetailsLevel level)
-{
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addDetailsAction" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
-    QAction* a = m->addAction(descr);
-
-    a->setData(static_cast<int>(level));
-    a->setCheckable(true);
-    a->setChecked(_exporter.detailsLevel(node->basicBlock()) == level);
-
-    return a;
-}
-
-QAction* ControlFlowGraphView::addStopLayoutAction(QMenu& topLevel)
-{
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addStopLayoutAction" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
-    if (_renderProcess)
-    {
-        QAction* stopLayout_ = topLevel.addAction(QObject::tr("Stop Layouting"));
-        topLevel.addSeparator();
-
-        return stopLayout_;
-    }
-    else
-        return nullptr;
-}
-
-QAction* ControlFlowGraphView::addMinimizationAction(QMenu* m, const QString& descr, int percentage)
-{
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addMinimizationAction" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
-    QAction* a = m->addAction(descr);
-
-    a->setData(percentage);
-    a->setCheckable(true);
-    a->setChecked(percentage == _exporter.minimalCostPercentage());
-    if (percentage == -1)
-        a->setEnabled(false);
-
-    return a;
-}
-
 void ControlFlowGraphView::exportGraphAsImage()
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
@@ -3755,6 +3705,56 @@ QAction* ControlFlowGraphView::addLayoutAction(QMenu* m, const QString& descr,
     a->setData(static_cast<int>(layout));
     a->setCheckable(true);
     a->setChecked(_exporter.layout() == layout);
+
+    return a;
+}
+
+QAction* ControlFlowGraphView::addStopLayoutAction(QMenu& topLevel)
+{
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addStopLayoutAction" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    if (_renderProcess)
+    {
+        QAction* stopLayout_ = topLevel.addAction(QObject::tr("Stop Layouting"));
+        topLevel.addSeparator();
+
+        return stopLayout_;
+    }
+    else
+        return nullptr;
+}
+
+QAction* ControlFlowGraphView::addDetailsAction(QMenu* m, const QString& descr, CFGNode* node,
+                                                CFGExporter::DetailsLevel level)
+{
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addDetailsAction" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    QAction* a = m->addAction(descr);
+
+    a->setData(static_cast<int>(level));
+    a->setCheckable(true);
+    a->setChecked(_exporter.detailsLevel(node->basicBlock()) == level);
+
+    return a;
+}
+
+QAction* ControlFlowGraphView::addMinimizationAction(QMenu* m, const QString& descr, int percentage)
+{
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addMinimizationAction" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    QAction* a = m->addAction(descr);
+
+    a->setData(percentage);
+    a->setCheckable(true);
+    a->setChecked(percentage == _exporter.minimalCostPercentage());
+    if (percentage == -1)
+        a->setEnabled(false);
 
     return a;
 }
