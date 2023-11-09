@@ -3728,13 +3728,13 @@ void ControlFlowGraphView::showText(const QString& text)
     _panningView->hide();
 }
 
-QAction* ControlFlowGraphView::addZoomPosAction(QMenu* m, QString s, ZoomPosition pos)
+QAction* ControlFlowGraphView::addZoomPosAction(QMenu* m, const QString& descr, ZoomPosition pos)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addZoomPosAction" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    QAction* a = m->addAction(s);
+    QAction* a = m->addAction(descr);
 
     a->setData(static_cast<int>(pos));
     a->setCheckable(true);
@@ -3743,13 +3743,14 @@ QAction* ControlFlowGraphView::addZoomPosAction(QMenu* m, QString s, ZoomPositio
     return a;
 }
 
-QAction* ControlFlowGraphView::addLayoutAction(QMenu* m, QString s, CFGExporter::Layout layout)
+QAction* ControlFlowGraphView::addLayoutAction(QMenu* m, const QString& descr,
+                                               CFGExporter::Layout layout)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addLayoutAction" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    QAction* a = m->addAction(s);
+    QAction* a = m->addAction(descr);
 
     a->setData(static_cast<int>(layout));
     a->setCheckable(true);
