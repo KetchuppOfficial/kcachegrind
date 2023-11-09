@@ -461,25 +461,6 @@ CFGEdge* CFGEdge::priorVisibleEdge()
         return nullptr;
 }
 
-QString CFGEdge::prettyName() const
-{
-    const TraceBasicBlock* from = bbFrom();
-
-    QString name;
-    if (from)
-    {
-        name = QObject::tr("Branch from %1").arg(from->prettyName());
-
-        const TraceBasicBlock* to = bbTo();
-        if (to)
-            name += QObject::tr(" to %1").arg(to->prettyName());
-    }
-    else
-        name = QObject::tr("(unknown branch)");
-
-    return name;
-}
-
 // ======================================================================================
 
 //
