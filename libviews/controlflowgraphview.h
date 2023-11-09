@@ -168,8 +168,6 @@ public:
     CFGEdge* nextVisibleEdge();
     CFGEdge* priorVisibleEdge();
 
-    QString prettyName() const;
-
     NodeType visitedFrom() const { return _visitedFrom; }
     void setVisitedFrom(NodeType node) { _visitedFrom = node; }
 
