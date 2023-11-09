@@ -3853,7 +3853,7 @@ void TraceData::updateFileCycles()
 
 TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
                                  typename TraceInstrMap::iterator last)
-    : TraceCostItem{ProfileContext::context(ProfileContext::BasicBlock)},
+    : TraceListCost{ProfileContext::context(ProfileContext::BasicBlock)},
       _instructions(std::distance(first, last)),
       _instrToBranch(_instructions.capacity()),
       _func{first->function()}
