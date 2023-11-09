@@ -239,7 +239,7 @@ public:
 
     void sortEdges();
 
-    int transformKeyIfNeeded(int key);
+    int transformKeyIfNeeded(int key) const;
 
     // translates string "B<firstAddr>B<lastAddr>" into appropriate CFGNode*
     CFGNode* toCFGNode(QString s);
