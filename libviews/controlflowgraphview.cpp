@@ -1029,8 +1029,8 @@ ObjdumpParser::ObjdumpParser(TraceFunction* func)
     _dumpStartAddr = _nextCostAddr;
     _dumpEndAddr = func->lastAddress() + 2;
 
-    if (!runObjdump(func))
-        throw std::runtime_error{"Error while running objdump"};
+    [[maybe_unused]] bool res = runObjdump(func);
+    assert(res);
 }
 
 bool ObjdumpParser::runObjdump(TraceFunction* func)
