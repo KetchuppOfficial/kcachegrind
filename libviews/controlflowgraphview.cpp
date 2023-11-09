@@ -1483,8 +1483,8 @@ void dumpNodeExtended(QTextStream& ts, const CFGNode& node, CFGExporter::Layout 
     if (bb->existsJumpToInstr(instr))
         ts << QStringLiteral("<I%1>").arg(instr->addr().toString());
 
-    ts << QStringLiteral("%1 | %2 | ").arg("0x" + bb->firstAddr().toString())
-                                      .arg(*node.begin());
+    ts << QStringLiteral(" | %1 | %2 | ").arg("0x" + bb->firstAddr().toString())
+                                         .arg(*node.begin());
     if (it != lastInstrIt)
         it++;
 
@@ -1507,13 +1507,22 @@ void dumpNodeExtended(QTextStream& ts, const CFGNode& node, CFGExporter::Layout 
     ts << "\"]\n";
 }
 
-void dumpNodeReduced(QTextStream& ts, const TraceBasicBlock* bb)
+void dumpNodeReduced(QTextStream& ts, const TraceBasicBlock* bb, CFGExporter::Layout layout)
 {
     QString firstAddr = bb->firstAddr().toString();
-    ts << QStringLiteral("  b%1b%2 [shape=box, label=\"%3\"]\n")
+    ts << QStringLiteral("  b%1b%2 [shape=record, label=\"")
                         .arg(firstAddr)
-                        .arg(bb->lastAddr().toString())
-                        .arg("0x" + firstAddr);
+                        .arg(bb->lastAddr().toString());
+
+    if (layout == CFGExporter::Layout::TopDown)
+        ts << '{';
+
+    ts << QStringLiteral(" | %1").arg("0x" + firstAddr);
+
+    if (layout == CFGExporter::Layout::TopDown)
+        ts << '}';
+
+    ts << "\"]\n";
 }
 
 const char* getEdgeColor(TraceBranch::Type type)
@@ -1749,7 +1758,7 @@ void CFGExporter::dumpNodes(QTextStream& ts)
         TraceBasicBlock* bb = node.basicBlock();
 
         if (detailsLevel(bb) == DetailsLevel::pcOnly)
-            dumpNodeReduced(ts, bb);
+            dumpNodeReduced(ts, bb, _layout);
         else
             dumpNodeExtended(ts, node, _layout);
     }
@@ -1956,21 +1965,30 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
 
     if (_view->isReduced(_node))
     {
+        qreal step = rectangle.height() / 2;
+        qreal lineY = rectangle.y() + step;
+
         p->fillRect(rectangle.x() + 1, rectangle.y() + 1, rectangle.width(), rectangle.height(),
                     Qt::gray);
 
-        p->drawText(rectangle.x(), rectangle.y(), rectangle.width(), rectangle.height(),
+        p->drawLine(rectangle.x(), lineY,
+                    rectangle.x() + rectangle.width(), lineY);
+
+        p->drawText(rectangle.x(), lineY, rectangle.width(), step,
                     Qt::AlignCenter, "0x" + _node->basicBlock()->firstAddr().toString());
     }
     else
     {
-        qreal step = rectangle.height() / (_node->instrNumber() + 1);
+        qreal step = rectangle.height() / (_node->instrNumber() + 2);
         qreal topLineY = rectangle.y();
 
-        p->fillRect(rectangle.x() + 1, topLineY + 1, rectangle.width(), step, Qt::gray);
+        p->fillRect(rectangle.x() + 1, topLineY + 1, rectangle.width(), step * 2, Qt::gray);
+        topLineY += step;
 
         p->drawText(rectangle.x(), topLineY, rectangle.width(), step,
                     Qt::AlignCenter, "0x" + _node->basicBlock()->firstAddr().toString());
+        p->drawLine(rectangle.x(), topLineY,
+                    rectangle.x() + rectangle.width(), topLineY);
         topLineY += step;
 
         for (auto instrIt = _node->begin(), ite = _node->end(); instrIt != ite; ++instrIt)
