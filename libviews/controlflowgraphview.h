@@ -110,7 +110,6 @@ public:
     const_iterator cend() const { return end(); }
 
     double self = 0.0;
-    double incl = 0.0;
 
 private:
 
