@@ -1407,66 +1407,6 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
 namespace
 {
 
-void dumpNodeExtended(QTextStream& ts, const CFGNode& node, CFGExporter::Layout layout)
-{
-    const TraceBasicBlock* bb = node.basicBlock();
-
-    ts << QStringLiteral("  b%1b%2 [shape=record, label=\"")
-                        .arg(bb->firstAddr().toString())
-                        .arg(bb->lastAddr().toString());
-
-    if (layout == CFGExporter::Layout::TopDown)
-        ts << '{';
-
-    auto it = bb->begin();
-    auto lastInstrIt = std::prev(bb->end());
-
-    TraceInstr* instr = *it;
-    if (bb->existsJumpToInstr(instr))
-        ts << QStringLiteral("<I%1>").arg(instr->addr().toString());
-
-    ts << QStringLiteral(" | %1 | %2 | ").arg("0x" + bb->firstAddr().toString())
-                                         .arg(*node.begin());
-    if (it != lastInstrIt)
-        it++;
-
-    auto i = 0;
-    for (; it != lastInstrIt; ++it, ++i)
-    {
-        instr = *it;
-        if (bb->existsJumpToInstr(instr))
-            ts << QStringLiteral("<I%1>").arg(instr->addr().toString());
-
-        ts << *std::next(node.begin(), i) << " | ";
-    }
-
-    ts << QStringLiteral("<I%1>").arg((*lastInstrIt)->addr().toString())
-        << *std::prev(node.end());
-
-    if (layout == CFGExporter::Layout::TopDown)
-        ts << '}';
-
-    ts << "\"]\n";
-}
-
-void dumpNodeReduced(QTextStream& ts, const TraceBasicBlock* bb, CFGExporter::Layout layout)
-{
-    QString firstAddr = bb->firstAddr().toString();
-    ts << QStringLiteral("  b%1b%2 [shape=record, label=\"")
-                        .arg(firstAddr)
-                        .arg(bb->lastAddr().toString());
-
-    if (layout == CFGExporter::Layout::TopDown)
-        ts << '{';
-
-    ts << QStringLiteral(" | %1").arg("0x" + firstAddr);
-
-    if (layout == CFGExporter::Layout::TopDown)
-        ts << '}';
-
-    ts << "\"]\n";
-}
-
 const char* getEdgeColor(TraceBranch::Type type)
 {
     switch (type)
@@ -1697,13 +1637,77 @@ void CFGExporter::dumpNodes(QTextStream& ts)
 
     for (auto& node : _nodeMap)
     {
-        TraceBasicBlock* bb = node.basicBlock();
-
-        if (detailsLevel(bb) == DetailsLevel::pcOnly)
-            dumpNodeReduced(ts, bb, _layout);
+        if (detailsLevel(node.basicBlock()) == DetailsLevel::pcOnly)
+            dumpNodeReduced(ts, node);
         else
-            dumpNodeExtended(ts, node, _layout);
+            dumpNodeExtended(ts, node);
     }
+}
+
+void CFGExporter::dumpNodeReduced(QTextStream& ts, const CFGNode& node)
+{
+    const TraceBasicBlock* bb = node.basicBlock();
+    QString firstAddr = bb->firstAddr().toString();
+
+    ts << QStringLiteral("  b%1b%2 [shape=record, label=\"")
+                        .arg(firstAddr)
+                        .arg(bb->lastAddr().toString());
+
+    if (_layout == Layout::TopDown)
+        ts << '{';
+
+    ts << QStringLiteral(" cost: %1 | %2 ")
+                        .arg(QString::number(node.self))
+                        .arg("0x" + firstAddr);
+
+    if (_layout == Layout::TopDown)
+        ts << '}';
+
+    ts << "\"]\n";
+}
+
+void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
+{
+    const TraceBasicBlock* bb = node.basicBlock();
+
+    ts << QStringLiteral("  b%1b%2 [shape=record, label=\"")
+                        .arg(bb->firstAddr().toString())
+                        .arg(bb->lastAddr().toString());
+
+    if (_layout == Layout::TopDown)
+        ts << '{';
+
+    auto it = bb->begin();
+    auto lastInstrIt = std::prev(bb->end());
+
+    TraceInstr* instr = *it;
+    if (bb->existsJumpToInstr(instr))
+        ts << QStringLiteral("<I%1>").arg(instr->addr().toString());
+
+    ts << QStringLiteral(" cost: %1 | %2 | %3 | ")
+                        .arg(QString::number(node.self))
+                        .arg("0x" + bb->firstAddr().toString())
+                        .arg(*node.begin());
+    if (it != lastInstrIt)
+        it++;
+
+    auto i = 0;
+    for (; it != lastInstrIt; ++it, ++i)
+    {
+        instr = *it;
+        if (bb->existsJumpToInstr(instr))
+            ts << QStringLiteral("<I%1>").arg(instr->addr().toString());
+
+        ts << *std::next(node.begin(), i) << " | ";
+    }
+
+    ts << QStringLiteral("<I%1>").arg((*lastInstrIt)->addr().toString())
+        << *std::prev(node.end());
+
+    if (_layout == Layout::TopDown)
+        ts << '}';
+
+    ts << "\"]\n";
 }
 
 void CFGExporter::dumpEdges(QTextStream& ts, DumpType type)
