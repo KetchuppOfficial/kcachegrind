@@ -1873,6 +1873,8 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     SubCost total = node->basicBlock()->function()->subCost(view->eventType());
     double selfPercentage = 100.0 * _node->self / total;
 
+    setPosition(0, DrawParams::TopCenter);
+
     // set inclusive cost
     if (GlobalConfig::showPercentage())
         setText(0, QStringLiteral("%1 %")
