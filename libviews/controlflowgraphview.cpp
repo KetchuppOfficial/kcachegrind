@@ -2975,7 +2975,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
             CFGNode* node = static_cast<CanvasCFGNode*>(item)->node();
             bb = node->basicBlock();
 
-            QMenu* detailsMenu = popup.addMenu(QObject::tr("Visualization"));
+            QMenu* detailsMenu = popup.addMenu(QObject::tr("This basic block"));
             actions[MenuActions::pcOnlyLocal] =
                     addDetailsAction(detailsMenu, QObject::tr("PC only"), node,
                                      CFGExporter::DetailsLevel::pcOnly);
@@ -3766,7 +3766,7 @@ QMenu* ControlFlowGraphView::addMinimizationMenu(QMenu& menu)
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addMinimizationMenu" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    QMenu* submenu = menu.addMenu(QObject::tr("Minimization"));
+    QMenu* submenu = menu.addMenu(QObject::tr("Min. basic block cost"));
 
     addMinimizationAction(submenu, QObject::tr("Undefined"), -1);
     submenu->addSeparator();
