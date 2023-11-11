@@ -1407,25 +1407,25 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
 namespace
 {
 
-const char* getEdgeColor(TraceBranch::Type type)
-{
-    switch (type)
-    {
-        case TraceBranch::Type::true_:
-            return "blue";
-        case TraceBranch::Type::unconditional:
-            return "black";
-        case TraceBranch::Type::indirect:
-            return "green";
-        default:
-            assert(false);
-            return nullptr;
-    }
-}
-
 void dumpNonFalseBranchColor(QTextStream& ts, const TraceBranch* br)
 {
-    ts << QStringLiteral("color=%1, ").arg(getEdgeColor(br->brType()));
+    const char* color;
+    switch (br->brType())
+    {
+        case TraceBranch::Type::true_:
+            color = "blue";
+            break;
+        case TraceBranch::Type::unconditional:
+            color = "black";
+            break;
+        case TraceBranch::Type::indirect:
+            color = "green";
+            break;
+        default:
+            assert(false);
+    }
+
+    ts << QStringLiteral("color=%1, ").arg(color);
 }
 
 void dumpPartOfNonFalseBranchFromReducedNode(QTextStream& ts, const TraceBasicBlock* bbFrom,
