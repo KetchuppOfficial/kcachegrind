@@ -255,6 +255,9 @@ private:
     bool fillInstrStrings(TraceFunction* func);
 
     void dumpNodes(QTextStream& ts);
+    void dumpNodeReduced(QTextStream& ts, const CFGNode& node);
+    void dumpNodeExtended(QTextStream& ts, const CFGNode& node);
+
     void dumpEdges(QTextStream& ts, DumpType type);
 
     QString _dotName;
