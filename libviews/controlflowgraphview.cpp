@@ -1983,7 +1983,6 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
     if (!e)
         return;
 
-    #if 1
     setPosition(0, DrawParams::TopCenter);
 
     #if 0
@@ -2026,7 +2025,6 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
     }
     else
         setPixmap(0, percentagePixmap(25, 10, count, Qt::blue, true));
-    #endif
 }
 
 void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem* option, QWidget*)
