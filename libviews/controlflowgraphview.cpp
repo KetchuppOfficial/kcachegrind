@@ -1505,23 +1505,13 @@ void dumpEdgeExtended(QTextStream& ts, const TraceBranch* br)
     const TraceBasicBlock* bbTo = br->bbTo();
     assert(bbTo);
 
-    switch (br->brType())
+    if (br->brType() == TraceBranch::Type::false_)
+        dumpFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
+    else
     {
-        case TraceBranch::Type::true_:
-        case TraceBranch::Type::indirect:
-        case TraceBranch::Type::unconditional:
-            dumpPartOfNonFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
-            dumpPartOfNonFalseBranchToExtendedNode(ts, br);
-            dumpNonFalseBranchColor(ts, br);
-            break;
-
-        case TraceBranch::Type::false_:
-            dumpFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
-            break;
-
-        default:
-            assert(false);
-            break;
+        dumpPartOfNonFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
+        dumpPartOfNonFalseBranchToExtendedNode(ts, br);
+        dumpNonFalseBranchColor(ts, br);
     }
 }
 
@@ -1535,23 +1525,13 @@ void dumpEdgeReduced(QTextStream& ts, const TraceBranch* br)
     const TraceBasicBlock* bbTo = br->bbTo();
     assert(bbTo);
 
-    switch (br->brType())
+    if (br->brType() == TraceBranch::Type::false_)
+        dumpFalseBranchFromReducedNode(ts, bbFrom, bbTo);
+    else
     {
-        case TraceBranch::Type::true_:
-        case TraceBranch::Type::indirect:
-        case TraceBranch::Type::unconditional:
-            dumpPartOfNonFalseBranchFromReducedNode(ts, bbFrom, bbTo);
-            dumpPartOfNonFalseBranchToReducedNode(ts, br);
-            dumpNonFalseBranchColor(ts, br);
-            break;
-
-        case TraceBranch::Type::false_:
-            dumpFalseBranchFromReducedNode(ts, bbFrom, bbTo);
-            break;
-
-        default:
-            assert(false);
-            break;
+        dumpPartOfNonFalseBranchFromReducedNode(ts, bbFrom, bbTo);
+        dumpPartOfNonFalseBranchToReducedNode(ts, br);
+        dumpNonFalseBranchColor(ts, br);
     }
 }
 
@@ -1565,23 +1545,13 @@ void dumpEdgeReducedToExtended(QTextStream& ts, const TraceBranch* br)
     const TraceBasicBlock* bbTo = br->bbTo();
     assert(bbTo);
 
-    switch (br->brType())
+    if (br->brType() == TraceBranch::Type::false_)
+        dumpFalseBranchFromReducedNode(ts, bbFrom, bbTo);
+    else
     {
-        case TraceBranch::Type::true_:
-        case TraceBranch::Type::indirect:
-        case TraceBranch::Type::unconditional:
-            dumpPartOfNonFalseBranchFromReducedNode(ts, bbFrom, bbTo);
-            dumpPartOfNonFalseBranchToExtendedNode(ts, br);
-            dumpNonFalseBranchColor(ts, br);
-            break;
-
-        case TraceBranch::Type::false_:
-            dumpFalseBranchFromReducedNode(ts, bbFrom, bbTo);
-            break;
-
-        default:
-            assert(false);
-            break;
+        dumpPartOfNonFalseBranchFromReducedNode(ts, bbFrom, bbTo);
+        dumpPartOfNonFalseBranchToExtendedNode(ts, br);
+        dumpNonFalseBranchColor(ts, br);
     }
 }
 
@@ -1595,23 +1565,13 @@ void dumpEdgeExtendedToReduced(QTextStream& ts, const TraceBranch* br)
     const TraceBasicBlock* bbTo = br->bbTo();
     assert(bbTo);
 
-    switch (br->brType())
+    if (br->brType() == TraceBranch::Type::false_)
+        dumpFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
+    else
     {
-        case TraceBranch::Type::true_:
-        case TraceBranch::Type::indirect:
-        case TraceBranch::Type::unconditional:
-            dumpPartOfNonFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
-            dumpPartOfNonFalseBranchToReducedNode(ts, br);
-            dumpNonFalseBranchColor(ts, br);
-            break;
-
-        case TraceBranch::Type::false_:
-            dumpFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
-            break;
-
-        default:
-            assert(false);
-            break;
+        dumpPartOfNonFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
+        dumpPartOfNonFalseBranchToReducedNode(ts, br);
+        dumpNonFalseBranchColor(ts, br);
     }
 }
 
