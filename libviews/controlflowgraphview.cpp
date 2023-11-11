@@ -2000,7 +2000,7 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
     #endif
 
     SubCost count = e->branch()->executedCount();
-    setText(0, QString::number(count));
+    setText(0, QStringLiteral("%1 x").arg(count.pretty()));
 
     #if 0
     int pixPos;
