@@ -1643,9 +1643,9 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
                          "    <td>%3</td>\n"
                          "    <td>%4</td>\n"
                          "  </tr>\n").arg(QString::number(node.self))
-                                    .arg("0x" + bb->firstAddr().toString())
-                                    .arg(node.begin()->first)
-                                    .arg(node.begin()->second);
+                                     .arg("0x" + bb->firstAddr().toString())
+                                     .arg(node.begin()->first)
+                                     .arg(node.begin()->second);
 
     auto lastInstrIt = std::prev(bb->end());
     if (it != lastInstrIt)
