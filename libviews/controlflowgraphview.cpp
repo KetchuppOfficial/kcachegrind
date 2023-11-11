@@ -1423,6 +1423,78 @@ const char* getEdgeColor(TraceBranch::Type type)
     }
 }
 
+void dumpNonFalseBranchColor(QTextStream& ts, const TraceBranch* br)
+{
+    ts << QStringLiteral("color=%1, ").arg(getEdgeColor(br->brType()));
+}
+
+void dumpPartOfNonFalseBranchFromReducedNode(QTextStream& ts, const TraceBasicBlock* bbFrom,
+                                             const TraceBasicBlock* bbTo)
+{
+    ts << QStringLiteral("  b%1b%2:w -> b%3b%4")
+                        .arg(bbFrom->firstAddr().toString())
+                        .arg(bbFrom->lastAddr().toString())
+                        .arg(bbTo->firstAddr().toString())
+                        .arg(bbTo->lastAddr().toString());
+}
+
+void dumpPartOfNonFalseBranchFromExtendedNode(QTextStream& ts, const TraceBasicBlock* bbFrom,
+                                              const TraceBasicBlock* bbTo)
+{
+    QString bbFromLastAddr = bbFrom->lastAddr().toString();
+
+    ts << QStringLiteral("  b%1b%2:I%3:w -> b%4b%5")
+                        .arg(bbFrom->firstAddr().toString())
+                        .arg(bbFromLastAddr).arg(bbFromLastAddr)
+                        .arg(bbTo->firstAddr().toString())
+                        .arg(bbTo->lastAddr().toString());
+}
+
+void dumpPartOfNonFalseBranchToReducedNode(QTextStream& ts, const TraceBranch* br)
+{
+    if (br->isCycle())
+        ts << QStringLiteral(":w [constraint=false, ");
+    else if (br->isBranchInside())
+        ts << QStringLiteral(" [");
+    else
+        ts << QStringLiteral(":n [");
+}
+
+void dumpPartOfNonFalseBranchToExtendedNode(QTextStream& ts, const TraceBranch* br)
+{
+    if (br->isCycle())
+        ts << QStringLiteral(":I%1:w [constraint=false, ")
+                            .arg(br->instrTo()->addr().toString());
+    else if (br->isBranchInside())
+        ts << QStringLiteral(":I%1 [")
+                            .arg(br->instrTo()->addr().toString());
+    else
+        ts << QStringLiteral(":n [");
+}
+
+void dumpFalseBranchFromReducedNode(QTextStream& ts, const TraceBasicBlock* bbFrom,
+                                    const TraceBasicBlock* bbTo)
+{
+    ts << QStringLiteral("  b%1b%2:e -> b%3b%4:n [color=red, ")
+                        .arg(bbFrom->firstAddr().toString())
+                        .arg(bbFrom->lastAddr().toString())
+                        .arg(bbTo->firstAddr().toString())
+                        .arg(bbTo->lastAddr().toString());
+}
+
+void dumpFalseBranchFromExtendedNode(QTextStream& ts, const TraceBasicBlock* bbFrom,
+                                     const TraceBasicBlock* bbTo)
+{
+    QString bbFromLastAddr = bbFrom->lastAddr().toString();
+
+    ts << QStringLiteral("  b%1b%2:I%3:e -> b%4b%5:n [color=red, ")
+                        .arg(bbFrom->firstAddr().toString())
+                        .arg(bbFromLastAddr)
+                        .arg(bbFromLastAddr)
+                        .arg(bbTo->firstAddr().toString())
+                        .arg(bbTo->lastAddr().toString());
+}
+
 void dumpEdgeExtended(QTextStream& ts, const TraceBranch* br)
 {
     assert(br);
@@ -1430,43 +1502,21 @@ void dumpEdgeExtended(QTextStream& ts, const TraceBranch* br)
     const TraceBasicBlock* bbFrom = br->bbFrom();
     assert(bbFrom);
 
-    QString bbFromFirstAddr = bbFrom->firstAddr().toString();
-    QString bbFromLastAddr = bbFrom->lastAddr().toString();
-
     const TraceBasicBlock* bbTo = br->bbTo();
     assert(bbTo);
-
-    QString bbToFirstAddr = bbTo->firstAddr().toString();
-    QString bbToLastAddr = bbTo->lastAddr().toString();
 
     switch (br->brType())
     {
         case TraceBranch::Type::true_:
         case TraceBranch::Type::indirect:
         case TraceBranch::Type::unconditional:
-        {
-            ts << QStringLiteral("  b%1b%2:I%3:w -> b%4b%5")
-                                .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
-                                .arg(bbToFirstAddr).arg(bbToLastAddr);
-
-            if (br->isCycle())
-                ts << QStringLiteral(":I%1:w [constraint=false, ")
-                                    .arg(br->instrTo()->addr().toString());
-            else if (br->isBranchInside())
-                ts << QStringLiteral(":I%1 [")
-                                    .arg(br->instrTo()->addr().toString());
-            else
-                ts << QStringLiteral(":n [");
-
-            ts << QStringLiteral("color=%1, ").arg(getEdgeColor(br->brType()));
-
+            dumpPartOfNonFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
+            dumpPartOfNonFalseBranchToExtendedNode(ts, br);
+            dumpNonFalseBranchColor(ts, br);
             break;
-        }
 
         case TraceBranch::Type::false_:
-            ts << QStringLiteral("  b%1b%2:I%3:e -> b%4b%5:n [color=red, ")
-                                .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
-                                .arg(bbToFirstAddr).arg(bbToLastAddr);
+            dumpFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
             break;
 
         default:
@@ -1482,40 +1532,21 @@ void dumpEdgeReduced(QTextStream& ts, const TraceBranch* br)
     const TraceBasicBlock* bbFrom = br->bbFrom();
     assert(bbFrom);
 
-    QString bbFromFirstAddr = bbFrom->firstAddr().toString();
-    QString bbFromLastAddr = bbFrom->lastAddr().toString();
-
     const TraceBasicBlock* bbTo = br->bbTo();
     assert(bbTo);
-
-    QString bbToFirstAddr = bbTo->firstAddr().toString();
-    QString bbToLastAddr = bbTo->lastAddr().toString();
 
     switch (br->brType())
     {
         case TraceBranch::Type::true_:
         case TraceBranch::Type::indirect:
         case TraceBranch::Type::unconditional:
-        {
-            ts << QStringLiteral("  b%1b%2:w -> b%3b%4")
-                                .arg(bbFromFirstAddr).arg(bbFromLastAddr)
-                                .arg(bbToFirstAddr).arg(bbToLastAddr);
-            if (br->isCycle())
-                ts << QStringLiteral(":w [constraint=false, ");
-            else if (br->isBranchInside())
-                ts << QStringLiteral(" [");
-            else
-                ts << QStringLiteral(":n [");
-
-            ts << QStringLiteral("color=%1, ").arg(getEdgeColor(br->brType()));
-
+            dumpPartOfNonFalseBranchFromReducedNode(ts, bbFrom, bbTo);
+            dumpPartOfNonFalseBranchToReducedNode(ts, br);
+            dumpNonFalseBranchColor(ts, br);
             break;
-        }
 
         case TraceBranch::Type::false_:
-            ts << QStringLiteral("  b%1b%2:e -> b%3b%4:n [color=red, ")
-                                .arg(bbFromFirstAddr).arg(bbFromLastAddr)
-                                .arg(bbToFirstAddr).arg(bbToLastAddr);
+            dumpFalseBranchFromReducedNode(ts, bbFrom, bbTo);
             break;
 
         default:
@@ -1531,44 +1562,21 @@ void dumpEdgeReducedToExtended(QTextStream& ts, const TraceBranch* br)
     const TraceBasicBlock* bbFrom = br->bbFrom();
     assert(bbFrom);
 
-    QString bbFromFirstAddr = bbFrom->firstAddr().toString();
-    QString bbFromLastAddr = bbFrom->lastAddr().toString();
-
     const TraceBasicBlock* bbTo = br->bbTo();
     assert(bbTo);
-
-    QString bbToFirstAddr = bbTo->firstAddr().toString();
-    QString bbToLastAddr = bbTo->lastAddr().toString();
 
     switch (br->brType())
     {
         case TraceBranch::Type::true_:
         case TraceBranch::Type::indirect:
         case TraceBranch::Type::unconditional:
-        {
-            ts << QStringLiteral("  b%1b%2:w -> b%3b%4")
-                                .arg(bbFromFirstAddr).arg(bbFromLastAddr)
-                                .arg(bbToFirstAddr).arg(bbToLastAddr);
-
-            if (br->isCycle())
-                ts << QStringLiteral(":I%1:w [constraint=false, ")
-                                    .arg(br->instrTo()->addr().toString());
-            else if (br->isBranchInside())
-                ts << QStringLiteral(":I%1 [")
-                                    .arg(br->instrTo()->addr().toString());
-            else
-                ts << QStringLiteral(":n [");
-
-            ts << QStringLiteral("color=%1, ").arg(getEdgeColor(br->brType()));
-
+            dumpPartOfNonFalseBranchFromReducedNode(ts, bbFrom, bbTo);
+            dumpPartOfNonFalseBranchToExtendedNode(ts, br);
+            dumpNonFalseBranchColor(ts, br);
             break;
-        }
 
         case TraceBranch::Type::false_:
-
-            ts << QStringLiteral("  b%1b%2:e -> b%3b%4:n [color=red, ")
-                                .arg(bbFromFirstAddr).arg(bbFromLastAddr)
-                                .arg(bbToFirstAddr).arg(bbToLastAddr);
+            dumpFalseBranchFromReducedNode(ts, bbFrom, bbTo);
             break;
 
         default:
@@ -1584,41 +1592,21 @@ void dumpEdgeExtendedToReduced(QTextStream& ts, const TraceBranch* br)
     const TraceBasicBlock* bbFrom = br->bbFrom();
     assert(bbFrom);
 
-    QString bbFromFirstAddr = bbFrom->firstAddr().toString();
-    QString bbFromLastAddr = bbFrom->lastAddr().toString();
-
     const TraceBasicBlock* bbTo = br->bbTo();
     assert(bbTo);
-
-    QString bbToFirstAddr = bbTo->firstAddr().toString();
-    QString bbToLastAddr = bbTo->lastAddr().toString();
 
     switch (br->brType())
     {
         case TraceBranch::Type::true_:
         case TraceBranch::Type::indirect:
         case TraceBranch::Type::unconditional:
-        {
-            ts << QStringLiteral("  b%1b%2:I%3:w -> b%4b%5")
-                                .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
-                                .arg(bbToFirstAddr).arg(bbToLastAddr);
-
-            if (br->isCycle())
-                ts << QStringLiteral(":w [constraint=false, ");
-            else if (br->isBranchInside())
-                ts << QStringLiteral(" [");
-            else
-                ts << QStringLiteral(":n [");
-
-            ts << QStringLiteral("color=%1, ").arg(getEdgeColor(br->brType()));
+            dumpPartOfNonFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
+            dumpPartOfNonFalseBranchToReducedNode(ts, br);
+            dumpNonFalseBranchColor(ts, br);
             break;
-        }
 
         case TraceBranch::Type::false_:
-
-            ts << QStringLiteral("  b%1b%2:I%3:e -> b%4b%5:n [color=red, ")
-                                .arg(bbFromFirstAddr).arg(bbFromLastAddr).arg(bbFromLastAddr)
-                                .arg(bbToFirstAddr).arg(bbToLastAddr);
+            dumpFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
             break;
 
         default:
