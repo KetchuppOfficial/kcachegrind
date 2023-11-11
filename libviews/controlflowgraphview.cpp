@@ -1936,7 +1936,7 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
         setPixmap(0, percentagePixmap(25, 10, count, Qt::blue, true));
 }
 
-void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem* option, QWidget*)
+void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
     #ifdef CANVASCFGEDGELABEL_DEBUG
     qDebug() << "\033[1;31m" << "CanvasCFGEdgeLabel::paint()" << "\033[0m";
