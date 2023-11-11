@@ -163,7 +163,6 @@ public:
     NodeType visitedFrom() const { return _visitedFrom; }
     void setVisitedFrom(NodeType node) { _visitedFrom = node; }
 
-    double cost = 0.0;
     double count = 0.0;
 
 private:
