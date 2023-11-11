@@ -147,46 +147,6 @@ void CFGNode::sortPredecessorEdges()
     std::sort(_predecessors.begin(), _predecessors.end(), edgeComp);
 }
 
-double CFGNode::successorCostSum() const
-{
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::successorCostSum()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
-    return std::accumulate(_successors.begin(), _successors.end(), 0.0,
-                           [](double val, CFGEdge* e){ return val + e->cost; });
-}
-
-double CFGNode::successorCountSum() const
-{
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::successorCountSum()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
-    return std::accumulate(_successors.begin(), _successors.end(), 0.0,
-                           [](double val, CFGEdge* e){ return val + e->count; });
-}
-
-double CFGNode::predecessorCostSum() const
-{
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::predecessorCostSum()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
-    return std::accumulate(_predecessors.begin(), _predecessors.end(), 0.0,
-                           [](double val, CFGEdge* e){ return val + e->cost; });
-}
-
-double CFGNode::predecessorCountSum() const
-{
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::predecessorCountSum()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
-    return std::accumulate(_predecessors.begin(), _predecessors.end(), 0.0,
-                           [](double val, CFGEdge* e){ return val + e->count; });
-}
-
 void CFGNode::selectSuccessorEdge(CFGEdge* edge)
 {
     #ifdef CFGNODE_DEBUG
