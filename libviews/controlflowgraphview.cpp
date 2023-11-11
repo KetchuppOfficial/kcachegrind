@@ -1495,7 +1495,7 @@ void dumpFalseBranchFromExtendedNode(QTextStream& ts, const TraceBasicBlock* bbF
                         .arg(bbTo->lastAddr().toString());
 }
 
-void dumpEdgeExtended(QTextStream& ts, const TraceBranch* br)
+void dumpEdgeExtendedToExtended(QTextStream& ts, const TraceBranch* br)
 {
     assert(br);
 
@@ -1515,7 +1515,7 @@ void dumpEdgeExtended(QTextStream& ts, const TraceBranch* br)
     }
 }
 
-void dumpEdgeReduced(QTextStream& ts, const TraceBranch* br)
+void dumpEdgeReducedToReduced(QTextStream& ts, const TraceBranch* br)
 {
     assert(br);
 
@@ -1673,13 +1673,13 @@ void CFGExporter::dumpEdges(QTextStream& ts, DumpType type)
         bool toReduced = (detailsLevel(br->bbTo()) == DetailsLevel::pcOnly);
 
         if (fromReduced && toReduced)
-            dumpEdgeReduced(ts, br);
+            dumpEdgeReducedToReduced(ts, br);
         else if (!fromReduced && toReduced)
             dumpEdgeExtendedToReduced(ts, br);
         else if (fromReduced && !toReduced)
             dumpEdgeReducedToExtended(ts, br);
         else
-            dumpEdgeExtended(ts, br);
+            dumpEdgeExtendedToExtended(ts, br);
 
         if (type == DumpType::internal)
         {
