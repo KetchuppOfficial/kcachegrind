@@ -181,16 +181,16 @@ CFGEdge* CFGNode::keyboardNextEdge()
     else if (!_successors.isEmpty())
     {
         CFGEdge* maxEdge = _successors[0];
-        double maxCost = maxEdge->cost;
+        double maxCount = maxEdge->count;
 
         for (decltype(_successors.size()) i = 1; i < _successors.size(); ++i)
         {
             edge = _successors[i];
 
-            if (edge->isVisible() && edge->cost > maxCost)
+            if (edge->isVisible() && edge->count > maxCount)
             {
                 maxEdge = edge;
-                maxCost = maxEdge->cost;
+                maxCount = maxEdge->count;
                 _lastSuccessorIndex = i;
             }
         }
@@ -218,16 +218,16 @@ CFGEdge* CFGNode::keyboardPrevEdge()
     else if (!_predecessors.isEmpty())
     {
         CFGEdge* maxEdge = _predecessors[0];
-        double maxCost = maxEdge->cost;
+        double maxCount = maxEdge->count;
 
         for (decltype(_predecessors.size()) i = 1; i < _predecessors.size(); ++i)
         {
             edge = _predecessors[i];
 
-            if (edge->isVisible() && edge->cost > maxCost)
+            if (edge->isVisible() && edge->count > maxCount)
             {
                 maxEdge = edge;
-                maxCost = maxEdge->cost;
+                maxCount = maxEdge->count;
                 _lastPredecessorIndex = i;
             }
         }
@@ -770,6 +770,7 @@ bool CFGExporter::createGraph()
             CFGEdge edge{std::addressof(br)};
             edge.setNodeFrom(std::addressof(node));
             edge.setNodeTo(findNode(bbTo));
+            edge.count = br.executedCount();
 
             std::pair key{br.instrFrom()->addr(), instrTo->addr()};
             auto edgeIt = _edgeMap.insert(key, edge);
