@@ -58,12 +58,6 @@ public:
     void sortSuccessorEdges();
     void sortPredecessorEdges();
 
-    double successorCostSum() const;
-    double successorCountSum() const;
-
-    double predecessorCostSum() const;
-    double predecessorCountSum() const;
-
     // keyboard navigation
     void selectSuccessorEdge(CFGEdge*);
     void selectPredecessorEdge(CFGEdge*);
