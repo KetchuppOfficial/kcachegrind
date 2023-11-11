@@ -33,11 +33,12 @@ class CFGNode final
 {
     template<typename It>
     using iterator_category_t = typename std::iterator_traits<It>::iterator_category;
+    using instrCont = QList<std::pair<QString, QString>>;
 
 public:
-    using iterator = typename QStringList::iterator;
-    using const_iterator = typename QStringList::const_iterator;
-    using size_type = typename QStringList::size_type;
+    using iterator = typename instrCont::iterator;
+    using const_iterator = typename instrCont::const_iterator;
+    using size_type = typename instrCont::size_type;
 
     CFGNode(TraceBasicBlock* bb);
 
@@ -117,7 +118,7 @@ private:
     bool _visible = false;
     CanvasCFGNode* _cn = nullptr;
 
-    QStringList _instructions;
+    instrCont _instructions;
 };
 
 

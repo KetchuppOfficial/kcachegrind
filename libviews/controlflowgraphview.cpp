@@ -862,7 +862,7 @@ public:
     ObjdumpParser(TraceFunction* func);
     ~ObjdumpParser() = default;
 
-    std::pair<QString, QMap<Addr, QString>> getInstrStrings();
+    std::pair<QString, QMap<Addr, std::pair<QString, QString>>> getInstrStrings();
 
 private:
     using instr_iterator = typename TraceInstrMap::iterator;
@@ -1081,13 +1081,13 @@ QString ObjdumpParser::getSysRoot()
     return _env.value(QStringLiteral("SYSROOT"));
 }
 
-std::pair<QString, QMap<Addr, QString>> ObjdumpParser::getInstrStrings()
+std::pair<QString, QMap<Addr, std::pair<QString, QString>>> ObjdumpParser::getInstrStrings()
 {
     #ifdef OBJDUMP_PARSER_DEBUG
     qDebug() << "\033[1;31m" << "ObjdumpParser::getInstrStrings()" << "\033[0m";
     #endif // OBJDUMP_PARSER_DEBUG
 
-    QMap<Addr, QString> instrStrings;
+    QMap<Addr, std::pair<QString, QString>> instrStrings;
 
     for (; ; _line.setPos(0))
     {
@@ -1160,7 +1160,7 @@ std::pair<QString, QMap<Addr, QString>> ObjdumpParser::getInstrStrings()
         {
             operands.replace('<', '[');
             operands.replace('>', ']');
-            instrStrings.insert(_objAddr, mnemonic + " " + operands);
+            instrStrings.insert(_objAddr, std::pair{mnemonic, operands});
         }
     }
 
@@ -1577,6 +1577,7 @@ void CFGExporter::dumpNodeReduced(QTextStream& ts, const CFGNode& node)
 
 void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
 {
+    #if 0
     const TraceBasicBlock* bb = node.basicBlock();
 
     ts << QStringLiteral("  b%1b%2 [shape=record, label=\"")
@@ -1593,30 +1594,86 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
     if (bb->existsJumpToInstr(instr))
         ts << QStringLiteral("<I%1>").arg(instr->addr().toString());
 
-    ts << QStringLiteral(" cost: %1 | %2 | %3 | ")
+    ts << QStringLiteral(" cost: %1 | %2 | %3 %4 | ")
                         .arg(QString::number(node.self))
                         .arg("0x" + bb->firstAddr().toString())
-                        .arg(*node.begin());
+                        .arg(node.begin()->first)
+                        .arg(node.begin()->second);
     if (it != lastInstrIt)
         it++;
 
-    auto i = 0;
-    for (; it != lastInstrIt; ++it, ++i)
+    auto strIt = std::next(node.begin());
+    for (; it != lastInstrIt; ++it, ++strIt)
     {
         instr = *it;
         if (bb->existsJumpToInstr(instr))
-            ts << QStringLiteral("<I%1>").arg(instr->addr().toString());
+            ts << QStringLiteral("<I%1> ").arg(instr->addr().toString());
 
-        ts << *std::next(node.begin(), i) << " | ";
+        ts << strIt->first << ' ' << strIt->second << " | ";
     }
 
-    ts << QStringLiteral("<I%1>").arg((*lastInstrIt)->addr().toString())
-        << *std::prev(node.end());
+    ts << QStringLiteral("<I%1> ").arg((*lastInstrIt)->addr().toString())
+       << strIt->first << ' ' << strIt->second;
 
     if (_layout == Layout::TopDown)
         ts << '}';
 
     ts << "\"]\n";
+    #endif
+
+    const TraceBasicBlock* bb = node.basicBlock();
+
+    ts << QStringLiteral("  b%1b%2 [shape=plaintext, label=<\n"
+                         "  <table border=\"0\" cellborder=\"1\" cellspacing=\"0\">\n"
+                         "  <tr>\n"
+                         "    <td colspan=\"2\"").arg(bb->firstAddr().toString())
+                                                 .arg(bb->lastAddr().toString());
+
+    auto it = bb->begin();
+    TraceInstr* instr = *it;
+    if (bb->existsJumpToInstr(instr))
+        ts << QStringLiteral(" port=\"I%1\"").arg(instr->addr().toString());
+
+    // qDebug("\033[1;31mHERE\033[0m");
+
+    ts << QStringLiteral(">cost: %1</td>\n"
+                         "  </tr>\n"
+                         "  <tr>\n"
+                         "    <td colspan=\"2\">%2</td>\n"
+                         "  </tr>\n"
+                         "  <tr>\n"
+                         "    <td>%3</td>\n"
+                         "    <td>%4</td>\n"
+                         "  </tr>\n").arg(QString::number(node.self))
+                                    .arg("0x" + bb->firstAddr().toString())
+                                    .arg(node.begin()->first)
+                                    .arg(node.begin()->second);
+
+    auto lastInstrIt = std::prev(bb->end());
+    if (it != lastInstrIt)
+        it++;
+
+    auto strIt = std::next(node.begin());
+    for (; it != lastInstrIt; ++it, ++strIt)
+    {
+        ts << "  <tr>\n"
+              "    <td";
+
+        instr = *it;
+        if (bb->existsJumpToInstr(instr))
+            ts << QStringLiteral(" port=\"I%1\"").arg(instr->addr().toString());
+
+        ts << QStringLiteral(">%1</td>\n"
+                             "    <td>%2</td>\n"
+                             "  </tr>\n").arg(strIt->first).arg(strIt->second);
+    }
+
+    ts << QStringLiteral("  <tr>\n"
+                         "    <td port=\"I%1\">%2</td>\n"
+                         "    <td>%3</td>\n"
+                         "  </tr>\n"
+                         "  </table>>]\n").arg((*lastInstrIt)->addr().toString())
+                                          .arg(strIt->first).arg(strIt->second);
 }
 
 void CFGExporter::dumpEdges(QTextStream& ts, DumpType type)
@@ -1848,15 +1905,26 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
                     rectangle.x() + rectangle.width(), topLineY);
         topLineY += step;
 
+        auto maxLenIt = std::max_element(_node->begin(), _node->end(), [](auto& pair1, auto& pair2)
+        {
+            return pair1.first.length() < pair2.first.length();
+        });
+
+        int shift = maxLenIt->first.length() * 10 + 2;
         for (auto instrIt = _node->begin(), ite = _node->end(); instrIt != ite; ++instrIt)
         {
-            p->drawText(rectangle.x(), topLineY, rectangle.width(), step,
-                        Qt::AlignCenter, *instrIt);
+            p->drawText(rectangle.x(), topLineY, shift, step,
+                        Qt::AlignCenter, instrIt->first);
+            p->drawText(rectangle.x() + shift, topLineY, rectangle.width() - shift, step,
+                        Qt::AlignCenter, instrIt->second);
             p->drawLine(rectangle.x(), topLineY,
                         rectangle.x() + rectangle.width(), topLineY);
 
             topLineY += step;
         }
+
+        p->drawLine(rectangle.x() + shift, rectangle.y() + step * 2,
+                    rectangle.x() + shift, rectangle.y() + rectangle.height());
     }
 
     if (StoredDrawParams::selected())
