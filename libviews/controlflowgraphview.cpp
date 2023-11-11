@@ -1634,8 +1634,6 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
     if (bb->existsJumpToInstr(instr))
         ts << QStringLiteral(" port=\"I%1\"").arg(instr->addr().toString());
 
-    // qDebug("\033[1;31mHERE\033[0m");
-
     ts << QStringLiteral(">cost: %1</td>\n"
                          "  </tr>\n"
                          "  <tr>\n"
