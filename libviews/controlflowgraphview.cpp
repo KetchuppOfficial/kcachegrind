@@ -1649,7 +1649,7 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
 
     auto lastInstrIt = std::prev(bb->end());
     if (it != lastInstrIt)
-        it++;
+        ++it;
 
     auto strIt = std::next(node.begin());
     for (; it != lastInstrIt; ++it, ++strIt)
