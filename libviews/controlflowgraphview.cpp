@@ -1417,6 +1417,8 @@ void dumpPartOfNonFalseBranchToReducedNode(QTextStream& ts, const TraceBranch* b
         ts << QStringLiteral(":w [constraint=false, ");
     else
         ts << QStringLiteral(":n [");
+
+    dumpNonFalseBranchColor(ts, br);
 }
 
 void dumpPartOfNonFalseBranchToExtendedNode(QTextStream& ts, const TraceBranch* br)
@@ -1429,6 +1431,8 @@ void dumpPartOfNonFalseBranchToExtendedNode(QTextStream& ts, const TraceBranch* 
                             .arg(br->instrTo()->addr().toString());
     else
         ts << QStringLiteral(":n [");
+
+    dumpNonFalseBranchColor(ts, br);
 }
 
 void dumpFalseBranchFromReducedNode(QTextStream& ts, const TraceBasicBlock* bbFrom,
@@ -1470,7 +1474,6 @@ void dumpEdgeExtendedToExtended(QTextStream& ts, const TraceBranch* br)
     {
         dumpPartOfNonFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
         dumpPartOfNonFalseBranchToExtendedNode(ts, br);
-        dumpNonFalseBranchColor(ts, br);
     }
 }
 
@@ -1490,7 +1493,6 @@ void dumpEdgeReducedToReduced(QTextStream& ts, const TraceBranch* br)
     {
         dumpPartOfNonFalseBranchFromReducedNode(ts, bbFrom, bbTo);
         dumpPartOfNonFalseBranchToReducedNode(ts, br);
-        dumpNonFalseBranchColor(ts, br);
     }
 }
 
@@ -1510,7 +1512,6 @@ void dumpEdgeReducedToExtended(QTextStream& ts, const TraceBranch* br)
     {
         dumpPartOfNonFalseBranchFromReducedNode(ts, bbFrom, bbTo);
         dumpPartOfNonFalseBranchToExtendedNode(ts, br);
-        dumpNonFalseBranchColor(ts, br);
     }
 }
 
@@ -1530,7 +1531,6 @@ void dumpEdgeExtendedToReduced(QTextStream& ts, const TraceBranch* br)
     {
         dumpPartOfNonFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
         dumpPartOfNonFalseBranchToReducedNode(ts, br);
-        dumpNonFalseBranchColor(ts, br);
     }
 }
 
