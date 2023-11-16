@@ -1847,12 +1847,12 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
         });
 
         int shift = maxLenIt->first.length() * 10 + 2;
-        for (auto instrIt = _node->begin(), ite = _node->end(); instrIt != ite; ++instrIt)
+        for (auto [mnemonic, args] : *_node)
         {
             p->drawText(rectangle.x(), topLineY, shift, step,
-                        Qt::AlignCenter, instrIt->first);
+                        Qt::AlignCenter, mnemonic);
             p->drawText(rectangle.x() + shift, topLineY, rectangle.width() - shift, step,
-                        Qt::AlignCenter, instrIt->second);
+                        Qt::AlignCenter, args);
             p->drawLine(rectangle.x(), topLineY,
                         rectangle.x() + rectangle.width(), topLineY);
 
