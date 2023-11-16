@@ -1165,6 +1165,36 @@ public:
     TraceBasicBlock(typename TraceInstrMap::iterator first,
                     typename TraceInstrMap::iterator last);
 
+    TraceBasicBlock(TraceBasicBlock& other, iterator from, iterator to)
+        : TraceListCost{ProfileContext::context(ProfileContext::BasicBlock)},
+          _func{other._func}
+    {
+        _instructions.reserve(std::distance(from, to));
+        std::copy(from, to, std::back_inserter(_instructions));
+
+        for (auto instr : _instructions)
+        {
+            instr->setBasicBlock(this);
+            addCost(instr);
+        }
+
+        auto& otherMap = other._instrToBranch;
+        auto brIt = otherMap.find(*from);
+        if (brIt != otherMap.end())
+            _instrToBranch.emplace(*from, std::move(brIt->second));
+
+        if (to == other.end())
+            _branches = other._branches;
+        else
+        {
+            _branches.resize(1);
+            _branches[0].setType(TraceBranch::Type::unconditional);
+            _branches[0].addExecutedCount(1); // temporary
+            _branches[0].setInstrFrom(*std::prev(to));
+            _branches[0].setInstrTo(*to);
+        }
+    }
+
     ~TraceBasicBlock() override = default;
 
     QString prettyName() const override;

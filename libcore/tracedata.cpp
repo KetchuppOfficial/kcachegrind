@@ -2679,6 +2679,31 @@ void TraceFunction::constructBasicBlocks()
         }
     }
 
+    decltype(_basicBlocks) newBBs;
+
+    for (auto bb : _basicBlocks)
+    {
+        auto from = bb->begin();
+        auto it = from;
+
+        for (auto ite = bb->end(); it != ite; ++it)
+        {
+            if (it != from && bb->existsJumpToInstr(*it))
+            {
+                newBBs.push_back(new TraceBasicBlock{*bb, from, it});
+                from = it;
+            }
+        }
+
+        newBBs.push_back(new TraceBasicBlock{*bb, from, it});
+    }
+
+    _basicBlocks.swap(newBBs);
+    #if 1
+    for(auto bb : newBBs)
+        delete bb;
+    #endif
+
     assert (std::all_of(_basicBlocks.begin(), _basicBlocks.end(),
                         [](TraceBasicBlock* bb){ return bb->instrNumber() > 0; }));
 }
