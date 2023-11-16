@@ -1404,7 +1404,7 @@ void dumpPartOfNonFalseBranchFromExtendedNode(QTextStream& ts, const TraceBasicB
 {
     QString bbFromLastAddr = bbFrom->lastAddr().toString();
 
-    ts << QStringLiteral("  b%1b%2:I%3:w -> b%4b%5")
+    ts << QStringLiteral("  b%1b%2:IL%3:w -> b%4b%5")
                         .arg(bbFrom->firstAddr().toString())
                         .arg(bbFromLastAddr).arg(bbFromLastAddr)
                         .arg(bbTo->firstAddr().toString())
@@ -1415,8 +1415,6 @@ void dumpPartOfNonFalseBranchToReducedNode(QTextStream& ts, const TraceBranch* b
 {
     if (br->isCycle())
         ts << QStringLiteral(":w [constraint=false, ");
-    else if (br->isBranchInside())
-        ts << QStringLiteral(" [");
     else
         ts << QStringLiteral(":n [");
 }
@@ -1424,10 +1422,10 @@ void dumpPartOfNonFalseBranchToReducedNode(QTextStream& ts, const TraceBranch* b
 void dumpPartOfNonFalseBranchToExtendedNode(QTextStream& ts, const TraceBranch* br)
 {
     if (br->isCycle())
-        ts << QStringLiteral(":I%1:w [constraint=false, ")
+        ts << QStringLiteral(":IL%1:w [constraint=false, ")
                             .arg(br->instrTo()->addr().toString());
     else if (br->isBranchInside())
-        ts << QStringLiteral(":I%1 [")
+        ts << QStringLiteral(":IL%1:w [")
                             .arg(br->instrTo()->addr().toString());
     else
         ts << QStringLiteral(":n [");
@@ -1448,7 +1446,7 @@ void dumpFalseBranchFromExtendedNode(QTextStream& ts, const TraceBasicBlock* bbF
 {
     QString bbFromLastAddr = bbFrom->lastAddr().toString();
 
-    ts << QStringLiteral("  b%1b%2:I%3:e -> b%4b%5:n [color=red, ")
+    ts << QStringLiteral("  b%1b%2:IR%3:e -> b%4b%5:n [color=red, ")
                         .arg(bbFrom->firstAddr().toString())
                         .arg(bbFromLastAddr)
                         .arg(bbFromLastAddr)
@@ -1622,44 +1620,31 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
     #endif
 
     const TraceBasicBlock* bb = node.basicBlock();
+    QString firstAddr = bb->firstAddr().toString();
+    QString lastAddr = bb->lastAddr().toString();
 
     ts << QStringLiteral("  b%1b%2 [shape=plaintext, label=<\n"
                          "  <table border=\"0\" cellborder=\"1\" cellspacing=\"0\">\n"
                          "  <tr>\n"
-                         "    <td colspan=\"2\"").arg(bb->firstAddr().toString())
-                                                 .arg(bb->lastAddr().toString());
-
-    auto it = bb->begin();
-    TraceInstr* instr = *it;
-    if (bb->existsJumpToInstr(instr))
-        ts << QStringLiteral(" port=\"I%1\"").arg(instr->addr().toString());
-
-    ts << QStringLiteral(">cost: %1</td>\n"
+                         "    <td colspan=\"2\">cost: %3</td>\n"
                          "  </tr>\n"
                          "  <tr>\n"
-                         "    <td colspan=\"2\">%2</td>\n"
-                         "  </tr>\n"
-                         "  <tr>\n"
-                         "    <td>%3</td>\n"
-                         "    <td>%4</td>\n"
-                         "  </tr>\n").arg(QString::number(node.self))
-                                     .arg("0x" + bb->firstAddr().toString())
-                                     .arg(node.begin()->first)
-                                     .arg(node.begin()->second);
+                         "    <td colspan=\"2\">%4</td>\n"
+                         "  </tr>\n").arg(firstAddr).arg(lastAddr)
+                                     .arg(QString::number(node.self))
+                                     .arg("0x" + firstAddr);
 
+    auto strIt = node.begin();
     auto lastInstrIt = std::prev(bb->end());
-    if (it != lastInstrIt)
-        ++it;
 
-    auto strIt = std::next(node.begin());
-    for (; it != lastInstrIt; ++it, ++strIt)
+    for (auto instrIt = bb->begin(); instrIt != lastInstrIt; ++instrIt, ++strIt)
     {
         ts << "  <tr>\n"
               "    <td";
 
-        instr = *it;
+        TraceInstr* instr = *instrIt;
         if (bb->existsJumpToInstr(instr))
-            ts << QStringLiteral(" port=\"I%1\"").arg(instr->addr().toString());
+            ts << QStringLiteral(" port=\"IL%1\"").arg(instr->addr().toString());
 
         ts << QStringLiteral(">%1</td>\n"
                              "    <td>%2</td>\n"
@@ -1667,11 +1652,11 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
     }
 
     ts << QStringLiteral("  <tr>\n"
-                         "    <td port=\"I%1\">%2</td>\n"
-                         "    <td>%3</td>\n"
+                         "    <td port=\"IL%1\">%2</td>\n"
+                         "    <td port=\"IR%3\">%4</td>\n"
                          "  </tr>\n"
-                         "  </table>>]\n").arg((*lastInstrIt)->addr().toString())
-                                          .arg(strIt->first).arg(strIt->second);
+                         "  </table>>]\n").arg(lastAddr).arg(strIt->first)
+                                          .arg(lastAddr).arg(strIt->second);
 }
 
 void CFGExporter::dumpEdges(QTextStream& ts, DumpType type)
@@ -1704,7 +1689,7 @@ void CFGExporter::dumpEdges(QTextStream& ts, DumpType type)
                             .arg(br->instrTo()->addr().toString());
         }
         else
-            ts << QStringLiteral("label=\"%1\"]\n").arg(br->executedCount().v);
+            ts << QStringLiteral("label=\"%1\"]\n").arg(br->executedCount().pretty());
     }
 
     #if 0
