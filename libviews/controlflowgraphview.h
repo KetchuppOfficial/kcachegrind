@@ -215,8 +215,8 @@ public:
     void switchDetailsLevel(TraceBasicBlock* bb);
     void setDetailsLevel(TraceFunction* func, DetailsLevel level);
     void minimizeBBsWithCostLessThan(uint64 minimalCost);
-    int minimalCostPercentage() const { return _minimalCostPercentage; }
-    void setMinimalCostPercentage(int p) { _minimalCostPercentage = p; }
+    double minimalCostPercentage() const { return _minimalCostPercentage; }
+    void setMinimalCostPercentage(double p) { _minimalCostPercentage = p; }
 
     CFGNode* findNode(TraceBasicBlock* bb);
     const CFGNode* findNode(TraceBasicBlock* bb) const;
@@ -270,7 +270,7 @@ private:
     QMap<std::pair<Addr, Addr>, CFGEdge> _edgeMap;
 
     details_map_type _detailsMap;
-    int _minimalCostPercentage = -1;
+    double _minimalCostPercentage = -1;
 };
 
 enum CanvasParts : int
@@ -464,7 +464,7 @@ private:
     QAction* addStopLayoutAction(QMenu& menu);
     QAction* addDetailsAction(QMenu* menu, const QString& descr, CFGNode* node,
                               CFGExporter::DetailsLevel level);
-    QAction* addMinimizationAction(QMenu* menu, const QString& descr, int percentage);
+    QAction* addMinimizationAction(QMenu* menu, const QString& descr, double percentage);
 
     QMenu* addZoomPosMenu(QMenu& menu);
     QMenu* addLayoutMenu(QMenu& menu);
