@@ -1553,6 +1553,10 @@ void CFGExporter::dumpNodes(QTextStream& ts)
 
 void CFGExporter::dumpNodeReduced(QTextStream& ts, const CFGNode& node)
 {
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::dumpNodeReduced()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
     const TraceBasicBlock* bb = node.basicBlock();
     QString firstAddr = bb->firstAddr().toString();
 
@@ -1575,6 +1579,10 @@ void CFGExporter::dumpNodeReduced(QTextStream& ts, const CFGNode& node)
 
 void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
 {
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::dumpNodeExtended()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
     #if 0
     const TraceBasicBlock* bb = node.basicBlock();
 
