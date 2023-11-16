@@ -2633,38 +2633,6 @@ std::vector<TraceBasicBlock*>& TraceFunction::basicBlocks()
     return _basicBlocks;
 }
 
-#if 0
-namespace
-{
-
-void calcInclusiveCosts(TraceBasicBlock* bb)
-{
-    static std::vector<TraceBasicBlock*> stack;
-
-    if (_branches.empty())
-        return;
-    else
-    {
-        auto accumulator = [](uint64 cost, TraceBranch& br){ return cost + br.executedCount().v; };
-        uint64 nJumps = std::accumulate(_branches.begin(), _branches.end(), 0, accumulator);
-
-        stack.push_back(bb);
-        for (auto& br : _branches)
-        {
-            TraceBasicBlock* bbTo = br.bbTo();
-            if (std::find(stack.begin(), stack.end(), bbTo) == stack.end())
-            {
-                calcInclusiveCosts(bbTo);
-                bb->addInclusive(bbTo);
-            }
-        }
-        stack.pop_back(bb);
-    }
-}
-
-} // unnamed namespace
-#endif
-
 void TraceFunction::constructBasicBlocks()
 {
     auto instructions = instrMap();
