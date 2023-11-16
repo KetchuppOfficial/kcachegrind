@@ -2443,8 +2443,7 @@ void ControlFlowGraphView::parseNode(QTextStream& lineStream)
     {
         assert(node->instrNumber() > 0);
         node->setVisible(true);
-
-        qreal w = _scaleX * nodeWidth.toDouble();
+        qreal w = (_scaleX - 6) * nodeWidth.toDouble();
         qreal h = _scaleY * nodeHeight.toDouble();
 
         auto rItem = new CanvasCFGNode{this, node, xx - w / 2, yy - h / 2, w, h};
