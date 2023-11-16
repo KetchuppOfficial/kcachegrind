@@ -1822,34 +1822,23 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
     qDebug() << "\033[1;31m" << "CanvasCFGNode::paint()" << "\033[0m";
     #endif // CANVASCFGNODE_DEBUG
 
+    bool reduced = _view->isReduced(_node);
+
     QRectF rectangle = rect();
+    qreal topLineY = rectangle.y();
 
-    if (_view->isReduced(_node))
+    qreal step = rectangle.height() / (reduced ? 2 : _node->instrNumber() + 2);
+
+    p->fillRect(rectangle.x() + 1, topLineY + 1, rectangle.width(), step * 2, Qt::gray);
+    topLineY += step;
+
+    p->drawText(rectangle.x(), topLineY, rectangle.width(), step,
+                Qt::AlignCenter, "0x" + _node->basicBlock()->firstAddr().toString());
+    p->drawLine(rectangle.x(), topLineY,
+                rectangle.x() + rectangle.width(), topLineY);
+
+    if (!reduced)
     {
-        qreal step = rectangle.height() / 2;
-        qreal lineY = rectangle.y() + step;
-
-        p->fillRect(rectangle.x() + 1, rectangle.y() + 1, rectangle.width(), rectangle.height(),
-                    Qt::gray);
-
-        p->drawLine(rectangle.x(), lineY,
-                    rectangle.x() + rectangle.width(), lineY);
-
-        p->drawText(rectangle.x(), lineY, rectangle.width(), step,
-                    Qt::AlignCenter, "0x" + _node->basicBlock()->firstAddr().toString());
-    }
-    else
-    {
-        qreal step = rectangle.height() / (_node->instrNumber() + 2);
-        qreal topLineY = rectangle.y();
-
-        p->fillRect(rectangle.x() + 1, topLineY + 1, rectangle.width(), step * 2, Qt::gray);
-        topLineY += step;
-
-        p->drawText(rectangle.x(), topLineY, rectangle.width(), step,
-                    Qt::AlignCenter, "0x" + _node->basicBlock()->firstAddr().toString());
-        p->drawLine(rectangle.x(), topLineY,
-                    rectangle.x() + rectangle.width(), topLineY);
         topLineY += step;
 
         auto maxLenIt = std::max_element(_node->begin(), _node->end(), [](auto& pair1, auto& pair2)
