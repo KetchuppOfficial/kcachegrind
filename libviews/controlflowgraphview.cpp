@@ -1841,12 +1841,16 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
     {
         topLineY += step;
 
-        auto maxLenIt = std::max_element(_node->begin(), _node->end(), [](auto& pair1, auto& pair2)
+        QFontMetrics fm = _view->fontMetrics();
+        auto mnemonicComp = [&fm](auto& pair1, auto& pair2)
         {
-            return pair1.first.length() < pair2.first.length();
-        });
+            return fm.size(Qt::TextSingleLine, pair1.first).width() <
+                   fm.size(Qt::TextSingleLine, pair2.first).width();
+        };
 
-        int shift = maxLenIt->first.length() * 10 + 2;
+        auto maxLenIt = std::max_element(_node->begin(), _node->end(), mnemonicComp);
+
+        int shift = fm.size(Qt::TextSingleLine, maxLenIt->first).width() + 4;
         for (auto &[mnemonic, args] : *_node)
         {
             p->drawText(rectangle.x(), topLineY, shift, step,
