@@ -2733,7 +2733,7 @@ void ControlFlowGraphView::minimizationTriggered(QAction* a)
 
     TraceFunction* func = getFunction();
     uint64 totalCost = func->subCost(_eventType).v;
-    int percentage = a->data().toInt();
+    double percentage = a->data().toDouble();
 
     _exporter.setMinimalCostPercentage(percentage);
     _exporter.minimizeBBsWithCostLessThan(percentage * totalCost / 100);
@@ -3623,7 +3623,7 @@ QAction* ControlFlowGraphView::addDetailsAction(QMenu* menu, const QString& desc
 }
 
 QAction* ControlFlowGraphView::addMinimizationAction(QMenu* menu, const QString& descr,
-                                                     int percentage)
+                                                     double percentage)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addMinimizationAction" << "\033[0m";
@@ -3688,7 +3688,7 @@ QMenu* ControlFlowGraphView::addMinimizationMenu(QMenu& menu)
 
     addMinimizationAction(submenu, QObject::tr("Undefined"), -1);
     submenu->addSeparator();
-    for (auto percentage = 0; percentage <= 100; percentage += 10)
+    for (auto percentage : {0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0})
         addMinimizationAction(submenu, QObject::tr("%1%").arg(percentage), percentage);
 
     connect(submenu, &QMenu::triggered,
