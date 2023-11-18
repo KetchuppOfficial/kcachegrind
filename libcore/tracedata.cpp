@@ -2633,37 +2633,23 @@ std::vector<TraceBasicBlock*>& TraceFunction::basicBlocks()
     return _basicBlocks;
 }
 
-void TraceFunction::constructBasicBlocks()
+namespace
 {
-    auto instructions = instrMap();
-    if (!instructions || instructions->empty())
-        return;
 
-    for (auto from = instructions->begin(), ite = instructions->end(); from != ite; )
+void collectBranchesInsideBB(std::vector<TraceBasicBlock*>::iterator first,
+                             std::vector<TraceBasicBlock*>::iterator last)
+{
+    for (; first != last; ++first)
     {
-        auto to = std::find_if_not(from, ite,
-                                   [](TraceInstr &i){ return i.instrJumps().isEmpty(); });
-
-        if (to != ite)
-            ++to;
-
-        auto bb = new TraceBasicBlock{from, to};
-        _basicBlocks.push_back(bb);
-
-        from = to;
-    }
-
-    for (auto it = _basicBlocks.begin(), ite = _basicBlocks.end(); it != ite; ++it)
-    {
-        TraceBasicBlock* bbPtr = *it;
+        TraceBasicBlock* bbPtr = *first;
         TraceBasicBlock::size_type nBranches = bbPtr->nBranches();
 
         if (nBranches == 0)
             continue;
         else if (nBranches == 2)
         {
-            auto nextBBIt = std::next(it);
-            if (nextBBIt != ite)
+            auto nextBBIt = std::next(first);
+            if (nextBBIt != last)
             {
                 TraceBranch& falseBr = bbPtr->branch(1);
                 falseBr.setInstrTo((*nextBBIt)->firstInstr());
@@ -2678,31 +2664,54 @@ void TraceFunction::constructBasicBlocks()
                 bbTo->addBranchInside(br);
         }
     }
+}
 
-    decltype(_basicBlocks) newBBs;
+} // unnamed namespace
 
-    for (auto bb : _basicBlocks)
+void TraceFunction::constructBasicBlocks()
+{
+    auto instructions = instrMap();
+    if (!instructions || instructions->empty())
+        return;
+
+    decltype(_basicBlocks) preliminaryBBs;
+
+    for (auto from = instructions->begin(), ite = instructions->end(); from != ite; )
+    {
+        auto to = std::find_if_not(from, ite,
+                                   [](TraceInstr &i){ return i.instrJumps().isEmpty(); });
+
+        if (to != ite)
+            ++to;
+
+        auto bb = new TraceBasicBlock{from, to};
+        preliminaryBBs.push_back(bb);
+
+        from = to;
+    }
+
+    collectBranchesInsideBB(preliminaryBBs.begin(), preliminaryBBs.end());
+
+    for (auto bb : preliminaryBBs)
     {
         auto from = bb->begin();
-        auto it = from;
+        auto it = std::next(from);
 
         for (auto ite = bb->end(); it != ite; ++it)
         {
-            if (it != from && bb->existsJumpToInstr(*it))
+            if (bb->existsJumpToInstr(*it))
             {
-                newBBs.push_back(new TraceBasicBlock{*bb, from, it});
+                _basicBlocks.push_back(new TraceBasicBlock{*bb, from, it});
                 from = it;
             }
         }
 
-        newBBs.push_back(new TraceBasicBlock{*bb, from, it});
+        _basicBlocks.push_back(new TraceBasicBlock{*bb, from, it});
     }
 
-    _basicBlocks.swap(newBBs);
-    #if 1
-    for(auto bb : newBBs)
-        delete bb;
-    #endif
+    qDeleteAll(preliminaryBBs);
+
+    collectBranchesInsideBB(_basicBlocks.begin(), _basicBlocks.end());
 
     assert (std::all_of(_basicBlocks.begin(), _basicBlocks.end(),
                         [](TraceBasicBlock* bb){ return bb->instrNumber() > 0; }));
@@ -3913,9 +3922,30 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
     }
 
     for (; first != last; ++first)
-    {
         first->setBasicBlock(this);
-        addCost(std::addressof(*first));
+}
+
+TraceBasicBlock::TraceBasicBlock(TraceBasicBlock& other, iterator from, iterator to)
+    : TraceListCost{ProfileContext::context(ProfileContext::BasicBlock)}, _func{other._func}
+{
+    _instructions.reserve(std::distance(from, to));
+    std::copy(from, to, std::back_inserter(_instructions));
+
+    for (auto instr : _instructions)
+    {
+        instr->setBasicBlock(this);
+        addCost(instr);
+    }
+
+    if (to == other.end())
+        _branches = other._branches;
+    else
+    {
+        _branches.resize(1);
+        _branches[0].setType(TraceBranch::Type::unconditional);
+        _branches[0].addExecutedCount(1); // temporary
+        _branches[0].setInstrFrom(*std::prev(to));
+        _branches[0].setInstrTo(*to);
     }
 }
 
