@@ -1426,9 +1426,6 @@ void dumpPartOfNonFalseBranchToExtendedNode(QTextStream& ts, const TraceBranch* 
     if (br->isCycle())
         ts << QStringLiteral(":IL%1:w [constraint=false, ")
                             .arg(br->instrTo()->addr().toString());
-    else if (br->isBranchInside())
-        ts << QStringLiteral(":IL%1:w [")
-                            .arg(br->instrTo()->addr().toString());
     else
         ts << QStringLiteral(":n [");
 
@@ -1599,18 +1596,19 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
                                      .arg("0x" + firstAddr);
 
     auto strIt = node.begin();
+    auto instrIt = bb->begin();
     auto lastInstrIt = std::prev(bb->end());
 
-    for (auto instrIt = bb->begin(); instrIt != lastInstrIt; ++instrIt, ++strIt)
+    ts << QStringLiteral("  <tr>\n"
+                         "    <td port=\"IL%1\">%2</td>\n"
+                         "    <td>%3</td>\n"
+                         "  </tr>\n").arg((*instrIt)->addr().toString())
+                                     .arg(strIt->first).arg(strIt->second);
+
+    for (++instrIt; instrIt != lastInstrIt; ++instrIt, ++strIt)
     {
-        ts << "  <tr>\n"
-              "    <td";
-
-        TraceInstr* instr = *instrIt;
-        if (bb->existsJumpToInstr(instr))
-            ts << QStringLiteral(" port=\"IL%1\"").arg(instr->addr().toString());
-
-        ts << QStringLiteral(">%1</td>\n"
+        ts << QStringLiteral("  <tr>\n"
+                             "    <td>%1</td>\n"
                              "    <td>%2</td>\n"
                              "  </tr>\n").arg(strIt->first).arg(strIt->second);
     }
