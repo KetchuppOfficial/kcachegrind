@@ -1653,15 +1653,6 @@ void CFGExporter::dumpEdges(QTextStream& ts, DumpType type)
         else
             ts << QStringLiteral("label=\"%1\"]\n").arg(br->executedCount().pretty());
     }
-
-    #if 0
-    ts << QStringLiteral("  B%1 -> B%2 [weight=%3, label=\"%4 (%5x)\"];\n")
-                        .arg(reinterpret_cast<std::ptrdiff_t>(edge.bbFrom()), 0, 16)
-                        .arg(reinterpret_cast<std::ptrdiff_t>(edge.bbTo()), 0, 16)
-                        .arg(static_cast<long>(std::log(std::log(edge.cost))))
-                        .arg(SubCost{edge.cost}.pretty())
-                        .arg(SubCost{edge.count}.pretty());
-    #endif
 }
 
 CFGNode* CFGExporter::toCFGNode(QString s)
