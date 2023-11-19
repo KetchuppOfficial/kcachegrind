@@ -1138,7 +1138,6 @@ public:
     const TraceBasicBlock* bbTo() const;
 
     bool isCycle() const;
-    bool isBranchInside() const;
 
     QString prettyName() const override { return QString{}; }
     QString formattedName() const override { return QString{}; }
