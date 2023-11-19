@@ -4021,7 +4021,3 @@ bool TraceBranch::isCycle() const
     return (_type == Type::true_ || _type == Type::unconditional) && (bbFrom() == bbTo());
 }
 
-bool TraceBranch::isBranchInside() const
-{
-    return _to && (_to != _to->basicBlock()->firstInstr());
-}
