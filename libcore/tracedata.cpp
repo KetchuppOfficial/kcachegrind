@@ -2663,9 +2663,10 @@ void TraceFunction::constructBasicBlocks()
         }
     }
 
-    auto to = instructions->end();
-    for (auto from = instructions->begin(), ite = to; from != ite; from = to)
+    for (auto from = instructions->begin(), ite = instructions->end(); from != ite; )
     {
+        auto to = ite;
+
         for (auto it = std::next(from); it != ite; ++it)
         {
             auto& jumps = it->instrJumps();
@@ -2685,7 +2686,9 @@ void TraceFunction::constructBasicBlocks()
             }
         }
 
+        assert(from != to);
         _basicBlocks.push_back(new TraceBasicBlock{from, to});
+        from = to;
     }
 
     for (auto bb : _basicBlocks)
@@ -3983,11 +3986,6 @@ void TraceBasicBlock::addIncomingBranch(TraceBranch& br)
     assert(br.instrTo() == firstInstr());
 
     _incomingBranches.push_back(std::addressof(br));
-}
-
-bool TraceBasicBlock::existsJumpToInstr(TraceInstr* instr) const
-{
-    return instr == firstInstr();
 }
 
 // ======================================================================================
