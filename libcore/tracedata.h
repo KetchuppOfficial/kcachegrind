@@ -1165,8 +1165,6 @@ public:
     TraceBasicBlock(typename TraceInstrMap::iterator first,
                     typename TraceInstrMap::iterator last);
 
-    TraceBasicBlock(TraceBasicBlock& other, iterator from, iterator to);
-
     ~TraceBasicBlock() override = default;
 
     QString prettyName() const override;
@@ -1201,16 +1199,18 @@ public:
     const_iterator end() const { return _instructions.end(); }
     const_iterator cend() const { return end(); }
 
-    void addBranchInside(TraceBranch& fromBB);
+    void addIncomingBranch(TraceBranch& br);
     bool existsJumpToInstr(TraceInstr *instr) const;
 
-    std::vector<TraceBranch*> predecessors() const;
+    std::vector<TraceBranch*>& predecessors() { return _incomingBranches; };
+    const std::vector<TraceBranch*>& predecessors() const { return _incomingBranches; };
 
 private:
     std::vector<TraceInstr*> _instructions;
-    std::unordered_map<TraceInstr*, std::vector<TraceBranch*>> _instrToBranch;
 
     std::vector<TraceBranch> _branches;
+    std::vector<TraceBranch*> _incomingBranches;
+
     TraceFunction* _func;
 };
 
