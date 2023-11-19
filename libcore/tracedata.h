@@ -1200,7 +1200,6 @@ public:
     const_iterator cend() const { return end(); }
 
     void addIncomingBranch(TraceBranch& br);
-    bool existsJumpToInstr(TraceInstr *instr) const;
 
     std::vector<TraceBranch*>& predecessors() { return _incomingBranches; };
     const std::vector<TraceBranch*>& predecessors() const { return _incomingBranches; };
