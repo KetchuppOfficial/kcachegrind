@@ -1581,6 +1581,7 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
     #endif // CFGEXPORTER_DEBUG
 
     const TraceBasicBlock* bb = node.basicBlock();
+    assert(bb);
     QString firstAddr = bb->firstAddr().toString();
     QString lastAddr = bb->lastAddr().toString();
 
@@ -1599,18 +1600,21 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
     auto instrIt = bb->begin();
     auto lastInstrIt = std::prev(bb->end());
 
-    ts << QStringLiteral("  <tr>\n"
-                         "    <td port=\"IL%1\">%2</td>\n"
-                         "    <td>%3</td>\n"
-                         "  </tr>\n").arg((*instrIt)->addr().toString())
-                                     .arg(strIt->first).arg(strIt->second);
-
-    for (++instrIt; instrIt != lastInstrIt; ++instrIt, ++strIt)
+    if (instrIt != lastInstrIt)
     {
         ts << QStringLiteral("  <tr>\n"
-                             "    <td>%1</td>\n"
-                             "    <td>%2</td>\n"
-                             "  </tr>\n").arg(strIt->first).arg(strIt->second);
+                             "    <td port=\"IL%1\">%2</td>\n"
+                             "    <td>%3</td>\n"
+                             "  </tr>\n").arg((*instrIt)->addr().toString())
+                                         .arg(strIt->first).arg(strIt->second);
+
+        for (++instrIt; instrIt != lastInstrIt; ++instrIt, ++strIt)
+        {
+            ts << QStringLiteral("  <tr>\n"
+                                 "    <td>%1</td>\n"
+                                 "    <td>%2</td>\n"
+                                 "  </tr>\n").arg(strIt->first).arg(strIt->second);
+        }
     }
 
     ts << QStringLiteral("  <tr>\n"
@@ -1618,7 +1622,7 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
                          "    <td port=\"IR%3\">%4</td>\n"
                          "  </tr>\n"
                          "  </table>>]\n").arg(lastAddr).arg(strIt->first)
-                                          .arg(lastAddr).arg(strIt->second);
+                                         .arg(lastAddr).arg(strIt->second);
 }
 
 void CFGExporter::dumpEdges(QTextStream& ts, DumpType type)
