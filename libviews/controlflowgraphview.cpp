@@ -1365,174 +1365,6 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
     return true;
 }
 
-namespace
-{
-
-void dumpNonFalseBranchColor(QTextStream& ts, const TraceBranch* br)
-{
-    const char* color;
-    switch (br->brType())
-    {
-        case TraceBranch::Type::true_:
-            color = "blue";
-            break;
-        case TraceBranch::Type::unconditional:
-            color = "black";
-            break;
-        case TraceBranch::Type::indirect:
-            color = "green";
-            break;
-        default:
-            assert(false);
-    }
-
-    ts << QStringLiteral("color=%1, ").arg(color);
-}
-
-void dumpPartOfNonFalseBranchFromReducedNode(QTextStream& ts, const TraceBasicBlock* bbFrom,
-                                             const TraceBasicBlock* bbTo)
-{
-    ts << QStringLiteral("  b%1b%2:w -> b%3b%4")
-                        .arg(bbFrom->firstAddr().toString())
-                        .arg(bbFrom->lastAddr().toString())
-                        .arg(bbTo->firstAddr().toString())
-                        .arg(bbTo->lastAddr().toString());
-}
-
-void dumpPartOfNonFalseBranchFromExtendedNode(QTextStream& ts, const TraceBasicBlock* bbFrom,
-                                              const TraceBasicBlock* bbTo)
-{
-    QString bbFromLastAddr = bbFrom->lastAddr().toString();
-
-    ts << QStringLiteral("  b%1b%2:IL%3:w -> b%4b%5")
-                        .arg(bbFrom->firstAddr().toString())
-                        .arg(bbFromLastAddr).arg(bbFromLastAddr)
-                        .arg(bbTo->firstAddr().toString())
-                        .arg(bbTo->lastAddr().toString());
-}
-
-void dumpPartOfNonFalseBranchToReducedNode(QTextStream& ts, const TraceBranch* br)
-{
-    if (br->isCycle())
-        ts << QStringLiteral(":w [constraint=false, ");
-    else
-        ts << QStringLiteral(":n [");
-
-    dumpNonFalseBranchColor(ts, br);
-}
-
-void dumpPartOfNonFalseBranchToExtendedNode(QTextStream& ts, const TraceBranch* br)
-{
-    if (br->isCycle())
-        ts << QStringLiteral(":IL%1:w [constraint=false, ")
-                            .arg(br->instrTo()->addr().toString());
-    else
-        ts << QStringLiteral(":n [");
-
-    dumpNonFalseBranchColor(ts, br);
-}
-
-void dumpFalseBranchFromReducedNode(QTextStream& ts, const TraceBasicBlock* bbFrom,
-                                    const TraceBasicBlock* bbTo)
-{
-    ts << QStringLiteral("  b%1b%2:e -> b%3b%4:n [color=red, ")
-                        .arg(bbFrom->firstAddr().toString())
-                        .arg(bbFrom->lastAddr().toString())
-                        .arg(bbTo->firstAddr().toString())
-                        .arg(bbTo->lastAddr().toString());
-}
-
-void dumpFalseBranchFromExtendedNode(QTextStream& ts, const TraceBasicBlock* bbFrom,
-                                     const TraceBasicBlock* bbTo)
-{
-    QString bbFromLastAddr = bbFrom->lastAddr().toString();
-
-    ts << QStringLiteral("  b%1b%2:IR%3:e -> b%4b%5:n [color=red, ")
-                        .arg(bbFrom->firstAddr().toString())
-                        .arg(bbFromLastAddr)
-                        .arg(bbFromLastAddr)
-                        .arg(bbTo->firstAddr().toString())
-                        .arg(bbTo->lastAddr().toString());
-}
-
-void dumpEdgeExtendedToExtended(QTextStream& ts, const TraceBranch* br)
-{
-    assert(br);
-
-    const TraceBasicBlock* bbFrom = br->bbFrom();
-    assert(bbFrom);
-
-    const TraceBasicBlock* bbTo = br->bbTo();
-    assert(bbTo);
-
-    if (br->brType() == TraceBranch::Type::false_)
-        dumpFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
-    else
-    {
-        dumpPartOfNonFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
-        dumpPartOfNonFalseBranchToExtendedNode(ts, br);
-    }
-}
-
-void dumpEdgeReducedToReduced(QTextStream& ts, const TraceBranch* br)
-{
-    assert(br);
-
-    const TraceBasicBlock* bbFrom = br->bbFrom();
-    assert(bbFrom);
-
-    const TraceBasicBlock* bbTo = br->bbTo();
-    assert(bbTo);
-
-    if (br->brType() == TraceBranch::Type::false_)
-        dumpFalseBranchFromReducedNode(ts, bbFrom, bbTo);
-    else
-    {
-        dumpPartOfNonFalseBranchFromReducedNode(ts, bbFrom, bbTo);
-        dumpPartOfNonFalseBranchToReducedNode(ts, br);
-    }
-}
-
-void dumpEdgeReducedToExtended(QTextStream& ts, const TraceBranch* br)
-{
-    assert(br);
-
-    const TraceBasicBlock* bbFrom = br->bbFrom();
-    assert(bbFrom);
-
-    const TraceBasicBlock* bbTo = br->bbTo();
-    assert(bbTo);
-
-    if (br->brType() == TraceBranch::Type::false_)
-        dumpFalseBranchFromReducedNode(ts, bbFrom, bbTo);
-    else
-    {
-        dumpPartOfNonFalseBranchFromReducedNode(ts, bbFrom, bbTo);
-        dumpPartOfNonFalseBranchToExtendedNode(ts, br);
-    }
-}
-
-void dumpEdgeExtendedToReduced(QTextStream& ts, const TraceBranch* br)
-{
-    assert(br);
-
-    const TraceBasicBlock* bbFrom = br->bbFrom();
-    assert(bbFrom);
-
-    const TraceBasicBlock* bbTo = br->bbTo();
-    assert(bbTo);
-
-    if (br->brType() == TraceBranch::Type::false_)
-        dumpFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
-    else
-    {
-        dumpPartOfNonFalseBranchFromExtendedNode(ts, bbFrom, bbTo);
-        dumpPartOfNonFalseBranchToReducedNode(ts, br);
-    }
-}
-
-} // unnamed namespace
-
 void CFGExporter::dumpNodes(QTextStream& ts)
 {
     #ifdef CFGEXPORTER_DEBUG
@@ -1625,6 +1457,75 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
                                          .arg(lastAddr).arg(strIt->second);
 }
 
+namespace
+{
+
+void dumpNonFalseBranchColor(QTextStream& ts, const TraceBranch* br)
+{
+    const char* color;
+    switch (br->brType())
+    {
+        case TraceBranch::Type::true_:
+            color = "blue";
+            break;
+        case TraceBranch::Type::unconditional:
+            color = "black";
+            break;
+        case TraceBranch::Type::indirect:
+            color = "green";
+            break;
+        default:
+            assert(false);
+    }
+
+    ts << QStringLiteral("color=%1, ").arg(color);
+}
+
+void dumpCyclicEdge(QTextStream& ts, const TraceBranch* br, bool isReduced)
+{
+    assert(br->bbFrom() == br->bbTo());
+
+    const TraceBasicBlock* bb = br->bbFrom();
+
+    QString firstAddr = bb->firstAddr().toString();
+    QString lastAddr = bb->lastAddr().toString();
+
+    if (isReduced)
+    {
+        ts << QStringLiteral("  b%1b%2:w -> b%4b%5:w [constraint=false, ")
+                            .arg(firstAddr).arg(lastAddr).arg(firstAddr).arg(lastAddr);
+    }
+    else
+    {
+        ts << QStringLiteral("  b%1b%2:IL%3:w -> b%4b%5:IL%6:w [constraint=false, ")
+                            .arg(firstAddr).arg(lastAddr).arg(lastAddr)
+                            .arg(firstAddr).arg(lastAddr).arg(firstAddr);
+    }
+
+    dumpNonFalseBranchColor(ts, br);
+}
+
+void dumpRegularBranch(QTextStream& ts, const TraceBranch* br)
+{
+    const TraceBasicBlock* bbFrom = br->bbFrom();
+    const TraceBasicBlock* bbTo = br->bbTo();
+
+    QString firstAddrFrom = bbFrom->firstAddr().toString();
+    QString lastAddrFrom = bbFrom->lastAddr().toString();
+    QString firstAddrTo = bbTo->firstAddr().toString();
+    QString lastAddrTo = bbTo->lastAddr().toString();
+
+    ts << QStringLiteral("  b%1b%2:s -> b%3b%4:n [")
+                        .arg(firstAddrFrom).arg(lastAddrFrom).arg(firstAddrTo).arg(lastAddrTo);
+
+    if (br->brType() == TraceBranch::Type::false_)
+        ts << "color=red, ";
+    else
+        dumpNonFalseBranchColor(ts, br);
+}
+
+} // unnamed namespace
+
 void CFGExporter::dumpEdges(QTextStream& ts, DumpType type)
 {
     #ifdef CFGEXPORTER_DEBUG
@@ -1636,17 +1537,13 @@ void CFGExporter::dumpEdges(QTextStream& ts, DumpType type)
         TraceBranch* br = edge.branch();
         assert(br);
 
-        bool fromReduced = (detailsLevel(br->bbFrom()) == DetailsLevel::pcOnly);
-        bool toReduced = (detailsLevel(br->bbTo()) == DetailsLevel::pcOnly);
-
-        if (fromReduced && toReduced)
-            dumpEdgeReducedToReduced(ts, br);
-        else if (!fromReduced && toReduced)
-            dumpEdgeExtendedToReduced(ts, br);
-        else if (fromReduced && !toReduced)
-            dumpEdgeReducedToExtended(ts, br);
+        if (br->isCycle())
+        {
+            bool isReduced = (detailsLevel(br->bbFrom()) == DetailsLevel::pcOnly);
+            dumpCyclicEdge(ts, br, isReduced);
+        }
         else
-            dumpEdgeExtendedToExtended(ts, br);
+            dumpRegularBranch(ts, br);
 
         if (type == DumpType::internal)
         {
