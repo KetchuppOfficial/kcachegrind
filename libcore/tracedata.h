@@ -1190,6 +1190,9 @@ public:
     TraceBranch& branch(size_type i) { return _branches[i]; }
     const TraceBranch& branch(size_type i) const { return _branches[i]; }
 
+    std::vector<TraceBranch>& branches() { return _branches; }
+    const std::vector<TraceBranch>& branches() const { return _branches; }
+
     iterator begin() { return _instructions.begin(); }
     const_iterator begin() const { return _instructions.begin(); }
     const_iterator cbegin() const { return begin(); }
