@@ -250,7 +250,7 @@ private:
 
     void dumpNodes(QTextStream& ts);
     void dumpNodeReduced(QTextStream& ts, const CFGNode& node);
-    void dumpNodeExtended(QTextStream& ts, const CFGNode& node);
+    void dumpNodeExtended(QTextStream& ts, const CFGNode& node, bool needPC, bool needCost);
 
     void dumpEdges(QTextStream& ts, DumpType type);
 

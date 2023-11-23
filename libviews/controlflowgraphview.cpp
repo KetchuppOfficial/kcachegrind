@@ -1376,7 +1376,7 @@ void CFGExporter::dumpNodes(QTextStream& ts)
         if (detailsLevel(node.basicBlock()) == DetailsLevel::pcOnly)
             dumpNodeReduced(ts, node);
         else
-            dumpNodeExtended(ts, node);
+            dumpNodeExtended(ts, node, true, true);
     }
 }
 
@@ -1406,7 +1406,24 @@ void CFGExporter::dumpNodeReduced(QTextStream& ts, const CFGNode& node)
     ts << "\"]\n";
 }
 
-void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
+namespace
+{
+
+void dumpPC(QTextStream& ts, Addr addr)
+{
+    ts << QStringLiteral("0x%1</td>\n"
+                         "    <td align=\"left\">").arg(addr.toString());
+}
+
+void dumpCost(QTextStream& ts, SubCost cost)
+{
+    ts << QStringLiteral("%1</td>\n"
+                         "    <td align=\"left\">").arg(cost.pretty());
+}
+
+} // unnamed namespace
+
+void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node, bool needPC, bool needCost)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::dumpNodeExtended()" << "\033[0m";
@@ -1414,19 +1431,21 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
 
     const TraceBasicBlock* bb = node.basicBlock();
     assert(bb);
+
     QString firstAddr = bb->firstAddr().toString();
     QString lastAddr = bb->lastAddr().toString();
 
+    int span = 2 + needPC + needCost;
     ts << QStringLiteral("  b%1b%2 [shape=plaintext, label=<\n"
                          "  <table border=\"0\" cellborder=\"1\" cellspacing=\"0\">\n"
                          "  <tr>\n"
-                         "    <td colspan=\"2\">cost: %3</td>\n"
+                         "    <td colspan=\"%3\">cost: %4</td>\n"
                          "  </tr>\n"
                          "  <tr>\n"
-                         "    <td colspan=\"2\">%4</td>\n"
-                         "  </tr>\n").arg(firstAddr).arg(lastAddr)
-                                     .arg(QString::number(node.self))
-                                     .arg("0x" + firstAddr);
+                         "    <td colspan=\"%5\">0x%6</td>\n"
+                         "  </tr>\n").arg(firstAddr).arg(lastAddr).arg(span)
+                                     .arg(QString::number(node.self)).arg(span)
+                                     .arg(firstAddr);
 
     auto strIt = node.begin();
     auto instrIt = bb->begin();
@@ -1434,27 +1453,51 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
 
     if (instrIt != lastInstrIt)
     {
-        ts << QStringLiteral("  <tr>\n"
-                             "    <td port=\"IL%1\">%2</td>\n"
-                             "    <td>%3</td>\n"
-                             "  </tr>\n").arg((*instrIt)->addr().toString())
-                                         .arg(strIt->first).arg(strIt->second);
+        TraceInstr* instr = *instrIt;
 
-        for (++instrIt; instrIt != lastInstrIt; ++instrIt, ++strIt)
+        ts << QStringLiteral("  <tr>\n"
+                             "    <td port=\"IL%1\" align=\"left\">")
+                            .arg(instr->addr().toString());
+
+        if (needPC)
+            dumpPC(ts, instr->addr());
+        if (needCost)
+            dumpCost(ts, instr->subCost(_eventType));
+
+        ts << QStringLiteral("%1</td>\n"
+                             "    <td align=\"left\">%2</td>\n"
+                             "  </tr>\n").arg(strIt->first).arg(strIt->second);
+
+        for (++instrIt, ++strIt; instrIt != lastInstrIt; ++instrIt, ++strIt)
         {
-            ts << QStringLiteral("  <tr>\n"
-                                 "    <td>%1</td>\n"
-                                 "    <td>%2</td>\n"
+            instr = *instrIt;
+
+            ts << "  <tr>\n"
+                  "    <td align=\"left\">";
+
+            if (needPC)
+                dumpPC(ts, instr->addr());
+            if (needCost)
+                dumpCost(ts, instr->subCost(_eventType));
+
+            ts << QStringLiteral("%1</td>\n"
+                                 "    <td align=\"left\">%2</td>\n"
                                  "  </tr>\n").arg(strIt->first).arg(strIt->second);
         }
     }
 
     ts << QStringLiteral("  <tr>\n"
-                         "    <td port=\"IL%1\">%2</td>\n"
-                         "    <td port=\"IR%3\">%4</td>\n"
+                         "    <td port=\"IL%1\" align=\"left\">").arg(lastAddr);
+
+    if (needPC)
+        dumpPC(ts, bb->lastAddr());
+    if (needCost)
+        dumpCost(ts, (*lastInstrIt)->subCost(_eventType));
+
+    ts << QStringLiteral("%1</td>\n"
+                         "    <td align=\"left\">%2</td>\n"
                          "  </tr>\n"
-                         "  </table>>]\n").arg(lastAddr).arg(strIt->first)
-                                         .arg(lastAddr).arg(strIt->second);
+                         "  </table>>]\n").arg(strIt->first).arg(strIt->second);
 }
 
 namespace
