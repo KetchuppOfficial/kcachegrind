@@ -2691,36 +2691,65 @@ void TraceFunction::constructBasicBlocks()
         from = to;
     }
 
+    incomingJumps.clear();
+
     for (auto bb : _basicBlocks)
     {
-        TraceBasicBlock::size_type nBranches = bb->nBranches();
-
-        for (decltype(nBranches) i = 0; i != nBranches; ++i)
+        for (auto& br : bb->branches())
         {
-            TraceBranch& br = bb->branch(i);
             TraceBasicBlock* bbTo = br.bbTo();
             if (bbTo)
                 bbTo->addIncomingBranch(br);
         }
     }
 
+    auto adder = [](uint64 val, TraceBranch* br){ return val + br->executedCount().v; };
+
+    for (auto bb: _basicBlocks)
+    {
+        if (bb->nBranches() == 1)
+        {
+            auto& br = bb->branch(0);
+            if (br.brType() == TraceBranch::Type::invalid)
+            {
+                auto& incoming = bb->predecessors();
+
+                uint64 execCount;
+                if (incoming.empty())
+                    execCount = calledCount();
+                else
+                    execCount = std::accumulate(incoming.begin(), incoming.end(), 0, adder);
+
+                br.addExecutedCount(execCount);
+            }
+        }
+    }
+
+    auto refAdder = [](uint64 val, TraceBranch& br){ return val + br.executedCount().v; };
+    auto isInvalid = [](TraceBranch* br) { return br->brType() == TraceBranch::Type::invalid; };
+
     for (auto bb : _basicBlocks)
     {
-        if (bb->nBranches() == 1 && bb->branch(0).brType() == TraceBranch::Type::invalid)
-        {
-            auto& incoming = bb->predecessors();
-            uint64 execCount;
-            if (incoming.empty())
-                execCount = 1;
-            else
-            {
-                auto adder = [](uint64 val, TraceBranch* br){ return val + br->executedCount().v; };
-                execCount = std::accumulate(incoming.begin(), incoming.end(), 0, adder);
-            }
+        auto& incoming = bb->predecessors();
 
-            bb->branch(0).addExecutedCount(execCount);
-            bb->branch(0).setType(TraceBranch::Type::unconditional);
+        auto invBrIt = std::find_if(incoming.begin(), incoming.end(), isInvalid);
+        if (invBrIt != incoming.end())
+        {
+            auto& outgoing = bb->branches();
+            uint64 incomingCount = std::accumulate(incoming.begin(), incoming.end(), 0, adder);
+            uint64 outgoingCount = std::accumulate(outgoing.begin(), outgoing.end(), 0, refAdder);
+
+            if (incomingCount == 0 || incomingCount == outgoingCount)
+                (*invBrIt)->setType(TraceBranch::Type::unconditional);
         }
+    }
+
+    auto pred = [](TraceBranch& br){ return br.brType() == TraceBranch::Type::invalid; };
+
+    for (auto bb: _basicBlocks)
+    {
+        auto& branches = bb->branches();
+        branches.erase(std::remove_if(branches.begin(), branches.end(), pred), branches.end());
     }
 
     assert (std::all_of(_basicBlocks.begin(), _basicBlocks.end(),
