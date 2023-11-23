@@ -1193,6 +1193,11 @@ public:
     std::vector<TraceBranch>& branches() { return _branches; }
     const std::vector<TraceBranch>& branches() const { return _branches; }
 
+    std::vector<TraceBranch*>& predecessors() { return _incomingBranches; };
+    const std::vector<TraceBranch*>& predecessors() const { return _incomingBranches; };
+
+    void addIncomingBranch(TraceBranch& br);
+
     iterator begin() { return _instructions.begin(); }
     const_iterator begin() const { return _instructions.begin(); }
     const_iterator cbegin() const { return begin(); }
@@ -1200,11 +1205,6 @@ public:
     iterator end() { return _instructions.end(); }
     const_iterator end() const { return _instructions.end(); }
     const_iterator cend() const { return end(); }
-
-    void addIncomingBranch(TraceBranch& br);
-
-    std::vector<TraceBranch*>& predecessors() { return _incomingBranches; };
-    const std::vector<TraceBranch*>& predecessors() const { return _incomingBranches; };
 
 private:
     std::vector<TraceInstr*> _instructions;
