@@ -455,7 +455,7 @@ CFGExporter::CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Typ
     assert(!basicBlocks.empty());
     _detailsMap.reserve(basicBlocks.size());
     for (auto bb : basicBlocks)
-        _detailsMap.emplace(bb, DetailsLevel::full);
+        _detailsMap.emplace(bb, std::forward_as_tuple(DetailsLevel::full, false, false));
 }
 
 CFGExporter::~CFGExporter()
@@ -467,15 +467,14 @@ CFGExporter::~CFGExporter()
     delete _tmpFile;
 }
 
+
 CFGExporter::DetailsLevel CFGExporter::detailsLevel(TraceBasicBlock* bb) const
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::detailsLevel()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    auto it = _detailsMap.find(bb);
-    assert(it != _detailsMap.end());
-    return it->second;
+    return showDetail<0>(bb);
 }
 
 void CFGExporter::setDetailsLevel(TraceBasicBlock* bb, DetailsLevel level)
@@ -486,7 +485,7 @@ void CFGExporter::setDetailsLevel(TraceBasicBlock* bb, DetailsLevel level)
 
     auto it = _detailsMap.find(bb);
     if (it != _detailsMap.end())
-        it->second = level;
+        std::get<0>(it->second) = level;
 }
 
 void CFGExporter::switchDetailsLevel(TraceBasicBlock* bb)
@@ -498,10 +497,10 @@ void CFGExporter::switchDetailsLevel(TraceBasicBlock* bb)
     auto it = _detailsMap.find(bb);
     if (it != _detailsMap.end())
     {
-        if (it->second == DetailsLevel::pcOnly)
-            it->second = DetailsLevel::full;
+        if (std::get<0>(it->second) == DetailsLevel::pcOnly)
+            std::get<0>(it->second) = DetailsLevel::full;
         else
-            it->second = DetailsLevel::pcOnly;
+            std::get<0>(it->second) = DetailsLevel::pcOnly;
     }
 }
 
@@ -512,9 +511,8 @@ void CFGExporter::setDetailsLevel(TraceFunction* func, DetailsLevel level)
     #endif // CFGEXPORTER_DEBUG
 
     assert(func);
-    auto& BBs = func->basicBlocks();
-    for (auto bb : BBs)
-        _detailsMap[bb] = level;
+    for (auto bb : func->basicBlocks())
+        std::get<0>(_detailsMap[bb]) = level;
 }
 
 void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
@@ -526,9 +524,55 @@ void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
     for (auto& node : _nodeMap)
     {
         if (node.self <= minimalCost)
-            _detailsMap[node.basicBlock()] = DetailsLevel::pcOnly;
+            std::get<0>(_detailsMap[node.basicBlock()]) = DetailsLevel::pcOnly;
         else
-            _detailsMap[node.basicBlock()] = DetailsLevel::full;
+            std::get<0>(_detailsMap[node.basicBlock()]) = DetailsLevel::full;
+    }
+}
+
+bool CFGExporter::showInstrPC(TraceBasicBlock* bb) const
+{
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::showInstrPC()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
+    return showDetail<1>(bb);
+}
+
+void CFGExporter::switchShowingPC(TraceBasicBlock* bb)
+{
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::switchShowingPC()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
+    auto it = _detailsMap.find(bb);
+    if (it != _detailsMap.end())
+    {
+        bool& status = std::get<1>(it->second);
+        status ^= true;
+    }
+}
+
+bool CFGExporter::showInstrCost(TraceBasicBlock* bb) const
+{
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::showInstrPC()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
+    return showDetail<2>(bb);
+}
+
+void CFGExporter::switchShowingCost(TraceBasicBlock* bb)
+{
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::switchShowingCost()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
+    auto it = _detailsMap.find(bb);
+    if (it != _detailsMap.end())
+    {
+        bool& status = std::get<2>(it->second);
+        status ^= true;
     }
 }
 
@@ -604,7 +648,7 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
                 _item = BBs.front();
 
                 for (auto bb : BBs)
-                    _detailsMap.emplace(bb, DetailsLevel::full);
+                    _detailsMap.emplace(bb, std::forward_as_tuple(DetailsLevel::full, false, false));
 
                 break;
             }
@@ -1373,10 +1417,12 @@ void CFGExporter::dumpNodes(QTextStream& ts)
 
     for (auto& node : _nodeMap)
     {
-        if (detailsLevel(node.basicBlock()) == DetailsLevel::pcOnly)
+        TraceBasicBlock* bb = node.basicBlock();
+
+        if (detailsLevel(bb) == DetailsLevel::pcOnly)
             dumpNodeReduced(ts, node);
         else
-            dumpNodeExtended(ts, node, true, true);
+            dumpNodeExtended(ts, node, showInstrPC(bb), showInstrCost(bb));
     }
 }
 
@@ -2796,6 +2842,8 @@ enum MenuActions
     pcOnlyGlobal,
     allInstructionsLocal,
     allInstructionsGlobal,
+    showInstrCost,
+    showInstrPC,
 
     // special value
     nActions
@@ -2833,6 +2881,12 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
             actions[MenuActions::allInstructionsLocal] =
                     addDetailsAction(detailsMenu, QObject::tr("All instructions"), node,
                                      CFGExporter::DetailsLevel::full);
+
+            actions[MenuActions::showInstrCost] =
+                    addCostAction(detailsMenu, QObject::tr("Show instructions' cost"), node, false);
+
+            actions[MenuActions::showInstrPC] =
+                    addPCAction(detailsMenu, QObject::tr("Show instructions' PC"), node, false);
 
             popup.addSeparator();
         }
@@ -2896,6 +2950,14 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
         case MenuActions::allInstructionsGlobal:
             _exporter.setDetailsLevel(func, CFGExporter::DetailsLevel::full);
             _exporter.setMinimalCostPercentage(0);
+            refresh(false);
+            break;
+        case MenuActions::showInstrPC:
+            _exporter.switchShowingPC(bb);
+            refresh(false);
+            break;
+        case MenuActions::showInstrCost:
+            _exporter.switchShowingCost(bb);
             refresh(false);
             break;
         default: // practically nActions
@@ -3569,6 +3631,38 @@ QAction* ControlFlowGraphView::addMinimizationAction(QMenu* menu, const QString&
     a->setChecked(percentage == _exporter.minimalCostPercentage());
     if (percentage == -1)
         a->setEnabled(false);
+
+    return a;
+}
+
+QAction* ControlFlowGraphView::addCostAction(QMenu* menu, const QString& descr, CFGNode* node,
+                                             bool needCost)
+{
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addCostAction" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    QAction* a = menu->addAction(descr);
+
+    a->setData(needCost);
+    a->setCheckable(true);
+    a->setChecked(_exporter.showInstrCost(node->basicBlock()) == true);
+
+    return a;
+}
+
+QAction* ControlFlowGraphView::addPCAction(QMenu* menu, const QString& descr, CFGNode* node,
+                                           bool needPC)
+{
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addPCAction" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    QAction* a = menu->addAction(descr);
+
+    a->setData(needPC);
+    a->setCheckable(true);
+    a->setChecked(_exporter.showInstrPC(node->basicBlock()) == true);
 
     return a;
 }
