@@ -6,6 +6,7 @@
 #include <iterator>
 #include <algorithm>
 #include <unordered_map>
+#include <tuple>
 
 #include <QList>
 #include <QString>
@@ -192,7 +193,8 @@ public:
     enum class DetailsLevel { pcOnly, full };
     enum class DumpType { internal, external };
 
-    using details_map_type = std::unordered_map<TraceBasicBlock*, DetailsLevel>;
+    using detail_t = std::tuple<DetailsLevel, bool, bool>;
+    using details_map_type = std::unordered_map<TraceBasicBlock*, detail_t>;
 
     CFGExporter() = default;
     CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Type gt,
@@ -217,6 +219,12 @@ public:
     void minimizeBBsWithCostLessThan(uint64 minimalCost);
     double minimalCostPercentage() const { return _minimalCostPercentage; }
     void setMinimalCostPercentage(double p) { _minimalCostPercentage = p; }
+
+    bool showInstrPC(TraceBasicBlock* bb) const;
+    void switchShowingPC(TraceBasicBlock* bb);
+
+    bool showInstrCost(TraceBasicBlock* bb) const;
+    void switchShowingCost(TraceBasicBlock* bb);
 
     CFGNode* findNode(TraceBasicBlock* bb);
     const CFGNode* findNode(TraceBasicBlock* bb) const;
@@ -253,6 +261,14 @@ private:
     void dumpNodeExtended(QTextStream& ts, const CFGNode& node, bool needPC, bool needCost);
 
     void dumpEdges(QTextStream& ts, DumpType type);
+
+    template<std::size_t I>
+    auto showDetail(TraceBasicBlock* bb) const -> std::tuple_element_t<I, detail_t>
+    {
+        auto it = _detailsMap.find(bb);
+        assert(it != _detailsMap.end());
+        return std::get<I>(it->second);
+    }
 
     QString _dotName;
     QTemporaryFile* _tmpFile;
@@ -465,6 +481,8 @@ private:
     QAction* addDetailsAction(QMenu* menu, const QString& descr, CFGNode* node,
                               CFGExporter::DetailsLevel level);
     QAction* addMinimizationAction(QMenu* menu, const QString& descr, double percentage);
+    QAction* addCostAction(QMenu* menu, const QString& descr, CFGNode* node, bool needCost);
+    QAction* addPCAction(QMenu* menu, const QString& descr, CFGNode* node, bool needPC);
 
     QMenu* addZoomPosMenu(QMenu& menu);
     QMenu* addLayoutMenu(QMenu& menu);
