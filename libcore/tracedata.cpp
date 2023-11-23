@@ -3856,9 +3856,7 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
     std::transform(first, last, _instructions.begin(),
                    [](TraceInstr &i){ return std::addressof(i); });
 
-    assert(lastInstr());
     auto &jumps = lastInstr()->instrJumps();
-
     auto nJumps = jumps.size();
 
     if (nJumps == 0)
