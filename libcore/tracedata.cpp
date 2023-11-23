@@ -2704,6 +2704,25 @@ void TraceFunction::constructBasicBlocks()
         }
     }
 
+    for (auto bb : _basicBlocks)
+    {
+        if (bb->nBranches() == 1 && bb->branch(0).brType() == TraceBranch::Type::invalid)
+        {
+            auto& incoming = bb->predecessors();
+            uint64 execCount;
+            if (incoming.empty())
+                execCount = 1;
+            else
+            {
+                auto adder = [](uint64 val, TraceBranch* br){ return val + br->executedCount().v; };
+                execCount = std::accumulate(incoming.begin(), incoming.end(), 0, adder);
+            }
+
+            bb->branch(0).addExecutedCount(execCount);
+            bb->branch(0).setType(TraceBranch::Type::unconditional);
+        }
+    }
+
     assert (std::all_of(_basicBlocks.begin(), _basicBlocks.end(),
                         [](TraceBasicBlock* bb){ return bb->instrNumber() > 0; }));
 }
@@ -3866,8 +3885,7 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
             _branches.resize(1);
             _branches[0].setInstrFrom(lastInstr());
             _branches[0].setInstrTo(std::addressof(*last));
-            _branches[0].setType(TraceBranch::Type::unconditional);
-            _branches[0].addExecutedCount(1); // temporary
+            _branches[0].setType(TraceBranch::Type::invalid);
         }
     }
     else if (nJumps == 1)
