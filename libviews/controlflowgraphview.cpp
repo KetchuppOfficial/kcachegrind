@@ -1562,6 +1562,9 @@ void dumpNonFalseBranchColor(QTextStream& ts, const TraceBranch* br)
         case TraceBranch::Type::indirect:
             color = "green";
             break;
+        case TraceBranch::Type::fallThrough:
+            color = "purple";
+            break;
         default:
             assert(false);
     }
@@ -2512,6 +2515,9 @@ QColor getArrowColor(CFGEdge* edge)
             break;
         case TraceBranch::Type::indirect:
             arrowColor = Qt::darkGreen;
+            break;
+        case TraceBranch::Type::fallThrough:
+            arrowColor = Qt::magenta;
             break;
         default:
             assert(false);

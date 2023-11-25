@@ -2740,7 +2740,7 @@ void TraceFunction::constructBasicBlocks()
             uint64 outgoingCount = std::accumulate(outgoing.begin(), outgoing.end(), 0, refAdder);
 
             if (incomingCount == 0 || incomingCount == outgoingCount)
-                (*invBrIt)->setType(TraceBranch::Type::unconditional);
+                (*invBrIt)->setType(TraceBranch::Type::fallThrough);
         }
     }
 
