@@ -3272,15 +3272,16 @@ void ControlFlowGraphView::updateSizes(QSize s)
 
     // hide birds eye view if no overview needed
     if (!_data || !_activeItem ||
-        ((cWidth < s.width()) && (cHeight < s.height())) ) {
+        ((cWidth < s.width()) && (cHeight < s.height())) )
+    {
         _panningView->hide();
         return;
     }
 
     double zoom = calculate_zoom (s, cWidth, cHeight);
 
-    /* Comparing floating point values??? WTF??? */
-    if (zoom != _panningZoom) {
+    if (zoom != _panningZoom)
+    {
         _panningZoom = zoom;
 
         QTransform m;
@@ -3294,7 +3295,7 @@ void ControlFlowGraphView::updateSizes(QSize s)
         scrollContentsBy(0, 0);
     }
 
-    _panningView->centerOn(_scene->width()/2, _scene->height()/2);
+    _panningView->centerOn(_scene->width() / 2, _scene->height() / 2);
 
     int cvW = _panningView->width();
     int cvH = _panningView->height();
@@ -3302,42 +3303,48 @@ void ControlFlowGraphView::updateSizes(QSize s)
     int y = height() - cvH - horizontalScrollBar()->height() - 2;
 
     ZoomPosition zp = _zoomPosition;
-    if (zp == ZoomPosition::Auto) {
+    if (zp == ZoomPosition::Auto)
+    {
         auto tlCols = items(QRect(0, 0, cvW, cvH)).count();
         auto trCols = items(QRect(x, 0, cvW, cvH)).count();
         auto blCols = items(QRect(0, y, cvW, cvH)).count();
         auto brCols = items(QRect(x, y, cvW, cvH)).count();
         decltype(tlCols) minCols;
 
-        switch (_lastAutoPosition) {
-        case ZoomPosition::TopRight:
-            minCols = trCols;
-            break;
-        case ZoomPosition::BottomLeft:
-            minCols = blCols;
-            break;
-        case ZoomPosition::BottomRight:
-            minCols = brCols;
-            break;
-        default:
-        case ZoomPosition::TopLeft:
-            minCols = tlCols;
-            break;
+        switch (_lastAutoPosition)
+        {
+            case ZoomPosition::TopRight:
+                minCols = trCols;
+                break;
+            case ZoomPosition::BottomLeft:
+                minCols = blCols;
+                break;
+            case ZoomPosition::BottomRight:
+                minCols = brCols;
+                break;
+            default:
+            case ZoomPosition::TopLeft:
+                minCols = tlCols;
+                break;
         }
 
-        if (minCols > tlCols) {
+        if (minCols > tlCols)
+        {
             minCols = tlCols;
             _lastAutoPosition = ZoomPosition::TopLeft;
         }
-        if (minCols > trCols) {
+        if (minCols > trCols)
+        {
             minCols = trCols;
             _lastAutoPosition = ZoomPosition::TopRight;
         }
-        if (minCols > blCols) {
+        if (minCols > blCols)
+        {
             minCols = blCols;
             _lastAutoPosition = ZoomPosition::BottomLeft;
         }
-        if (minCols > brCols) {
+        if (minCols > brCols)
+        {
             minCols = brCols;
             _lastAutoPosition = ZoomPosition::BottomRight;
         }
@@ -3346,20 +3353,20 @@ void ControlFlowGraphView::updateSizes(QSize s)
     }
 
     QPoint newZoomPos{0, 0};
-    switch (zp) {
-        break;
-    case ZoomPosition::TopRight:
-        newZoomPos = QPoint(x, 0);
-        break;
-    case ZoomPosition::BottomLeft:
-        newZoomPos = QPoint(0, y);
-        break;
-    case ZoomPosition::BottomRight:
-        newZoomPos = QPoint(x, y);
-        break;
-    case ZoomPosition::TopLeft:
-    default:
-        break;
+    switch (zp)
+    {
+        case ZoomPosition::TopRight:
+            newZoomPos = QPoint(x, 0);
+            break;
+        case ZoomPosition::BottomLeft:
+            newZoomPos = QPoint(0, y);
+            break;
+        case ZoomPosition::BottomRight:
+            newZoomPos = QPoint(x, y);
+            break;
+        case ZoomPosition::TopLeft:
+        default:
+            break;
     }
 
     if (newZoomPos != _panningView->pos())
