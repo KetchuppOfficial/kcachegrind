@@ -1115,7 +1115,7 @@ protected:
 class TraceBranch : public TraceJumpCost
 {
 public:
-    enum class Type {invalid, unconditional, indirect, true_, false_};
+    enum class Type {invalid, unconditional, indirect, fallThrough, true_, false_};
 
     TraceBranch();
     ~TraceBranch() override = default;
