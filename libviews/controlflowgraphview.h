@@ -6,7 +6,6 @@
 #include <iterator>
 #include <algorithm>
 #include <unordered_map>
-#include <tuple>
 
 #include <QList>
 #include <QString>
@@ -192,9 +191,15 @@ public:
     enum class Layout { TopDown, LeftRight };
     enum class DetailsLevel { pcOnly, full };
     enum class DumpType { internal, external };
+    enum Options : int
+    {
+        default_ = 0,
+        reduced = 1 << 0,
+        showInstrCost = 1 << 1,
+        showInstrPC = 1 << 2
+    };
 
-    using detail_t = std::tuple<DetailsLevel, bool, bool>;
-    using details_map_type = std::unordered_map<TraceBasicBlock*, detail_t>;
+    using details_map_type = std::unordered_map<const TraceBasicBlock*, int>;
 
     CFGExporter() = default;
     CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Type gt,
@@ -212,22 +217,19 @@ public:
     size_type edgeCount() const { return _edgeMap.count(); }
     size_type nodeCount() const { return _nodeMap.count(); }
 
-    DetailsLevel detailsLevel(TraceBasicBlock* bb) const;
-    void setDetailsLevel(TraceBasicBlock* bb, DetailsLevel level);
-    void switchDetailsLevel(TraceBasicBlock* bb);
-    void setDetailsLevel(TraceFunction* func, DetailsLevel level);
+    Options getNodeOptions(const TraceBasicBlock* bb) const;
+    void setNodeOption(const TraceBasicBlock* bb, Options option);
+    void setNodeOption(TraceFunction* func, Options option);
+    void resetNodeOption(const TraceBasicBlock* bb, Options option);
+    void resetNodeOption(TraceFunction* func, Options option);
+    void switchNodeOption(const TraceBasicBlock* bb, Options option);
+
     void minimizeBBsWithCostLessThan(uint64 minimalCost);
     double minimalCostPercentage() const { return _minimalCostPercentage; }
     void setMinimalCostPercentage(double p) { _minimalCostPercentage = p; }
 
-    bool showInstrPC(TraceBasicBlock* bb) const;
-    void switchShowingPC(TraceBasicBlock* bb);
-
-    bool showInstrCost(TraceBasicBlock* bb) const;
-    void switchShowingCost(TraceBasicBlock* bb);
-
-    CFGNode* findNode(TraceBasicBlock* bb);
-    const CFGNode* findNode(TraceBasicBlock* bb) const;
+    CFGNode* findNode(const TraceBasicBlock* bb);
+    const CFGNode* findNode(const TraceBasicBlock* bb) const;
 
     CFGEdge* findEdge(Addr from, Addr to);
     const CFGEdge* findEdge(Addr from, Addr to) const;
@@ -258,17 +260,9 @@ private:
 
     void dumpNodes(QTextStream& ts);
     void dumpNodeReduced(QTextStream& ts, const CFGNode& node);
-    void dumpNodeExtended(QTextStream& ts, const CFGNode& node, bool needPC, bool needCost);
+    void dumpNodeExtended(QTextStream& ts, const CFGNode& node);
 
     void dumpEdges(QTextStream& ts, DumpType type);
-
-    template<std::size_t I>
-    auto showDetail(TraceBasicBlock* bb) const -> std::tuple_element_t<I, detail_t>
-    {
-        auto it = _detailsMap.find(bb);
-        assert(it != _detailsMap.end());
-        return std::get<I>(it->second);
-    }
 
     QString _dotName;
     QTemporaryFile* _tmpFile;
@@ -419,7 +413,9 @@ public:
 
     QString whatsThis() const override;
 
-    bool isReduced(CFGNode* node) const;
+    bool isReduced(const CFGNode* node) const;
+    bool showInstrPC(const CFGNode* node) const;
+    bool showInstrCost(const CFGNode* node) const;
     TraceFunction* getFunction();
 
 public Q_SLOTS:
@@ -478,11 +474,9 @@ private:
     QAction* addZoomPosAction(QMenu* m, const QString& descr, ZoomPosition pos);
     QAction* addLayoutAction(QMenu* m, const QString& descr, CFGExporter::Layout);
     QAction* addStopLayoutAction(QMenu& menu);
-    QAction* addDetailsAction(QMenu* menu, const QString& descr, CFGNode* node,
-                              CFGExporter::DetailsLevel level);
+    QAction* addOptionsAction(QMenu* menu, const QString& descr, CFGNode* node,
+                              CFGExporter::Options option);
     QAction* addMinimizationAction(QMenu* menu, const QString& descr, double percentage);
-    QAction* addCostAction(QMenu* menu, const QString& descr, CFGNode* node, bool needCost);
-    QAction* addPCAction(QMenu* menu, const QString& descr, CFGNode* node, bool needPC);
 
     QMenu* addZoomPosMenu(QMenu& menu);
     QMenu* addLayoutMenu(QMenu& menu);

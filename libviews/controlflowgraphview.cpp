@@ -455,7 +455,7 @@ CFGExporter::CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Typ
     assert(!basicBlocks.empty());
     _detailsMap.reserve(basicBlocks.size());
     for (auto bb : basicBlocks)
-        _detailsMap.emplace(bb, std::forward_as_tuple(DetailsLevel::full, false, false));
+        _detailsMap.emplace(bb, Options::default_);
 }
 
 CFGExporter::~CFGExporter()
@@ -467,52 +467,67 @@ CFGExporter::~CFGExporter()
     delete _tmpFile;
 }
 
-
-CFGExporter::DetailsLevel CFGExporter::detailsLevel(TraceBasicBlock* bb) const
+CFGExporter::Options CFGExporter::getNodeOptions(const TraceBasicBlock* bb) const
 {
     #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::detailsLevel()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
-    return showDetail<0>(bb);
-}
-
-void CFGExporter::setDetailsLevel(TraceBasicBlock* bb, DetailsLevel level)
-{
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::setDetailsLevel()" << "\033[0m";
+    qDebug() << "\033[1;31m" << "CFGExporter::getNodeOptions()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
     auto it = _detailsMap.find(bb);
-    if (it != _detailsMap.end())
-        std::get<0>(it->second) = level;
+    assert(it != _detailsMap.end());
+
+    return static_cast<Options>(it->second);
 }
 
-void CFGExporter::switchDetailsLevel(TraceBasicBlock* bb)
+void CFGExporter::setNodeOption(const TraceBasicBlock* bb, Options option)
 {
     #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::switchDetailsLevel()" << "\033[0m";
+    qDebug() << "\033[1;31m" << "CFGExporter::setNodeOption()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    auto it = _detailsMap.find(bb);
-    if (it != _detailsMap.end())
-    {
-        if (std::get<0>(it->second) == DetailsLevel::pcOnly)
-            std::get<0>(it->second) = DetailsLevel::full;
-        else
-            std::get<0>(it->second) = DetailsLevel::pcOnly;
-    }
+    _detailsMap[bb] |= static_cast<int>(option);
 }
 
-void CFGExporter::setDetailsLevel(TraceFunction* func, DetailsLevel level)
+void CFGExporter::setNodeOption(TraceFunction* func, Options option)
 {
     #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::setDetailsLevel()" << "\033[0m";
+    qDebug() << "\033[1;31m" << "CFGExporter::setNodeOption()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
     assert(func);
     for (auto bb : func->basicBlocks())
-        std::get<0>(_detailsMap[bb]) = level;
+        setNodeOption(bb, option);
+}
+
+void CFGExporter::resetNodeOption(const TraceBasicBlock* bb, Options option)
+{
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::resetNodeOption()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
+    _detailsMap[bb] &= static_cast<int>(~option);
+}
+
+void CFGExporter::resetNodeOption(TraceFunction* func, Options option)
+{
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::resetNodeOption()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
+    assert(func);
+    for (auto bb : func->basicBlocks())
+        resetNodeOption(bb, option);
+}
+
+void CFGExporter::switchNodeOption(const TraceBasicBlock* bb, Options option)
+{
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::switchNodeOption()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
+    auto it = _detailsMap.find(bb);
+    if (it != _detailsMap.end())
+        it->second ^= option;
 }
 
 void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
@@ -524,59 +539,13 @@ void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
     for (auto& node : _nodeMap)
     {
         if (node.self <= minimalCost)
-            std::get<0>(_detailsMap[node.basicBlock()]) = DetailsLevel::pcOnly;
+            setNodeOption(node.basicBlock(), Options::reduced);
         else
-            std::get<0>(_detailsMap[node.basicBlock()]) = DetailsLevel::full;
+            resetNodeOption(node.basicBlock(), Options::reduced);
     }
 }
 
-bool CFGExporter::showInstrPC(TraceBasicBlock* bb) const
-{
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::showInstrPC()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
-    return showDetail<1>(bb);
-}
-
-void CFGExporter::switchShowingPC(TraceBasicBlock* bb)
-{
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::switchShowingPC()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
-    auto it = _detailsMap.find(bb);
-    if (it != _detailsMap.end())
-    {
-        bool& status = std::get<1>(it->second);
-        status ^= true;
-    }
-}
-
-bool CFGExporter::showInstrCost(TraceBasicBlock* bb) const
-{
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::showInstrPC()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
-    return showDetail<2>(bb);
-}
-
-void CFGExporter::switchShowingCost(TraceBasicBlock* bb)
-{
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::switchShowingCost()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
-    auto it = _detailsMap.find(bb);
-    if (it != _detailsMap.end())
-    {
-        bool& status = std::get<2>(it->second);
-        status ^= true;
-    }
-}
-
-const CFGNode* CFGExporter::findNode(TraceBasicBlock* bb) const
+const CFGNode* CFGExporter::findNode(const TraceBasicBlock* bb) const
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::findNode()" << "\033[0m";
@@ -589,7 +558,7 @@ const CFGNode* CFGExporter::findNode(TraceBasicBlock* bb) const
     return (it == _nodeMap.end()) ? nullptr : std::addressof(*it);
 }
 
-CFGNode* CFGExporter::findNode(TraceBasicBlock* bb)
+CFGNode* CFGExporter::findNode(const TraceBasicBlock* bb)
 {
     return const_cast<CFGNode*>(static_cast<const CFGExporter*>(this)->findNode(bb));
 }
@@ -648,7 +617,7 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
                 _item = BBs.front();
 
                 for (auto bb : BBs)
-                    _detailsMap.emplace(bb, std::forward_as_tuple(DetailsLevel::full, false, false));
+                    _detailsMap.emplace(bb, Options::default_);
 
                 break;
             }
@@ -1417,12 +1386,10 @@ void CFGExporter::dumpNodes(QTextStream& ts)
 
     for (auto& node : _nodeMap)
     {
-        TraceBasicBlock* bb = node.basicBlock();
-
-        if (detailsLevel(bb) == DetailsLevel::pcOnly)
+        if (getNodeOptions(node.basicBlock()) & Options::reduced)
             dumpNodeReduced(ts, node);
         else
-            dumpNodeExtended(ts, node, showInstrPC(bb), showInstrCost(bb));
+            dumpNodeExtended(ts, node);
     }
 }
 
@@ -1469,7 +1436,7 @@ void dumpCost(QTextStream& ts, SubCost cost)
 
 } // unnamed namespace
 
-void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node, bool needPC, bool needCost)
+void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::dumpNodeExtended()" << "\033[0m";
@@ -1481,7 +1448,11 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node, bool ne
     QString firstAddr = bb->firstAddr().toString();
     QString lastAddr = bb->lastAddr().toString();
 
+    Options options = getNodeOptions(bb);
+    bool needPC = options & Options::showInstrPC;
+    bool needCost = options & Options::showInstrCost;
     int span = 2 + needPC + needCost;
+
     ts << QStringLiteral("  b%1b%2 [shape=plaintext, label=<\n"
                          "  <table border=\"0\" cellborder=\"1\" cellspacing=\"0\">\n"
                          "  <tr>\n"
@@ -1627,10 +1598,7 @@ void CFGExporter::dumpEdges(QTextStream& ts, DumpType type)
         assert(br);
 
         if (br->isCycle())
-        {
-            bool isReduced = (detailsLevel(br->bbFrom()) == DetailsLevel::pcOnly);
-            dumpCyclicEdge(ts, br, isReduced);
-        }
+            dumpCyclicEdge(ts, br, getNodeOptions(br->bbFrom()) & Options::reduced);
         else
             dumpRegularBranch(ts, br);
 
@@ -1804,23 +1772,44 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
     bool reduced = _view->isReduced(_node);
 
     QRectF rectangle = rect();
-    qreal topLineY = rectangle.y();
+    qreal x = rectangle.x();
+    qreal y = rectangle.y();
+    qreal w = rectangle.width();
+    qreal h = rectangle.height();
+    qreal topLineY = y;
 
-    qreal step = rectangle.height() / (reduced ? 2 : _node->instrNumber() + 2);
+    qreal step = h / (reduced ? 2 : _node->instrNumber() + 2);
 
-    p->fillRect(rectangle.x() + 1, topLineY + 1, rectangle.width(), step * 2, Qt::gray);
+    p->fillRect(x + 1, topLineY + 1, w, step * 2, Qt::gray);
     topLineY += step;
 
-    p->drawText(rectangle.x(), topLineY, rectangle.width(), step,
+    p->drawText(x, topLineY, w, step,
                 Qt::AlignCenter, "0x" + _node->basicBlock()->firstAddr().toString());
-    p->drawLine(rectangle.x(), topLineY,
-                rectangle.x() + rectangle.width(), topLineY);
+    p->drawLine(x, topLineY,
+                x + w, topLineY);
 
     if (!reduced)
     {
         topLineY += step;
 
         QFontMetrics fm = _view->fontMetrics();
+        TraceBasicBlock* bb = _node->basicBlock();
+
+        int PCLen;
+        if (_view->showInstrPC(_node))
+            PCLen = fm.size(Qt::TextSingleLine, "0x" + bb->firstAddr().pretty()).width() + 4;
+        else
+            PCLen = 0;
+
+        int costLen;
+        if (_view->showInstrCost(_node))
+        {
+            QString costStr = bb->firstInstr()->subCost(_view->eventType()).pretty();
+            costLen = fm.size(Qt::TextSingleLine, costStr).width() + 4;
+        }
+        else
+            costLen = 0;
+
         auto mnemonicComp = [&fm](auto& pair1, auto& pair2)
         {
             return fm.size(Qt::TextSingleLine, pair1.first).width() <
@@ -1829,21 +1818,39 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
 
         auto maxLenIt = std::max_element(_node->begin(), _node->end(), mnemonicComp);
 
-        int shift = fm.size(Qt::TextSingleLine, maxLenIt->first).width() + 4;
+        int mnemonicLen = fm.size(Qt::TextSingleLine, maxLenIt->first).width() + 4;
+        int costRightBorder = PCLen + costLen;
+        int mnemonicRightBorder = costRightBorder + mnemonicLen;
+        int argsLen = w - mnemonicRightBorder;
+
+        auto instrIt = bb->begin();
         for (auto &[mnemonic, args] : *_node)
         {
-            p->drawText(rectangle.x() + 2, topLineY, shift, step,
+            if (PCLen != 0)
+                p->drawText(x + 2, topLineY, PCLen, step,
+                            Qt::AlignLeft, "0x" + (*instrIt)->addr().pretty());
+
+            if (costLen != 0)
+                p->drawText(x + PCLen + 2, topLineY, costLen, step,
+                            Qt::AlignLeft, (*instrIt)->subCost(_view->eventType()).pretty());
+
+            p->drawText(x + costRightBorder + 2, topLineY, mnemonicLen, step,
                         Qt::AlignLeft, mnemonic);
-            p->drawText(rectangle.x() + shift + 2, topLineY, rectangle.width() - shift, step,
+            p->drawText(x + mnemonicRightBorder + 2, topLineY, argsLen, step,
                         Qt::AlignLeft, args);
-            p->drawLine(rectangle.x(), topLineY,
-                        rectangle.x() + rectangle.width(), topLineY);
+            p->drawLine(x, topLineY, x + w, topLineY);
 
             topLineY += step;
+            ++instrIt;
         }
 
-        p->drawLine(rectangle.x() + shift, rectangle.y() + step * 2,
-                    rectangle.x() + shift, rectangle.y() + rectangle.height());
+        if (PCLen != 0)
+            p->drawLine(x + PCLen, y + step * 2, x + PCLen, y + h);
+
+        if (costLen != 0)
+            p->drawLine(x + costRightBorder, y + step * 2, x + costRightBorder, y + h);
+
+        p->drawLine(x + mnemonicRightBorder, y + step * 2, x + mnemonicRightBorder, y + h);
     }
 
     if (StoredDrawParams::selected())
@@ -2124,13 +2131,23 @@ QString ControlFlowGraphView::whatsThis() const
     return QObject::tr("This is Control Flow Graph by dWX1268804");
 }
 
-bool ControlFlowGraphView::isReduced(CFGNode* node) const
+bool ControlFlowGraphView::isReduced(const CFGNode* node) const
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::isReduced" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    return _exporter.detailsLevel(node->basicBlock()) == CFGExporter::DetailsLevel::pcOnly;
+    return _exporter.getNodeOptions(node->basicBlock()) & CFGExporter::Options::reduced;
+}
+
+bool ControlFlowGraphView::showInstrPC(const CFGNode* node) const
+{
+    return _exporter.getNodeOptions(node->basicBlock()) & CFGExporter::Options::showInstrPC;
+}
+
+bool ControlFlowGraphView::showInstrCost(const CFGNode* node) const
+{
+    return _exporter.getNodeOptions(node->basicBlock()) & CFGExporter::Options::showInstrCost;
 }
 
 TraceFunction* ControlFlowGraphView::getFunction()
@@ -2792,7 +2809,7 @@ void ControlFlowGraphView::mouseDoubleClickEvent(QMouseEvent* event)
 
     if (_selectedNode)
     {
-        _exporter.switchDetailsLevel(_selectedNode->basicBlock());
+        _exporter.switchNodeOption(_selectedNode->basicBlock(), CFGExporter::Options::reduced);
         _exporter.setMinimalCostPercentage(-1);
         refresh(false);
     }
@@ -2840,7 +2857,6 @@ enum MenuActions
     exportAsImage,
     pcOnlyLocal,
     pcOnlyGlobal,
-    allInstructionsLocal,
     allInstructionsGlobal,
     showInstrCost,
     showInstrPC,
@@ -2876,17 +2892,16 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
             QMenu* detailsMenu = popup.addMenu(QObject::tr("This basic block"));
             actions[MenuActions::pcOnlyLocal] =
-                    addDetailsAction(detailsMenu, QObject::tr("PC only"), node,
-                                     CFGExporter::DetailsLevel::pcOnly);
-            actions[MenuActions::allInstructionsLocal] =
-                    addDetailsAction(detailsMenu, QObject::tr("All instructions"), node,
-                                     CFGExporter::DetailsLevel::full);
-
-            actions[MenuActions::showInstrCost] =
-                    addCostAction(detailsMenu, QObject::tr("Show instructions' cost"), node, false);
+                    addOptionsAction(detailsMenu, QObject::tr("PC only"), node,
+                                     CFGExporter::Options::reduced);
 
             actions[MenuActions::showInstrPC] =
-                    addPCAction(detailsMenu, QObject::tr("Show instructions' PC"), node, false);
+                    addOptionsAction(detailsMenu, QObject::tr("Show instructions' PC"), node,
+                                     CFGExporter::Options::showInstrPC);
+
+            actions[MenuActions::showInstrCost] =
+                    addOptionsAction(detailsMenu, QObject::tr("Show instructions' cost"), node,
+                                     CFGExporter::Options::showInstrCost);
 
             popup.addSeparator();
         }
@@ -2933,31 +2948,26 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
                 exportGraphAsImage();
             break;
         case MenuActions::pcOnlyLocal:
-            _exporter.setDetailsLevel(bb, CFGExporter::DetailsLevel::pcOnly);
+            _exporter.switchNodeOption(bb, CFGExporter::Options::reduced);
             _exporter.setMinimalCostPercentage(-1);
             refresh(false);
             break;
         case MenuActions::pcOnlyGlobal:
-            _exporter.setDetailsLevel(func, CFGExporter::DetailsLevel::pcOnly);
+            _exporter.setNodeOption(func, CFGExporter::Options::reduced);
             _exporter.setMinimalCostPercentage(100);
             refresh(false);
             break;
-        case MenuActions::allInstructionsLocal:
-            _exporter.setDetailsLevel(bb, CFGExporter::DetailsLevel::full);
-            _exporter.setMinimalCostPercentage(-1);
-            refresh(false);
-            break;
         case MenuActions::allInstructionsGlobal:
-            _exporter.setDetailsLevel(func, CFGExporter::DetailsLevel::full);
+            _exporter.resetNodeOption(func, CFGExporter::Options::reduced);
             _exporter.setMinimalCostPercentage(0);
             refresh(false);
             break;
         case MenuActions::showInstrPC:
-            _exporter.switchShowingPC(bb);
+            _exporter.switchNodeOption(bb, CFGExporter::Options::showInstrPC);
             refresh(false);
             break;
         case MenuActions::showInstrCost:
-            _exporter.switchShowingCost(bb);
+            _exporter.switchNodeOption(bb, CFGExporter::Options::showInstrCost);
             refresh(false);
             break;
         default: // practically nActions
@@ -3601,18 +3611,25 @@ QAction* ControlFlowGraphView::addStopLayoutAction(QMenu& menu)
         return nullptr;
 }
 
-QAction* ControlFlowGraphView::addDetailsAction(QMenu* menu, const QString& descr, CFGNode* node,
-                                                CFGExporter::DetailsLevel level)
+QAction* ControlFlowGraphView::addOptionsAction(QMenu* menu, const QString& descr, CFGNode* node,
+                                                CFGExporter::Options option)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addDetailsAction" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
+    CFGExporter::Options options = _exporter.getNodeOptions(node->basicBlock());
+
     QAction* a = menu->addAction(descr);
 
-    a->setData(static_cast<int>(level));
+    a->setData(option);
     a->setCheckable(true);
-    a->setChecked(_exporter.detailsLevel(node->basicBlock()) == level);
+
+    if ((options & CFGExporter::Options::reduced) &&
+        (option & (CFGExporter::Options::showInstrPC | CFGExporter::Options::showInstrCost)))
+        a->setEnabled(false);
+
+    a->setChecked(options & option);
 
     return a;
 }
@@ -3631,38 +3648,6 @@ QAction* ControlFlowGraphView::addMinimizationAction(QMenu* menu, const QString&
     a->setChecked(percentage == _exporter.minimalCostPercentage());
     if (percentage == -1)
         a->setEnabled(false);
-
-    return a;
-}
-
-QAction* ControlFlowGraphView::addCostAction(QMenu* menu, const QString& descr, CFGNode* node,
-                                             bool needCost)
-{
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addCostAction" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
-    QAction* a = menu->addAction(descr);
-
-    a->setData(needCost);
-    a->setCheckable(true);
-    a->setChecked(_exporter.showInstrCost(node->basicBlock()) == true);
-
-    return a;
-}
-
-QAction* ControlFlowGraphView::addPCAction(QMenu* menu, const QString& descr, CFGNode* node,
-                                           bool needPC)
-{
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addPCAction" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
-    QAction* a = menu->addAction(descr);
-
-    a->setData(needPC);
-    a->setCheckable(true);
-    a->setChecked(_exporter.showInstrPC(node->basicBlock()) == true);
 
     return a;
 }
