@@ -3263,7 +3263,7 @@ void ControlFlowGraphView::updateSizes(QSize s)
     if (!_scene)
         return;
 
-    if (s == QSize{0, 0})
+    if (s.isNull())
         s = size();
 
     // the part of the scene that should be visible
