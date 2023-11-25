@@ -186,19 +186,19 @@ class ControlFlowGraphView;
 class CFGExporter final
 {
 public:
-    using size_type = typename QMap<TraceBasicBlock*, CFGNode>::size_type;
 
     enum class Layout { TopDown, LeftRight };
-    enum class DetailsLevel { pcOnly, full };
     enum class DumpType { internal, external };
+
     enum Options : int
     {
         default_ = 0,
-        reduced = 1 << 0,
-        showInstrCost = 1 << 1,
-        showInstrPC = 1 << 2
+        reduced = 1 << 1,
+        showInstrCost = 1 << 2,
+        showInstrPC = 1 << 3
     };
 
+    using size_type = typename QMap<TraceBasicBlock*, CFGNode>::size_type;
     using details_map_type = std::unordered_map<const TraceBasicBlock*, int>;
 
     CFGExporter() = default;
@@ -219,10 +219,12 @@ public:
 
     Options getNodeOptions(const TraceBasicBlock* bb) const;
     void setNodeOption(const TraceBasicBlock* bb, Options option);
-    void setNodeOption(TraceFunction* func, Options option);
     void resetNodeOption(const TraceBasicBlock* bb, Options option);
-    void resetNodeOption(TraceFunction* func, Options option);
     void switchNodeOption(const TraceBasicBlock* bb, Options option);
+
+    Options getGraphOptions(TraceFunction* func) const;
+    void setGraphOption(TraceFunction* func, Options option);
+    void resetGraphOption(TraceFunction* func, Options option);
 
     void minimizeBBsWithCostLessThan(uint64 minimalCost);
     double minimalCostPercentage() const { return _minimalCostPercentage; }
@@ -246,9 +248,9 @@ public:
     // translates string "B<firstAddr>B<lastAddr>" into appropriate CFGNode*
     CFGNode* toCFGNode(QString s);
 
-    details_map_type& detailsMap() { return _detailsMap; }
-    const details_map_type& detailsMap() const { return _detailsMap; }
-    void setDetailsMap(const details_map_type& map) { _detailsMap = map; }
+    details_map_type& detailsMap() { return _optionsMap; }
+    const details_map_type& detailsMap() const { return _optionsMap; }
+    void setDetailsMap(const details_map_type& map) { _optionsMap = map; }
 
     static bool savePrompt(QWidget* parent, TraceFunction* func,
                            EventType* eventType, ProfileContext::Type groupType,
@@ -279,7 +281,8 @@ private:
     QMap<std::pair<Addr, Addr>, CFGNode> _nodeMap;
     QMap<std::pair<Addr, Addr>, CFGEdge> _edgeMap;
 
-    details_map_type _detailsMap;
+    details_map_type _optionsMap;
+    std::unordered_map<const TraceFunction*, int> _globalOptionsMap;
     double _minimalCostPercentage = -1;
 };
 
@@ -474,6 +477,8 @@ private:
     QAction* addLayoutAction(QMenu* m, const QString& descr, CFGExporter::Layout);
     QAction* addStopLayoutAction(QMenu& menu);
     QAction* addOptionsAction(QMenu* menu, const QString& descr, CFGNode* node,
+                              CFGExporter::Options option);
+    QAction* addOptionsAction(QMenu* menu, const QString& descr, TraceFunction* func,
                               CFGExporter::Options option);
     QAction* addMinimizationAction(QMenu* menu, const QString& descr, double percentage);
 
