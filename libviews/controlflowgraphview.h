@@ -465,7 +465,6 @@ private:
     CFGEdge* getEdgeFromDot(QTextStream& lineStream, int lineno);
     QPolygon getEdgePolygon(QTextStream& lineStream, int lineno);
     void checkScene();
-    void updateSelectedNodeOrEdge(CFGNode* activeNode, CFGEdge* activeEdge);
     void centerOnSelectedNodeOrEdge();
 
     // called from keyPressEvent
