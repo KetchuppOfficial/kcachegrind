@@ -453,9 +453,9 @@ CFGExporter::CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Typ
 
     auto& basicBlocks = func->basicBlocks();
     assert(!basicBlocks.empty());
-    _detailsMap.reserve(basicBlocks.size());
+    _optionsMap.reserve(basicBlocks.size());
     for (auto bb : basicBlocks)
-        _detailsMap.emplace(bb, Options::default_);
+        _optionsMap.emplace(bb, Options::default_);
 }
 
 CFGExporter::~CFGExporter()
@@ -473,8 +473,8 @@ CFGExporter::Options CFGExporter::getNodeOptions(const TraceBasicBlock* bb) cons
     qDebug() << "\033[1;31m" << "CFGExporter::getNodeOptions()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    auto it = _detailsMap.find(bb);
-    assert(it != _detailsMap.end());
+    auto it = _optionsMap.find(bb);
+    assert(it != _optionsMap.end());
 
     return static_cast<Options>(it->second);
 }
@@ -485,18 +485,7 @@ void CFGExporter::setNodeOption(const TraceBasicBlock* bb, Options option)
     qDebug() << "\033[1;31m" << "CFGExporter::setNodeOption()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    _detailsMap[bb] |= static_cast<int>(option);
-}
-
-void CFGExporter::setNodeOption(TraceFunction* func, Options option)
-{
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::setNodeOption()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
-    assert(func);
-    for (auto bb : func->basicBlocks())
-        setNodeOption(bb, option);
+    _optionsMap[bb] |= option;
 }
 
 void CFGExporter::resetNodeOption(const TraceBasicBlock* bb, Options option)
@@ -505,18 +494,7 @@ void CFGExporter::resetNodeOption(const TraceBasicBlock* bb, Options option)
     qDebug() << "\033[1;31m" << "CFGExporter::resetNodeOption()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    _detailsMap[bb] &= static_cast<int>(~option);
-}
-
-void CFGExporter::resetNodeOption(TraceFunction* func, Options option)
-{
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::resetNodeOption()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
-    assert(func);
-    for (auto bb : func->basicBlocks())
-        resetNodeOption(bb, option);
+    _optionsMap[bb] &= ~option;
 }
 
 void CFGExporter::switchNodeOption(const TraceBasicBlock* bb, Options option)
@@ -525,9 +503,45 @@ void CFGExporter::switchNodeOption(const TraceBasicBlock* bb, Options option)
     qDebug() << "\033[1;31m" << "CFGExporter::switchNodeOption()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    auto it = _detailsMap.find(bb);
-    if (it != _detailsMap.end())
-        it->second ^= option;
+    _optionsMap[bb] ^= option;
+}
+
+CFGExporter::Options CFGExporter::getGraphOptions(TraceFunction* func) const
+{
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::getGraphOptions()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
+    auto it = _globalOptionsMap.find(func);
+    assert(it != _globalOptionsMap.end());
+
+    return static_cast<Options>(it->second);
+}
+
+void CFGExporter::setGraphOption(TraceFunction* func, Options option)
+{
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::setGraphOption()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
+    assert(func);
+    for (auto bb : func->basicBlocks())
+        setNodeOption(bb, option);
+
+    _globalOptionsMap[func] |= option;
+}
+
+void CFGExporter::resetGraphOption(TraceFunction* func, Options option)
+{
+    #ifdef CFGEXPORTER_DEBUG
+    qDebug() << "\033[1;31m" << "CFGExporter::resetGraphOption()" << "\033[0m";
+    #endif // CFGEXPORTER_DEBUG
+
+    assert(func);
+    for (auto bb : func->basicBlocks())
+        resetNodeOption(bb, option);
+
+    _globalOptionsMap[func] &= ~option;
 }
 
 void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
@@ -616,8 +630,9 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
 
                 _item = BBs.front();
 
+                _globalOptionsMap.emplace(func, Options::default_);
                 for (auto bb : BBs)
-                    _detailsMap.emplace(bb, Options::default_);
+                    _optionsMap.emplace(bb, Options::default_);
 
                 break;
             }
@@ -2855,11 +2870,14 @@ enum MenuActions
     stopLayout,
     exportAsDot,
     exportAsImage,
-    pcOnlyLocal,
-    pcOnlyGlobal,
-    allInstructionsGlobal,
+
+    pcOnly,
     showInstrCost,
     showInstrPC,
+
+    pcOnlyGlobal,
+    showInstrPCGlobal,
+    showInstrCostGlobal,
 
     // special value
     nActions
@@ -2891,7 +2909,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
             bb = node->basicBlock();
 
             QMenu* detailsMenu = popup.addMenu(QObject::tr("This basic block"));
-            actions[MenuActions::pcOnlyLocal] =
+            actions[MenuActions::pcOnly] =
                     addOptionsAction(detailsMenu, QObject::tr("PC only"), node,
                                      CFGExporter::Options::reduced);
 
@@ -2911,8 +2929,20 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
     popup.addSeparator();
 
-    actions[MenuActions::pcOnlyGlobal] = popup.addAction(QObject::tr("PC only"));
-    actions[MenuActions::allInstructionsGlobal] = popup.addAction(QObject::tr("All instructions"));
+    actions[MenuActions::pcOnlyGlobal] =
+            addOptionsAction(std::addressof(popup), QObject::tr("PC only"), func,
+                             CFGExporter::Options::reduced);
+
+    actions[MenuActions::showInstrPCGlobal] =
+            addOptionsAction(std::addressof(popup), QObject::tr("Show instructions' PC"), func,
+                             CFGExporter::Options::showInstrPC);
+
+    actions[MenuActions::showInstrCostGlobal] =
+            addOptionsAction(std::addressof(popup), QObject::tr("Show instructions' cost"), func,
+                             CFGExporter::Options::showInstrCost);
+
+    popup.addSeparator();
+
     addMinimizationMenu(popup);
 
     popup.addSeparator();
@@ -2947,29 +2977,59 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
             if (_scene)
                 exportGraphAsImage();
             break;
-        case MenuActions::pcOnlyLocal:
+
+        case MenuActions::pcOnly:
             _exporter.switchNodeOption(bb, CFGExporter::Options::reduced);
             _exporter.setMinimalCostPercentage(-1);
             refresh(false);
             break;
-        case MenuActions::pcOnlyGlobal:
-            _exporter.setNodeOption(func, CFGExporter::Options::reduced);
-            _exporter.setMinimalCostPercentage(100);
-            refresh(false);
-            break;
-        case MenuActions::allInstructionsGlobal:
-            _exporter.resetNodeOption(func, CFGExporter::Options::reduced);
-            _exporter.setMinimalCostPercentage(0);
-            refresh(false);
-            break;
+
         case MenuActions::showInstrPC:
             _exporter.switchNodeOption(bb, CFGExporter::Options::showInstrPC);
             refresh(false);
             break;
+
         case MenuActions::showInstrCost:
             _exporter.switchNodeOption(bb, CFGExporter::Options::showInstrCost);
             refresh(false);
             break;
+
+        case MenuActions::pcOnlyGlobal:
+
+            if (action->isChecked())
+            {
+                _exporter.setMinimalCostPercentage(10);
+                _exporter.setGraphOption(func, CFGExporter::Options::reduced);
+            }
+            else
+            {
+                _exporter.setMinimalCostPercentage(0);
+                _exporter.resetGraphOption(func, CFGExporter::Options::reduced);
+            }
+
+            refresh(false);
+            break;
+
+        case MenuActions::showInstrPCGlobal:
+
+            if (action->isChecked())
+                _exporter.setGraphOption(func, CFGExporter::Options::showInstrPC);
+            else
+                _exporter.resetGraphOption(func, CFGExporter::Options::showInstrPC);
+
+            refresh(false);
+            break;
+
+        case MenuActions::showInstrCostGlobal:
+
+            if (action->isChecked())
+                _exporter.setGraphOption(func, CFGExporter::Options::showInstrCost);
+            else
+                _exporter.resetGraphOption(func, CFGExporter::Options::showInstrCost);
+
+            refresh(false);
+            break;
+
         default: // practically nActions
             break;
     }
@@ -3619,6 +3679,29 @@ QAction* ControlFlowGraphView::addOptionsAction(QMenu* menu, const QString& desc
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
     CFGExporter::Options options = _exporter.getNodeOptions(node->basicBlock());
+
+    QAction* a = menu->addAction(descr);
+
+    a->setData(option);
+    a->setCheckable(true);
+
+    if ((options & CFGExporter::Options::reduced) &&
+        (option & (CFGExporter::Options::showInstrPC | CFGExporter::Options::showInstrCost)))
+        a->setEnabled(false);
+
+    a->setChecked(options & option);
+
+    return a;
+}
+
+QAction* ControlFlowGraphView::addOptionsAction(QMenu* menu, const QString& descr, TraceFunction* func,
+                                                CFGExporter::Options option)
+{
+    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
+    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addOptionsAction" << "\033[0m";
+    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
+
+    CFGExporter::Options options = _exporter.getGraphOptions(func);
 
     QAction* a = menu->addAction(descr);
 
