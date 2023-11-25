@@ -515,7 +515,7 @@ CFGExporter::Options CFGExporter::getGraphOptions(TraceFunction* func) const
     auto it = _globalOptionsMap.find(func);
     assert(it != _globalOptionsMap.end());
 
-    return static_cast<Options>(it->second);
+    return static_cast<Options>(it->second.first);
 }
 
 void CFGExporter::setGraphOption(TraceFunction* func, Options option)
@@ -528,7 +528,7 @@ void CFGExporter::setGraphOption(TraceFunction* func, Options option)
     for (auto bb : func->basicBlocks())
         setNodeOption(bb, option);
 
-    _globalOptionsMap[func] |= option;
+    _globalOptionsMap[func].first |= option;
 }
 
 void CFGExporter::resetGraphOption(TraceFunction* func, Options option)
@@ -541,7 +541,7 @@ void CFGExporter::resetGraphOption(TraceFunction* func, Options option)
     for (auto bb : func->basicBlocks())
         resetNodeOption(bb, option);
 
-    _globalOptionsMap[func] &= ~option;
+    _globalOptionsMap[func].first &= ~option;
 }
 
 void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
@@ -557,6 +557,19 @@ void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
         else
             resetNodeOption(node.basicBlock(), Options::reduced);
     }
+}
+
+double CFGExporter::minimalCostPercentage(TraceFunction* func) const
+{
+    auto it = _globalOptionsMap.find(func);
+    assert(it != _globalOptionsMap.end());
+
+    return it->second.second;
+}
+
+void CFGExporter::setMinimalCostPercentage(TraceFunction* func, double percentage)
+{
+    _globalOptionsMap[func].second = percentage;
 }
 
 const CFGNode* CFGExporter::findNode(const TraceBasicBlock* bb) const
@@ -630,7 +643,7 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
 
                 _item = BBs.front();
 
-                _globalOptionsMap.emplace(func, Options::default_);
+                _globalOptionsMap.emplace(func, std::make_pair(Options::default_, -1.0));
                 for (auto bb : BBs)
                     _optionsMap.emplace(bb, Options::default_);
 
@@ -2746,7 +2759,7 @@ void ControlFlowGraphView::minimizationTriggered(QAction* a)
     uint64 totalCost = func->subCost(_eventType).v;
     double percentage = a->data().toDouble();
 
-    _exporter.setMinimalCostPercentage(percentage);
+    _exporter.setMinimalCostPercentage(func, percentage);
     _exporter.minimizeBBsWithCostLessThan(percentage * totalCost / 100);
     refresh(false);
 }
@@ -2824,8 +2837,9 @@ void ControlFlowGraphView::mouseDoubleClickEvent(QMouseEvent* event)
 
     if (_selectedNode)
     {
-        _exporter.switchNodeOption(_selectedNode->basicBlock(), CFGExporter::Options::reduced);
-        _exporter.setMinimalCostPercentage(-1);
+        TraceBasicBlock* bb = _selectedNode->basicBlock();
+        _exporter.switchNodeOption(bb, CFGExporter::Options::reduced);
+        _exporter.setMinimalCostPercentage(bb->function(), -1);
         refresh(false);
     }
 
@@ -2943,7 +2957,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
     popup.addSeparator();
 
-    addMinimizationMenu(popup);
+    addMinimizationMenu(popup, func);
 
     popup.addSeparator();
 
@@ -2980,7 +2994,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
         case MenuActions::pcOnly:
             _exporter.switchNodeOption(bb, CFGExporter::Options::reduced);
-            _exporter.setMinimalCostPercentage(-1);
+            _exporter.setMinimalCostPercentage(func, -1);
             refresh(false);
             break;
 
@@ -2998,12 +3012,12 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
             if (action->isChecked())
             {
-                _exporter.setMinimalCostPercentage(10);
+                _exporter.setMinimalCostPercentage(func, 10);
                 _exporter.setGraphOption(func, CFGExporter::Options::reduced);
             }
             else
             {
-                _exporter.setMinimalCostPercentage(0);
+                _exporter.setMinimalCostPercentage(func, 0);
                 _exporter.resetGraphOption(func, CFGExporter::Options::reduced);
             }
 
@@ -3718,7 +3732,7 @@ QAction* ControlFlowGraphView::addOptionsAction(QMenu* menu, const QString& desc
 }
 
 QAction* ControlFlowGraphView::addMinimizationAction(QMenu* menu, const QString& descr,
-                                                     double percentage)
+                                                     TraceFunction* func, double percentage)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addMinimizationAction" << "\033[0m";
@@ -3728,7 +3742,7 @@ QAction* ControlFlowGraphView::addMinimizationAction(QMenu* menu, const QString&
 
     a->setData(percentage);
     a->setCheckable(true);
-    a->setChecked(percentage == _exporter.minimalCostPercentage());
+    a->setChecked(percentage == _exporter.minimalCostPercentage(func));
     if (percentage == -1)
         a->setEnabled(false);
 
@@ -3773,7 +3787,7 @@ QMenu* ControlFlowGraphView::addLayoutMenu(QMenu& menu)
     return submenu;
 }
 
-QMenu* ControlFlowGraphView::addMinimizationMenu(QMenu& menu)
+QMenu* ControlFlowGraphView::addMinimizationMenu(QMenu& menu, TraceFunction* func)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::addMinimizationMenu" << "\033[0m";
@@ -3781,10 +3795,10 @@ QMenu* ControlFlowGraphView::addMinimizationMenu(QMenu& menu)
 
     QMenu* submenu = menu.addMenu(QObject::tr("Min. basic block cost"));
 
-    addMinimizationAction(submenu, QObject::tr("Undefined"), -1);
+    addMinimizationAction(submenu, QObject::tr("Undefined"), func, -1);
     submenu->addSeparator();
-    for (auto percentage : {0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0})
-        addMinimizationAction(submenu, QObject::tr("%1%").arg(percentage), percentage);
+    for (auto percentage : {0.0, 0.1, 0.2, 0.5, 1.0, 2.0, 5.0, 10.0})
+        addMinimizationAction(submenu, QObject::tr("%1%").arg(percentage), func, percentage);
 
     connect(submenu, &QMenu::triggered,
             this, &ControlFlowGraphView::minimizationTriggered);

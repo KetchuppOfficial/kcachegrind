@@ -227,8 +227,8 @@ public:
     void resetGraphOption(TraceFunction* func, Options option);
 
     void minimizeBBsWithCostLessThan(uint64 minimalCost);
-    double minimalCostPercentage() const { return _minimalCostPercentage; }
-    void setMinimalCostPercentage(double p) { _minimalCostPercentage = p; }
+    double minimalCostPercentage(TraceFunction* func) const;
+    void setMinimalCostPercentage(TraceFunction* func, double percentage);
 
     CFGNode* findNode(const TraceBasicBlock* bb);
     const CFGNode* findNode(const TraceBasicBlock* bb) const;
@@ -282,8 +282,7 @@ private:
     QMap<std::pair<Addr, Addr>, CFGEdge> _edgeMap;
 
     details_map_type _optionsMap;
-    std::unordered_map<const TraceFunction*, int> _globalOptionsMap;
-    double _minimalCostPercentage = -1;
+    std::unordered_map<const TraceFunction*, std::pair<int, double>> _globalOptionsMap;
 };
 
 enum CanvasParts : int
@@ -480,11 +479,12 @@ private:
                               CFGExporter::Options option);
     QAction* addOptionsAction(QMenu* menu, const QString& descr, TraceFunction* func,
                               CFGExporter::Options option);
-    QAction* addMinimizationAction(QMenu* menu, const QString& descr, double percentage);
+    QAction* addMinimizationAction(QMenu* menu, const QString& descr, TraceFunction* func,
+                                   double percentage);
 
     QMenu* addZoomPosMenu(QMenu& menu);
     QMenu* addLayoutMenu(QMenu& menu);
-    QMenu* addMinimizationMenu(QMenu& menu);
+    QMenu* addMinimizationMenu(QMenu& menu, TraceFunction* func);
 
     QGraphicsScene* _scene = nullptr;
     QPoint _lastPos;
