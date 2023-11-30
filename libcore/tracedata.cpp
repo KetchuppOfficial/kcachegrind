@@ -3969,19 +3969,6 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
     }
 }
 
-QString TraceBasicBlock::prettyName() const
-{
-    return firstAddr().toString();
-}
-
-QString TraceBasicBlock::formattedName() const
-{
-    return QString{};
-}
-
-void TraceBasicBlock::update()
-{}
-
 const TraceInstr* TraceBasicBlock::firstInstr() const
 {
     assert(!_instructions.empty());
