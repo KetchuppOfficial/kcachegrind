@@ -581,7 +581,7 @@ const CFGNode* CFGExporter::findNode(const TraceBasicBlock* bb) const
     if (!bb)
         return nullptr;
 
-    auto it = _nodeMap.find(std::make_pair(bb->firstAddr(), bb->lastAddr()));
+    auto it = _nodeMap.find(bb);
     return (it == _nodeMap.end()) ? nullptr : std::addressof(*it);
 }
 
@@ -590,19 +590,19 @@ CFGNode* CFGExporter::findNode(const TraceBasicBlock* bb)
     return const_cast<CFGNode*>(static_cast<const CFGExporter*>(this)->findNode(bb));
 }
 
-const CFGEdge* CFGExporter::findEdge(Addr from, Addr to) const
+const CFGEdge* CFGExporter::findEdge(const TraceBasicBlock* bbFrom, const TraceBasicBlock* bbTo) const
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::findEdge()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    auto it = _edgeMap.find(std::make_pair(from, to));
+    auto it = _edgeMap.find(std::make_pair(bbFrom, bbTo));
     return (it == _edgeMap.end()) ? nullptr : std::addressof(*it);
 }
 
-CFGEdge* CFGExporter::findEdge(Addr from, Addr to)
+CFGEdge* CFGExporter::findEdge(const TraceBasicBlock* bbFrom, const TraceBasicBlock* bbTo)
 {
-    return const_cast<CFGEdge*>(static_cast<const CFGExporter*>(this)->findEdge(from, to));
+    return const_cast<CFGEdge*>(static_cast<const CFGExporter*>(this)->findEdge(bbFrom, bbTo));
 }
 
 void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QString filename)
@@ -704,7 +704,7 @@ void CFGExporter::sortEdges()
     }
 }
 
-bool CFGExporter::writeDot(DumpType type, QIODevice* device)
+bool CFGExporter::writeDot(QIODevice* device)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::writeDot()" << "\033[0m";
@@ -742,7 +742,7 @@ bool CFGExporter::writeDot(DumpType type, QIODevice* device)
             *stream << QStringLiteral("  rankdir=LR;\n");
 
         dumpNodes(*stream);
-        dumpEdges(*stream, type);
+        dumpEdges(*stream);
 
         *stream << "}\n";
     }
@@ -793,7 +793,7 @@ bool CFGExporter::createGraph()
     auto& BBs = func->basicBlocks();
     for (auto bb : BBs)
     {
-        auto nodeIt = _nodeMap.insert(std::make_pair(bb->firstAddr(), bb->lastAddr()), CFGNode{bb});
+        auto nodeIt = _nodeMap.insert(bb, CFGNode{bb});
         nodeIt->self = bb->subCost(_eventType);
     }
 
@@ -805,15 +805,14 @@ bool CFGExporter::createGraph()
         for (decltype(nBranches) i = 0; i != nBranches; ++i)
         {
             TraceBranch& br = bbFrom->branch(i);
-            TraceInstr* instrTo = br.instrTo();
-            TraceBasicBlock* bbTo = instrTo->basicBlock();
+            TraceBasicBlock* bbTo = br.bbTo();
 
             CFGEdge edge{std::addressof(br)};
             edge.setNodeFrom(std::addressof(node));
             edge.setNodeTo(findNode(bbTo));
             edge.count = br.executedCount();
 
-            std::pair key{br.instrFrom()->addr(), instrTo->addr()};
+            std::pair key{bbFrom, bbTo};
             auto edgeIt = _edgeMap.insert(key, edge);
             node.addSuccessorEdge(std::addressof(*edgeIt));
         }
@@ -821,8 +820,7 @@ bool CFGExporter::createGraph()
 
     for (auto &node : _nodeMap)
         for (auto branch : node.basicBlock()->predecessors())
-            node.addPredecessorEdge(findEdge(branch->instrFrom()->addr(),
-                                             branch->instrTo()->addr()));
+            node.addPredecessorEdge(findEdge(branch->bbFrom(), branch->bbTo()));
 
     return fillInstrStrings(func);
 }
@@ -1389,13 +1387,13 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
 
     for (auto it = _nodeMap.begin(), ite = _nodeMap.end(); it != ite; ++it)
     {
-        auto [firstAddr, lastAddr] = it.key();
+        const TraceBasicBlock* bb = it.key();
         CFGNode& node = it.value();
 
-        auto lastIt = instrStrings.find(lastAddr);
+        auto lastIt = instrStrings.find(bb->lastAddr());
         assert(lastIt != instrStrings.end());
 
-        node.insertInstructions(instrStrings.find(firstAddr), std::next(lastIt));
+        node.insertInstructions(instrStrings.find(bb->firstAddr()), std::next(lastIt));
     }
 
     return true;
@@ -1423,18 +1421,16 @@ void CFGExporter::dumpNodeReduced(QTextStream& ts, const CFGNode& node)
     #endif // CFGEXPORTER_DEBUG
 
     const TraceBasicBlock* bb = node.basicBlock();
-    QString firstAddr = bb->firstAddr().toString();
 
-    ts << QStringLiteral("  b%1b%2 [shape=record, label=\"")
-                        .arg(firstAddr)
-                        .arg(bb->lastAddr().toString());
+    ts << QStringLiteral("  bb%1 [shape=record, label=\"")
+                        .arg(reinterpret_cast<qulonglong>(bb), 0, 16);
 
     if (_layout == Layout::TopDown)
         ts << '{';
 
-    ts << QStringLiteral(" cost: %1 | %2 ")
+    ts << QStringLiteral(" cost: %1 | 0x%2 ")
                         .arg(QString::number(node.self))
-                        .arg("0x" + firstAddr);
+                        .arg(bb->firstAddr().toString());
 
     if (_layout == Layout::TopDown)
         ts << '}';
@@ -1468,24 +1464,21 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
     const TraceBasicBlock* bb = node.basicBlock();
     assert(bb);
 
-    QString firstAddr = bb->firstAddr().toString();
-    QString lastAddr = bb->lastAddr().toString();
-
     Options options = getNodeOptions(bb);
     bool needPC = options & Options::showInstrPC;
     bool needCost = options & Options::showInstrCost;
     int span = 2 + needPC + needCost;
 
-    ts << QStringLiteral("  b%1b%2 [shape=plaintext, label=<\n"
+    ts << QStringLiteral("  bb%1 [shape=plaintext, label=<\n"
                          "  <table border=\"0\" cellborder=\"1\" cellspacing=\"0\">\n"
                          "  <tr>\n"
-                         "    <td colspan=\"%3\">cost: %4</td>\n"
+                         "    <td colspan=\"%2\">cost: %3</td>\n"
                          "  </tr>\n"
                          "  <tr>\n"
-                         "    <td colspan=\"%5\">0x%6</td>\n"
-                         "  </tr>\n").arg(firstAddr).arg(lastAddr).arg(span)
+                         "    <td colspan=\"%4\">0x%5</td>\n"
+                         "  </tr>\n").arg(reinterpret_cast<qulonglong>(bb), 0, 16).arg(span)
                                      .arg(QString::number(node.self)).arg(span)
-                                     .arg(firstAddr);
+                                     .arg(bb->firstAddr().toString());
 
     auto strIt = node.begin();
     auto instrIt = bb->begin();
@@ -1526,11 +1519,12 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
         }
     }
 
+    Addr lastAddr = bb->lastAddr();
     ts << QStringLiteral("  <tr>\n"
-                         "    <td port=\"IL%1\" align=\"left\">").arg(lastAddr);
+                         "    <td port=\"IL%1\" align=\"left\">").arg(lastAddr.toString());
 
     if (needPC)
-        dumpPC(ts, bb->lastAddr());
+        dumpPC(ts, lastAddr);
     if (needCost)
         dumpCost(ts, (*lastInstrIt)->subCost(_eventType));
 
@@ -1572,20 +1566,16 @@ void dumpCyclicEdge(QTextStream& ts, const TraceBranch* br, bool isReduced)
     assert(br->bbFrom() == br->bbTo());
 
     const TraceBasicBlock* bb = br->bbFrom();
-
-    QString firstAddr = bb->firstAddr().toString();
-    QString lastAddr = bb->lastAddr().toString();
+    auto bbI = reinterpret_cast<qulonglong>(bb);
 
     if (isReduced)
-    {
-        ts << QStringLiteral("  b%1b%2:w -> b%4b%5:w [constraint=false, ")
-                            .arg(firstAddr).arg(lastAddr).arg(firstAddr).arg(lastAddr);
-    }
+        ts << QStringLiteral("  bb%1:w -> bb%2:w [constraint=false, ")
+                            .arg(bbI, 0, 16).arg(bbI, 0, 16);
     else
     {
-        ts << QStringLiteral("  b%1b%2:IL%3:w -> b%4b%5:IL%6:w [constraint=false, ")
-                            .arg(firstAddr).arg(lastAddr).arg(lastAddr)
-                            .arg(firstAddr).arg(lastAddr).arg(firstAddr);
+        ts << QStringLiteral("  bb%1:IL%2:w -> bb%3:IL%4:w [constraint=false, ")
+                            .arg(bbI, 0, 16).arg(bb->lastAddr().toString())
+                            .arg(bbI, 0, 16).arg(bb->firstAddr().toString());
     }
 
     dumpNonFalseBranchColor(ts, br);
@@ -1593,16 +1583,9 @@ void dumpCyclicEdge(QTextStream& ts, const TraceBranch* br, bool isReduced)
 
 void dumpRegularBranch(QTextStream& ts, const TraceBranch* br)
 {
-    const TraceBasicBlock* bbFrom = br->bbFrom();
-    const TraceBasicBlock* bbTo = br->bbTo();
-
-    QString firstAddrFrom = bbFrom->firstAddr().toString();
-    QString lastAddrFrom = bbFrom->lastAddr().toString();
-    QString firstAddrTo = bbTo->firstAddr().toString();
-    QString lastAddrTo = bbTo->lastAddr().toString();
-
-    ts << QStringLiteral("  b%1b%2:s -> b%3b%4:n [")
-                        .arg(firstAddrFrom).arg(lastAddrFrom).arg(firstAddrTo).arg(lastAddrTo);
+    ts << QStringLiteral("  bb%1:s -> bb%2:n [")
+                        .arg(reinterpret_cast<qulonglong>(br->bbFrom()), 0, 16)
+                        .arg(reinterpret_cast<qulonglong>(br->bbTo()), 0, 16);
 
     if (br->brType() == TraceBranch::Type::false_)
         ts << "color=red, ";
@@ -1612,7 +1595,7 @@ void dumpRegularBranch(QTextStream& ts, const TraceBranch* br)
 
 } // unnamed namespace
 
-void CFGExporter::dumpEdges(QTextStream& ts, DumpType type)
+void CFGExporter::dumpEdges(QTextStream& ts)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::dumpEdges()" << "\033[0m";
@@ -1628,14 +1611,7 @@ void CFGExporter::dumpEdges(QTextStream& ts, DumpType type)
         else
             dumpRegularBranch(ts, br);
 
-        if (type == DumpType::internal)
-        {
-            ts << QStringLiteral("label=\"%1 %2\"]\n")
-                            .arg(br->instrFrom()->addr().toString())
-                            .arg(br->instrTo()->addr().toString());
-        }
-        else
-            ts << QStringLiteral("label=\"%1\"]\n").arg(br->executedCount().pretty());
+        ts << QStringLiteral("label=\"%1\"]\n").arg(br->executedCount().v);
     }
 }
 
@@ -1645,22 +1621,16 @@ CFGNode* CFGExporter::toCFGNode(QString s)
     qDebug() << "\033[1;31m" << "CFGExporter::toBasicBlock()" << "\033[0m";
     #endif // CFGEXPORTER_DEBUG
 
-    if (s[0] == 'b')
+    assert(s.length() >= 3);
+
+    if (s[0] == 'b' && s[1] == 'b')
     {
-        qsizetype i = s.indexOf('b', 1);
-        if (i != -1)
+        bool ok;
+        qulonglong ibb = s.mid(2).toULongLong(&ok, 16);
+        if (ok)
         {
-            bool ok;
-            qulonglong from = s.mid(1, i - 1).toULongLong(&ok, 16);
-            if (ok)
-            {
-                qulonglong to = s.mid(i + 1).toULongLong(&ok, 16);
-                if (ok)
-                {
-                    auto it = _nodeMap.find(std::make_pair(Addr{from}, Addr{to}));
-                    return (it == _nodeMap.end()) ? nullptr : std::addressof(*it);
-                }
-            }
+            auto it = _nodeMap.find(reinterpret_cast<TraceBasicBlock*>(ibb));
+            return (it == _nodeMap.end()) ? nullptr : std::addressof(*it);
         }
     }
 
@@ -1717,7 +1687,7 @@ bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
         ge.setLayout(layout);
         ge.setDetailsMap(map);
 
-        bool wrote = ge.writeDot(DumpType::external);
+        bool wrote = ge.writeDot();
         if (wrote && mime != filter1)
         {
             QProcess proc;
@@ -2568,15 +2538,12 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::parseEdge" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    QString node;
-    lineStream >> node >> node; // ignored
+    CFGEdge* edge = getEdgeFromDot(lineStream, lineno);
+    if (!edge)
+        return;
 
     QPolygon poly = getEdgePolygon(lineStream, lineno);
     if (poly.empty())
-        return;
-
-    CFGEdge* edge = getEdgeFromDot(lineStream, lineno);
-    if (!edge)
         return;
 
     edge->setVisible(true);
@@ -2596,6 +2563,9 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
     else
         sItem->setSelected(edge == _selectedEdge);
 
+    QString label;
+    lineStream >> label; // further ignored
+
     auto [xx, yy] = calculateSizes(lineStream);
     auto lItem = new CanvasCFGEdgeLabel{this, sItem,
                                         static_cast<qreal>(xx - 60),
@@ -2608,33 +2578,42 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
     lItem->show();
 }
 
+namespace
+{
+
+TraceBasicBlock* getNodeForEdge(QTextStream& lineStream)
+{
+    QString bbStr;
+    lineStream >> bbStr;
+
+    qsizetype colonI = bbStr.indexOf(':');
+    assert(colonI != -1);
+    bbStr = bbStr.mid(2, colonI - 2);
+
+    bool ok;
+    qulonglong from = bbStr.toULongLong(&ok, 16);
+    assert(ok);
+
+    return reinterpret_cast<TraceBasicBlock*>(from);
+}
+
+} // unnamed namespace
+
 CFGEdge* ControlFlowGraphView::getEdgeFromDot(QTextStream& lineStream, int lineno)
 {
     #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
     qDebug() << "\033[1;31m" << "ControlFlowGraphView::getEdgeFromDotReduced" << "\033[0m";
     #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
-    QString addrFrom;
-    lineStream >> addrFrom;
-    addrFrom.remove(0, 1);
+    TraceBasicBlock* bbFrom = getNodeForEdge(lineStream);
+    assert(bbFrom);
+    TraceBasicBlock* bbTo = getNodeForEdge(lineStream);
+    assert(bbTo);
 
-    bool ok;
-    qulonglong from = addrFrom.toULongLong(&ok, 16);
-    assert(ok);
-    Addr fromAddr{from};
-
-    QString addrTo;
-    lineStream >> addrTo;
-    addrTo.remove(addrTo.length() - 1, 1);
-
-    qulonglong to = addrTo.toULongLong(&ok, 16);
-    assert(ok);
-    Addr toAddr{to};
-
-    CFGEdge* edge = _exporter.findEdge(fromAddr, toAddr);
+    CFGEdge* edge = _exporter.findEdge(bbFrom, bbTo);
     if (!edge)
     {
-        qDebug() << "Unknown edge \'" << addrFrom << "\'-\'" << addrTo << "\' from dot ("
+        qDebug() << "Unknown edge \'" << bbFrom << "\'-\'" << bbTo << "\' from dot ("
                 << _exporter.filename() << ":" << lineno << ")";
     }
 
@@ -3430,8 +3409,7 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
             case ProfileContext::Branch:
             {
                 auto branch = static_cast<TraceBranch*>(_selectedItem);
-                CFGEdge* edge = _exporter.findEdge(branch->instrFrom()->addr(),
-                                                   branch->instrTo()->addr());
+                CFGEdge* edge = _exporter.findEdge(branch->bbFrom(), branch->bbTo());
                 if (edge == _selectedEdge)
                     return;
 
@@ -3608,7 +3586,7 @@ void ControlFlowGraphView::refresh(bool reset)
     process->start(renderProgram, renderArgs);
     if (reset)
         _exporter.reset(_selectedItem ? _selectedItem : _activeItem, _eventType, _groupType);
-    _exporter.writeDot(CFGExporter::DumpType::internal, process);
+    _exporter.writeDot(process);
     process->closeWriteChannel();
 }
 

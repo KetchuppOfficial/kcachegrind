@@ -188,7 +188,6 @@ class CFGExporter final
 public:
 
     enum class Layout { TopDown, LeftRight };
-    enum class DumpType { internal, external };
 
     enum Options : int
     {
@@ -233,13 +232,13 @@ public:
     CFGNode* findNode(const TraceBasicBlock* bb);
     const CFGNode* findNode(const TraceBasicBlock* bb) const;
 
-    CFGEdge* findEdge(Addr from, Addr to);
-    const CFGEdge* findEdge(Addr from, Addr to) const;
+    CFGEdge* findEdge(const TraceBasicBlock* bbFrom, const TraceBasicBlock* bbTo);
+    const CFGEdge* findEdge(const TraceBasicBlock* bbFrom, const TraceBasicBlock* bbTo) const;
 
     void reset(CostItem* i, EventType* et, ProfileContext::Type gt,
                QString filename = QString{});
 
-    bool writeDot(DumpType type, QIODevice* device = nullptr);
+    bool writeDot(QIODevice* device = nullptr);
 
     void sortEdges();
 
@@ -264,7 +263,7 @@ private:
     void dumpNodeReduced(QTextStream& ts, const CFGNode& node);
     void dumpNodeExtended(QTextStream& ts, const CFGNode& node);
 
-    void dumpEdges(QTextStream& ts, DumpType type);
+    void dumpEdges(QTextStream& ts);
 
     QString _dotName;
     QTemporaryFile* _tmpFile;
@@ -278,8 +277,8 @@ private:
     bool _graphCreated = false;
     Layout _layout = Layout::TopDown;
 
-    QMap<std::pair<Addr, Addr>, CFGNode> _nodeMap;
-    QMap<std::pair<Addr, Addr>, CFGEdge> _edgeMap;
+    QMap<const TraceBasicBlock*, CFGNode> _nodeMap;
+    QMap<std::pair<const TraceBasicBlock*, const TraceBasicBlock*>, CFGEdge> _edgeMap;
 
     options_map_type _optionsMap;
     std::unordered_map<const TraceFunction*, std::pair<int, double>> _globalOptionsMap;
