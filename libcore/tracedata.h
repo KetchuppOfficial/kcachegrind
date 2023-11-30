@@ -1161,6 +1161,8 @@ public:
 
     ~TraceBasicBlock() override = default;
 
+    void update() override {};
+
     size_type instrNumber() const { return _instructions.size(); }
 
     TraceInstr* firstInstr();
