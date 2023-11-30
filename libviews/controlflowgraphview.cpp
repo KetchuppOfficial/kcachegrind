@@ -43,10 +43,6 @@ CFGNode::CFGNode(TraceBasicBlock* bb) : _bb{bb} {}
 
 void CFGNode::addSuccessorEdge(CFGEdge* edge)
 {
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::setSuccessorEdge()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
     if (edge)
     {
         _successors.append(edge);
@@ -56,30 +52,18 @@ void CFGNode::addSuccessorEdge(CFGEdge* edge)
 
 void CFGNode::addPredecessorEdge(CFGEdge* edge)
 {
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::addPredecessorEdge()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
     if (edge)
         _predecessors.append(edge);
 }
 
 void CFGNode::clearEdges()
 {
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::clearEdges()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
     _predecessors.clear();
     _successors.clear();
 }
 
 void CFGNode::sortSuccessorEdges()
 {
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::sortSuccessorEdges()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
     auto edgeComp = [canvasNode = _cn](const CFGEdge* ge1, const CFGEdge* ge2)
     {
         const CanvasCFGEdge* ce1 = ge1->canvasEdge();
@@ -111,10 +95,6 @@ void CFGNode::sortSuccessorEdges()
 
 void CFGNode::sortPredecessorEdges()
 {
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::sortPredecessorEdges()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
     auto edgeComp = [canvasNode = _cn](const CFGEdge* ge1, const CFGEdge* ge2)
     {
         const CanvasCFGEdge* ce1 = ge1->canvasEdge();
@@ -149,28 +129,16 @@ void CFGNode::sortPredecessorEdges()
 
 void CFGNode::selectSuccessorEdge(CFGEdge* edge)
 {
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::selectSuccessorEdge()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
     _lastSuccessorIndex = _successors.indexOf(edge);
 }
 
 void CFGNode::selectPredecessorEdge(CFGEdge* edge)
 {
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::selectPredecessorEdge()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
     _lastPredecessorIndex = _predecessors.indexOf(edge);
 }
 
 CFGEdge* CFGNode::keyboardNextEdge()
 {
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::keyboardNextEdge()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
     CFGEdge* edge = _successors.value(_lastSuccessorIndex);
 
     if (edge && !edge->isVisible())
@@ -204,10 +172,6 @@ CFGEdge* CFGNode::keyboardNextEdge()
 
 CFGEdge* CFGNode::keyboardPrevEdge()
 {
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::keyboardPrevEdge()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
     CFGEdge* edge = _predecessors.value(_lastPredecessorIndex);
 
     if (edge && !edge->isVisible())
@@ -241,10 +205,6 @@ CFGEdge* CFGNode::keyboardPrevEdge()
 
 CFGEdge* CFGNode::nextVisibleSuccessorEdge(CFGEdge* edge)
 {
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::nextVisibleSuccessorEdge()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
     int shift = edge ? _successors.indexOf(edge) : _lastSuccessorIndex;
     auto begin = std::next(_successors.begin(), shift + 1);
     auto end = _successors.end();
@@ -262,10 +222,6 @@ CFGEdge* CFGNode::nextVisibleSuccessorEdge(CFGEdge* edge)
 
 CFGEdge* CFGNode::nextVisiblePredecessorEdge(CFGEdge* edge)
 {
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::nextVisiblePredecessorEdge()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
     int shift = edge ? _predecessors.indexOf(edge) : _lastPredecessorIndex;
     auto begin = std::next(_predecessors.begin(), shift + 1);
     auto end = _predecessors.end();
@@ -283,10 +239,6 @@ CFGEdge* CFGNode::nextVisiblePredecessorEdge(CFGEdge* edge)
 
 CFGEdge* CFGNode::priorVisibleSuccessorEdge(CFGEdge* edge)
 {
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::priorVisibleSuccessorEdge()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
     int idx = edge ? _successors.indexOf(edge) : _lastSuccessorIndex;
 
     idx = (idx < 0) ? _successors.size() - 1 : idx - 1;
@@ -305,10 +257,6 @@ CFGEdge* CFGNode::priorVisibleSuccessorEdge(CFGEdge* edge)
 
 CFGEdge* CFGNode::priorVisiblePredecessorEdge(CFGEdge* edge)
 {
-    #ifdef CFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CFGNode::priorVisiblePredecessorEdge()" << "\033[0m";
-    #endif // CFGNODE_DEBUG
-
     int idx = edge ? _predecessors.indexOf(edge) : _lastPredecessorIndex;
 
     idx = (idx < 0) ? _predecessors.size() - 1 : idx - 1;
@@ -431,10 +379,6 @@ CFGExporter::CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Typ
                          QString filename)
                         : _item{func}, _eventType{et}, _groupType{gt}
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::CFGExporter()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     if (!_item)
         return;
 
@@ -460,19 +404,11 @@ CFGExporter::CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Typ
 
 CFGExporter::~CFGExporter()
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::~CFGExporter()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     delete _tmpFile;
 }
 
 CFGExporter::Options CFGExporter::getNodeOptions(const TraceBasicBlock* bb) const
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::getNodeOptions()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     auto it = _optionsMap.find(bb);
     assert(it != _optionsMap.end());
 
@@ -481,37 +417,21 @@ CFGExporter::Options CFGExporter::getNodeOptions(const TraceBasicBlock* bb) cons
 
 void CFGExporter::setNodeOption(const TraceBasicBlock* bb, Options option)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::setNodeOption()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     _optionsMap[bb] |= option;
 }
 
 void CFGExporter::resetNodeOption(const TraceBasicBlock* bb, Options option)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::resetNodeOption()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     _optionsMap[bb] &= ~option;
 }
 
 void CFGExporter::switchNodeOption(const TraceBasicBlock* bb, Options option)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::switchNodeOption()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     _optionsMap[bb] ^= option;
 }
 
 CFGExporter::Options CFGExporter::getGraphOptions(TraceFunction* func) const
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::getGraphOptions()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     auto it = _globalOptionsMap.find(func);
     assert(it != _globalOptionsMap.end());
 
@@ -520,10 +440,6 @@ CFGExporter::Options CFGExporter::getGraphOptions(TraceFunction* func) const
 
 void CFGExporter::setGraphOption(TraceFunction* func, Options option)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::setGraphOption()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     assert(func);
     for (auto bb : func->basicBlocks())
         setNodeOption(bb, option);
@@ -533,10 +449,6 @@ void CFGExporter::setGraphOption(TraceFunction* func, Options option)
 
 void CFGExporter::resetGraphOption(TraceFunction* func, Options option)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::resetGraphOption()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     assert(func);
     for (auto bb : func->basicBlocks())
         resetNodeOption(bb, option);
@@ -546,10 +458,6 @@ void CFGExporter::resetGraphOption(TraceFunction* func, Options option)
 
 void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::minimizeBBsWithCostLessThan()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     for (auto& node : _nodeMap)
     {
         if (node.self <= minimalCost)
@@ -574,10 +482,6 @@ void CFGExporter::setMinimalCostPercentage(TraceFunction* func, double percentag
 
 const CFGNode* CFGExporter::findNode(const TraceBasicBlock* bb) const
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::findNode()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     if (!bb)
         return nullptr;
 
@@ -592,10 +496,6 @@ CFGNode* CFGExporter::findNode(const TraceBasicBlock* bb)
 
 const CFGEdge* CFGExporter::findEdge(const TraceBasicBlock* bbFrom, const TraceBasicBlock* bbTo) const
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::findEdge()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     auto it = _edgeMap.find(std::make_pair(bbFrom, bbTo));
     return (it == _edgeMap.end()) ? nullptr : std::addressof(*it);
 }
@@ -607,10 +507,6 @@ CFGEdge* CFGExporter::findEdge(const TraceBasicBlock* bbFrom, const TraceBasicBl
 
 void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QString filename)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::reset()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     _graphCreated = false;
 
     _eventType = et;
@@ -693,10 +589,6 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
 
 void CFGExporter::sortEdges()
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::sortEdges()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     for (auto& node : _nodeMap)
     {
         node.sortPredecessorEdges();
@@ -706,10 +598,6 @@ void CFGExporter::sortEdges()
 
 bool CFGExporter::writeDot(QIODevice* device)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::writeDot()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     if (!_item)
         return false;
 
@@ -765,10 +653,6 @@ bool CFGExporter::writeDot(QIODevice* device)
 
 bool CFGExporter::createGraph()
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::createGraph()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     if (!_item || _graphCreated)
         return false;
 
@@ -827,10 +711,6 @@ bool CFGExporter::createGraph()
 
 int CFGExporter::transformKeyIfNeeded(int key) const
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::transformKeyIfNeeded()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     if (_layout == Layout::LeftRight)
     {
         switch (key)
@@ -951,10 +831,6 @@ private:
 ObjdumpParser::ObjdumpParser(TraceFunction* func)
     : _isArm{func->data()->architecture() == TraceData::ArchARM}
 {
-    #ifdef OBJDUMP_PARSER_DEBUG
-    qDebug() << "\033[1;31m" << "ObjdumpParser::ObjdumpParser()" << "\033[0m";
-    #endif // OBJDUMP_PARSER_DEBUG
-
     auto instrMap = func->instrMap();
     assert(!instrMap->empty());
 
@@ -974,10 +850,6 @@ ObjdumpParser::ObjdumpParser(TraceFunction* func)
 
 bool ObjdumpParser::runObjdump(TraceFunction* func)
 {
-    #ifdef OBJDUMP_PARSER_DEBUG
-    qDebug() << "\033[1;31m" << "ObjdumpParser::runObjdump()" << "\033[0m";
-    #endif // OBJDUMP_PARSER_DEBUG
-
     TraceObject* objectFile = func->object();
     QString dir = objectFile->directory();
 
@@ -1031,10 +903,6 @@ bool ObjdumpParser::runObjdump(TraceFunction* func)
 
 bool ObjdumpParser::searchFile(QString& dir, TraceObject* o, TraceData* data)
 {
-    #ifdef OBJDUMP_PARSER_DEBUG
-    qDebug() << "\033[1;31m" << "ObjdumpParser::searchFile()" << "\033[0m";
-    #endif // OBJDUMP_PARSER_DEBUG
-
     QString filename = o->shortName();
 
     if (QDir::isAbsolutePath(dir))
@@ -1083,10 +951,6 @@ bool ObjdumpParser::searchFile(QString& dir, TraceObject* o, TraceData* data)
 
 QString ObjdumpParser::getObjDump()
 {
-    #ifdef OBJDUMP_PARSER_DEBUG
-    qDebug() << "\033[1;31m" << "ObjdumpParser::getObjDump()" << "\033[0m";
-    #endif // OBJDUMP_PARSER_DEBUG
-
     if (_env.isEmpty())
         _env = QProcessEnvironment::systemEnvironment();
 
@@ -1095,10 +959,6 @@ QString ObjdumpParser::getObjDump()
 
 QString ObjdumpParser::getObjDumpFormat()
 {
-    #ifdef OBJDUMP_PARSER_DEBUG
-    qDebug() << "\033[1;31m" << "ObjdumpParser::getObjDumpFormat()" << "\033[0m";
-    #endif // OBJDUMP_PARSER_DEBUG
-
     if (_env.isEmpty())
         _env = QProcessEnvironment::systemEnvironment();
 
@@ -1107,10 +967,6 @@ QString ObjdumpParser::getObjDumpFormat()
 
 QString ObjdumpParser::getSysRoot()
 {
-    #ifdef OBJDUMP_PARSER_DEBUG
-    qDebug() << "\033[1;31m" << "ObjdumpParser::getSysRoot()" << "\033[0m";
-    #endif // OBJDUMP_PARSER_DEBUG
-
     if (_env.isEmpty())
         _env = QProcessEnvironment::systemEnvironment();
 
@@ -1119,10 +975,6 @@ QString ObjdumpParser::getSysRoot()
 
 std::pair<QString, QMap<Addr, std::pair<QString, QString>>> ObjdumpParser::getInstrStrings()
 {
-    #ifdef OBJDUMP_PARSER_DEBUG
-    qDebug() << "\033[1;31m" << "ObjdumpParser::getInstrStrings()" << "\033[0m";
-    #endif // OBJDUMP_PARSER_DEBUG
-
     QMap<Addr, std::pair<QString, QString>> instrStrings;
 
     for (; ; _line.setPos(0))
@@ -1229,10 +1081,6 @@ std::pair<QString, QMap<Addr, std::pair<QString, QString>>> ObjdumpParser::getIn
 
 void ObjdumpParser::getObjAddr()
 {
-    #ifdef OBJDUMP_PARSER_DEBUG
-    qDebug() << "\033[1;31m" << "ObjdumpParser::getObjAddr()" << "\033[0m";
-    #endif // OBJDUMP_PARSER_DEBUG
-
     _needObjAddr = false;
     while (true)
     {
@@ -1260,10 +1108,6 @@ void ObjdumpParser::getObjAddr()
 
 void ObjdumpParser::getCostAddr()
 {
-    #ifdef OBJDUMP_PARSER_DEBUG
-    qDebug() << "\033[1;31m" << "ObjdumpParser::getCostAddr()" << "\033[0m";
-    #endif // OBJDUMP_PARSER_DEBUG
-
     _needCostAddr = false;
     _costIt = _it++;
 
@@ -1274,19 +1118,11 @@ void ObjdumpParser::getCostAddr()
 
 bool ObjdumpParser::isHexDigit(char c)
 {
-    #ifdef OBJDUMP_PARSER_DEBUG
-    qDebug() << "\033[1;31m" << "ObjdumpParser::ishexDigit()" << "\033[0m";
-    #endif // OBJDUMP_PARSER_DEBUG
-
     return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f');
 }
 
 Addr ObjdumpParser::parseAddress()
 {
-    #ifdef OBJDUMP_PARSER_DEBUG
-    qDebug() << "\033[1;31m" << "ObjdumpParser::parserAddress()" << "\033[0m";
-    #endif // OBJDUMP_PARSER_DEBUG
-
     _line.skipWhitespaces();
 
     Addr addr;
@@ -1298,10 +1134,6 @@ Addr ObjdumpParser::parseAddress()
 
 QString ObjdumpParser::parseEncoding()
 {
-    #ifdef OBJDUMP_PARSER_DEBUG
-    qDebug() << "\033[1;31m" << "ObjdumpParser::parseEncoding()" << "\033[0m";
-    #endif // OBJDUMP_PARSER_DEBUG
-
     _line.skipWhitespaces();
     LineBuffer::pos_type start = _line.getPos();
 
@@ -1333,10 +1165,6 @@ QString ObjdumpParser::parseEncoding()
 
 QString ObjdumpParser::parseMnemonic()
 {
-    #ifdef OBJDUMP_PARSER_DEBUG
-    qDebug() << "\033[1;31m" << "ObjdumpParser::parseMnemonic()" << "\033[0m";
-    #endif // OBJDUMP_PARSER_DEBUG
-
     _line.skipWhitespaces();
     LineBuffer::pos_type start = _line.getPos();
 
@@ -1348,10 +1176,6 @@ QString ObjdumpParser::parseMnemonic()
 
 QString ObjdumpParser::parseOperands()
 {
-    #ifdef OBJDUMP_PARSER_DEBUG
-    qDebug() << "\033[1;31m" << "ObjdumpParser::parseOperands()" << "\033[0m";
-    #endif // OBJDUMP_PARSER_DEBUG
-
     _line.skipWhitespaces();
 
     char* operandsPos = _line.relData();
@@ -1368,10 +1192,6 @@ QString ObjdumpParser::parseOperands()
 
 bool CFGExporter::fillInstrStrings(TraceFunction* func)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::fillInstrStrings()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     assert(func);
 
     if (_nodeMap.empty())
@@ -1401,10 +1221,6 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
 
 void CFGExporter::dumpNodes(QTextStream& ts)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::dumpNodes()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     for (auto& node : _nodeMap)
     {
         if (getNodeOptions(node.basicBlock()) & Options::reduced)
@@ -1416,10 +1232,6 @@ void CFGExporter::dumpNodes(QTextStream& ts)
 
 void CFGExporter::dumpNodeReduced(QTextStream& ts, const CFGNode& node)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::dumpNodeReduced()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     const TraceBasicBlock* bb = node.basicBlock();
 
     ts << QStringLiteral("  bb%1 [shape=record, label=\"")
@@ -1457,10 +1269,6 @@ void dumpCost(QTextStream& ts, SubCost cost)
 
 void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::dumpNodeExtended()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     const TraceBasicBlock* bb = node.basicBlock();
     assert(bb);
 
@@ -1597,10 +1405,6 @@ void dumpRegularBranch(QTextStream& ts, const TraceBranch* br)
 
 void CFGExporter::dumpEdges(QTextStream& ts)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::dumpEdges()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     for (auto& edge : _edgeMap)
     {
         TraceBranch* br = edge.branch();
@@ -1617,10 +1421,6 @@ void CFGExporter::dumpEdges(QTextStream& ts)
 
 CFGNode* CFGExporter::toCFGNode(QString s)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::toBasicBlock()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     assert(s.length() >= 3);
 
     if (s[0] == 'b' && s[1] == 'b')
@@ -1641,10 +1441,6 @@ bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
                              EventType* eventType, ProfileContext::Type groupType,
                              Layout layout, const options_map_type& map)
 {
-    #ifdef CFGEXPORTER_DEBUG
-    qDebug() << "\033[1;31m" << "CFGExporter::savePrompt()" << "\033[0m";
-    #endif // CFGEXPORTER_DEBUG
-
     static constexpr const char* filter1 = "text/vnd.graphviz";
     static constexpr const char* filter2 = "application/pdf";
     static constexpr const char* filter3 = "application/postscript";
@@ -1720,10 +1516,6 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
                              qreal x, qreal y, qreal w, qreal h) :
     QGraphicsRectItem{x, y, w, h}, _node{node}, _view{view}
 {
-    #ifdef CANVASCFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CanvasCFGNode::CanvasCFGNode()" << "\033[0m";
-    #endif // CANVASCFGNODE_DEBUG
-
     if (!_node || !_view)
         return;
 
@@ -1751,20 +1543,12 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
 
 void CanvasCFGNode::setSelected(bool s)
 {
-    #ifdef CANVASCFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CanvasCFGNode::setSelected()" << "\033[0m";
-    #endif // CANVASCFGNODE_DEBUG
-
     StoredDrawParams::setSelected(s);
     update();
 }
 
 void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
-    #ifdef CANVASCFGNODE_DEBUG
-    qDebug() << "\033[1;31m" << "CanvasCFGNode::paint()" << "\033[0m";
-    #endif // CANVASCFGNODE_DEBUG
-
     bool reduced = _view->isReduced(_node);
 
     QRectF rectangle = rect();
@@ -1874,10 +1658,6 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
                                        qreal x, qreal y, qreal w, qreal h) :
     QGraphicsRectItem{x, y, w, h}, _ce{ce}, _view{v}
 {
-    #ifdef CANVASCFGEDGELABEL_DEBUG
-    qDebug() << "\033[1;31m" << "CanvasCFGEdgeLabel::CanvasCFGEdgeLabel()" << "\033[0m";
-    #endif // CANVASCFGEDGELABEL_DEBUG
-
     CFGEdge* e = _ce->edge();
     if (!e)
         return;
@@ -1928,9 +1708,6 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
 
 void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
-    #ifdef CANVASCFGEDGELABEL_DEBUG
-    qDebug() << "\033[1;31m" << "CanvasCFGEdgeLabel::paint()" << "\033[0m";
-    #endif // CANVASCFGEDGELABEL_DEBUG
 #if 0
 #if QT_VERSION >= 0x040600
     if (option->levelOfDetailFromTransform(p->transform()) < 0.5)
@@ -1955,19 +1732,10 @@ void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWi
 // CanvasCFGEdgeArrow
 //
 
-CanvasCFGEdgeArrow::CanvasCFGEdgeArrow(CanvasCFGEdge* ce) : _ce{ce}
-{
-    #ifdef CANVASCFGEDGEARROW_DEBUG
-    qDebug() << "\033[1;31m" << "CanvasCFGEdgeArrow::CanvasCFGEdgeArrow()" << "\033[0m";
-    #endif // CANVASCFGEDGEARROW_DEBUG
-}
+CanvasCFGEdgeArrow::CanvasCFGEdgeArrow(CanvasCFGEdge* ce) : _ce{ce} {}
 
 void CanvasCFGEdgeArrow::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
-    #ifdef CANVASCFGEDGEARROW_DEBUG
-    qDebug() << "\033[1;31m" << "CanvasCFGEdgeArrow::paint()" << "\033[0m";
-    #endif // CANVASCFGEDGEARROW_DEBUG
-
     p->setRenderHint(QPainter::Antialiasing);
     p->setBrush(Qt::black);
     p->drawPolygon(polygon(), Qt::OddEvenFill);
@@ -1981,19 +1749,11 @@ void CanvasCFGEdgeArrow::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWi
 
 CanvasCFGEdge::CanvasCFGEdge(CFGEdge* e) : _edge{e}
 {
-    #ifdef CANVASCFGEDGE_DEBUG
-    qDebug() << "\033[1;31m" << "CanvasCFGEdge::CanvasCFGEdge()" << "\033[0m";
-    #endif // CANVASCFGEDGE_DEBUG
-
     setFlag(QGraphicsItem::ItemIsSelectable);
 }
 
 void CanvasCFGEdge::setLabel(CanvasCFGEdgeLabel* l)
 {
-    #ifdef CANVASCFGEDGE_DEBUG
-    qDebug() << "\033[1;31m" << "CanvasCFGEdge::setLabel()" << "\033[0m";
-    #endif // CANVASCFGEDGE_DEBUG
-
     _label = l;
 
     if (_label)
@@ -2010,10 +1770,6 @@ void CanvasCFGEdge::setLabel(CanvasCFGEdgeLabel* l)
 
 void CanvasCFGEdge::setArrow(CanvasCFGEdgeArrow* a)
 {
-    #ifdef CANVASCFGEDGE_DEBUG
-    qDebug() << "\033[1;31m" << "CanvasCFGEdge::setArrow()" << "\033[0m";
-    #endif // CANVASCFGEDGE_DEBUG
-
     _arrow = a;
 
     if (_arrow && _label)
@@ -2023,10 +1779,6 @@ void CanvasCFGEdge::setArrow(CanvasCFGEdgeArrow* a)
 
 void CanvasCFGEdge::setControlPoints(const QPolygon& p)
 {
-    #ifdef CANVASCFGEDGE_DEBUG
-    qDebug() << "\033[1;31m" << "CanvasCFGEdge:setControlPoints()" << "\033[0m";
-    #endif // CANVASCFGEDGE_DEBUG
-
     _points = p;
 
     QPainterPath path;
@@ -2039,20 +1791,12 @@ void CanvasCFGEdge::setControlPoints(const QPolygon& p)
 
 void CanvasCFGEdge::setSelected(bool s)
 {
-    #ifdef CANVASCFGEDGE_DEBUG
-    qDebug() << "\033[1;31m" << "CanvasCFGEdge:setSelected()" << "\033[0m";
-    #endif // CANVASCFGEDGE_DEBUG
-
     QGraphicsItem::setSelected(s);
     update();
 }
 
 void CanvasCFGEdge::paint(QPainter* p, const QStyleOptionGraphicsItem* option, QWidget*)
 {
-    #ifdef CANVASCFGEDGE_DEBUG
-    qDebug() << "\033[1;31m" << "CanvasCFGEdge:paint()" << "\033[0m";
-    #endif // CANVASCFGEDGE_DEBUG
-
     p->setRenderHint(QPainter::Antialiasing);
 
 #if QT_VERSION >= 0x040600
@@ -2078,10 +1822,6 @@ ControlFlowGraphView::ControlFlowGraphView(TraceItemView* parentView, QWidget* p
                                            const QString& name) :
     QGraphicsView(parent), TraceItemView(parentView)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::ControlFlowGraphView" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     setObjectName(name);
     setWhatsThis(whatsThis());
     setFocusPolicy(Qt::StrongFocus);
@@ -2104,10 +1844,6 @@ ControlFlowGraphView::ControlFlowGraphView(TraceItemView* parentView, QWidget* p
 
 ControlFlowGraphView::~ControlFlowGraphView()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::~ControlFlowGraphView" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (_scene)
     {
         _panningView->setScene(nullptr);
@@ -2120,19 +1856,11 @@ ControlFlowGraphView::~ControlFlowGraphView()
 
 QString ControlFlowGraphView::whatsThis() const
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::whatsThis" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     return QObject::tr("This is Control Flow Graph by dWX1268804");
 }
 
 bool ControlFlowGraphView::isReduced(const CFGNode* node) const
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::isReduced" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     return _exporter.getNodeOptions(node->basicBlock()) & CFGExporter::Options::reduced;
 }
 
@@ -2148,10 +1876,6 @@ bool ControlFlowGraphView::showInstrCost(const CFGNode* node) const
 
 TraceFunction* ControlFlowGraphView::getFunction()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::getFunction" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     assert(_activeItem);
 
     switch (_activeItem->type())
@@ -2172,10 +1896,6 @@ TraceFunction* ControlFlowGraphView::getFunction()
 
 void ControlFlowGraphView::zoomRectMoved(qreal dx, qreal dy)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::zoomRectMoved" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     //FIXME if (leftMargin()>0) dx = 0;
     //FIXME if (topMargin()>0) dy = 0;
 
@@ -2187,20 +1907,12 @@ void ControlFlowGraphView::zoomRectMoved(qreal dx, qreal dy)
 
 void ControlFlowGraphView::zoomRectMoveFinished()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::zoomRectMoveFinished" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (_zoomPosition == ZoomPosition::Auto)
         updateSizes();
 }
 
 void ControlFlowGraphView::showRenderWarning()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::showRenderWarning" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     QString s;
     if (_renderProcess)
         s = QObject::tr("Warning: a long lasting graph layouting is in progress.\n"
@@ -2216,10 +1928,6 @@ void ControlFlowGraphView::showRenderWarning()
 
 void ControlFlowGraphView::showRenderError(const QString& text)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::showRenderError" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     QString err = QObject::tr("No graph available because the layouting process failed.\n");
     if (_renderProcess)
         err += QObject::tr("Trying to run the following command did not work:\n"
@@ -2234,10 +1942,6 @@ void ControlFlowGraphView::showRenderError(const QString& text)
 
 void ControlFlowGraphView::stopRendering()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug("ControlFlowGraphView::stopRendering: Killing QProcess %p", _renderProcess);
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (!_renderProcess)
         return;
 
@@ -2253,10 +1957,6 @@ void ControlFlowGraphView::stopRendering()
 
 void ControlFlowGraphView::readDotOutput()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::readDotOutput" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     auto process = qobject_cast<QProcess*>(sender());
     qDebug("ControlFlowGraphView::readDotOutput: QProcess %p", process);
 
@@ -2268,10 +1968,6 @@ void ControlFlowGraphView::readDotOutput()
 
 void ControlFlowGraphView::dotError()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::dotError" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     auto process = qobject_cast<QProcess*>(sender());
     qDebug("ControlFlowGraphView::dotError: Got %d from QProcess %p", process->error(), process);
 
@@ -2288,10 +1984,6 @@ void ControlFlowGraphView::dotError()
 
 void ControlFlowGraphView::dotExited()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::dotExited" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     auto process = qobject_cast<QProcess*>(sender());
     qDebug("ControlFlowGraphView::dotExited: QProcess %p", process);
 
@@ -2333,10 +2025,6 @@ void ControlFlowGraphView::dotExited()
 
 void ControlFlowGraphView::parseDot()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::parseDot" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     QTextStream dotStream{std::addressof(_unparsedOutput), QIODevice::ReadOnly};
     _scaleY = 8 + 3 * fontMetrics().height();
 
@@ -2369,10 +2057,6 @@ void ControlFlowGraphView::parseDot()
 
 void ControlFlowGraphView::setupScreen(QTextStream& lineStream, int lineno)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::setupScreen" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     QString dotWidthString, dotHeightString;
     lineStream >> _dotHeight >> dotWidthString >> dotHeightString;
 
@@ -2403,10 +2087,6 @@ void ControlFlowGraphView::setupScreen(QTextStream& lineStream, int lineno)
 
 std::pair<int, int> ControlFlowGraphView::calculateSizes(QTextStream& lineStream)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::calculateSizes" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     QString xStr, yStr;
     lineStream >> xStr >> yStr;
 
@@ -2418,10 +2098,6 @@ std::pair<int, int> ControlFlowGraphView::calculateSizes(QTextStream& lineStream
 
 void ControlFlowGraphView::parseNode(QTextStream& lineStream)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::parseNode" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     QString nodeName;
     lineStream >> nodeName;
 
@@ -2534,10 +2210,6 @@ CanvasCFGEdgeArrow* createArrow(CanvasCFGEdge* sItem, const QPolygon& poly, QCol
 
 void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::parseEdge" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     CFGEdge* edge = getEdgeFromDot(lineStream, lineno);
     if (!edge)
         return;
@@ -2601,10 +2273,6 @@ TraceBasicBlock* getNodeForEdge(QTextStream& lineStream)
 
 CFGEdge* ControlFlowGraphView::getEdgeFromDot(QTextStream& lineStream, int lineno)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::getEdgeFromDotReduced" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     TraceBasicBlock* bbFrom = getNodeForEdge(lineStream);
     assert(bbFrom);
     TraceBasicBlock* bbTo = getNodeForEdge(lineStream);
@@ -2623,10 +2291,6 @@ CFGEdge* ControlFlowGraphView::getEdgeFromDot(QTextStream& lineStream, int linen
 
 QPolygon ControlFlowGraphView::getEdgePolygon(QTextStream& lineStream, int lineno)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::getEdgePolygon" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     int nPoints;
     lineStream >> nPoints;
     assert(nPoints > 1);
@@ -2651,10 +2315,6 @@ QPolygon ControlFlowGraphView::getEdgePolygon(QTextStream& lineStream, int linen
 
 void ControlFlowGraphView::checkScene()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::checkSceneAndActiveItems" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (!_scene)
     {
         _scene = new QGraphicsScene;
@@ -2675,10 +2335,6 @@ void ControlFlowGraphView::checkScene()
 
 void ControlFlowGraphView::centerOnSelectedNodeOrEdge()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::centerOnSelectedNodeOrEdge" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     CanvasCFGNode* sNode = nullptr;
     if (_selectedNode)
         sNode = _selectedNode->canvasNode();
@@ -2711,30 +2367,18 @@ void ControlFlowGraphView::centerOnSelectedNodeOrEdge()
 
 void ControlFlowGraphView::zoomPosTriggered(QAction* a)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::zoomPosTriggered" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     _zoomPosition = static_cast<ZoomPosition>(a->data().toInt());
     updateSizes();
 }
 
 void ControlFlowGraphView::layoutTriggered(QAction* a)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::layoutTriggered" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     _exporter.setLayout(static_cast<CFGExporter::Layout>(a->data().toInt()));
     refresh(false);
 }
 
 void ControlFlowGraphView::minimizationTriggered(QAction* a)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::minimizationTriggered" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     TraceFunction* func = getFunction();
     uint64 totalCost = func->subCost(_eventType).v;
     double percentage = a->data().toDouble();
@@ -2746,10 +2390,6 @@ void ControlFlowGraphView::minimizationTriggered(QAction* a)
 
 void ControlFlowGraphView::resizeEvent(QResizeEvent* e)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::resizeEvent" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     QGraphicsView::resizeEvent(e);
     if (_scene)
         updateSizes(e->size());
@@ -2758,10 +2398,6 @@ void ControlFlowGraphView::resizeEvent(QResizeEvent* e)
 void ControlFlowGraphView::mouseEvent(void (TraceItemView::* func)(CostItem*), QGraphicsItem* item)
 {
     assert(item);
-
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::mouseEvent" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
 
     if (item->type() == CanvasParts::Node)
     {
@@ -2787,10 +2423,6 @@ void ControlFlowGraphView::mouseEvent(void (TraceItemView::* func)(CostItem*), Q
 
 void ControlFlowGraphView::mousePressEvent(QMouseEvent* event)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::mousePressEvent" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     setFocus();
 
     if (event->button() == Qt::LeftButton)
@@ -2805,10 +2437,6 @@ void ControlFlowGraphView::mousePressEvent(QMouseEvent* event)
 
 void ControlFlowGraphView::mouseDoubleClickEvent(QMouseEvent* event)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::mouseDoubleClickEvent" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     QGraphicsItem* item = itemAt(event->pos());
     if (!item)
         return;
@@ -2828,10 +2456,6 @@ void ControlFlowGraphView::mouseDoubleClickEvent(QMouseEvent* event)
 
 void ControlFlowGraphView::mouseMoveEvent(QMouseEvent* event)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::mouseMoveEvent" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (_isMoving)
     {
         QPoint delta = event->pos() - _lastPos;
@@ -2847,10 +2471,6 @@ void ControlFlowGraphView::mouseMoveEvent(QMouseEvent* event)
 
 void ControlFlowGraphView::mouseReleaseEvent(QMouseEvent*)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::mouseReleaseEvent" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     _isMoving = false;
     if (_zoomPosition == ZoomPosition::Auto)
         updateSizes();
@@ -2881,10 +2501,6 @@ enum MenuActions
 
 void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::contextMenuEvent" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     _isMoving = false;
 
     std::array<QAction*, MenuActions::nActions> actions;
@@ -3031,10 +2647,6 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
 void ControlFlowGraphView::exportGraphAsImage()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::exportGraphAsImage" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     assert(_scene);
 
     QString fileName = QFileDialog::getSaveFileName(this,
@@ -3092,10 +2704,6 @@ std::pair<CFGNode*, CFGEdge*> getNodeOrEdgeToSelect(CFGEdge* edge, int key)
 
 void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::keyPressEvent" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (!_scene)
         e->ignore();
     else if (e->key() == Qt::Key_Return || e->key() == Qt::Key_Space)
@@ -3132,10 +2740,6 @@ void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
 
 void ControlFlowGraphView::movePointOfView(QKeyEvent* e)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::movePointOfView" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     auto dx = [this]{ return mapToScene(width(), 0) - mapToScene(0, 0); };
     auto dy = [this]{ return mapToScene(0, height()) - mapToScene(0, 0); };
 
@@ -3193,10 +2797,6 @@ void ControlFlowGraphView::movePointOfView(QKeyEvent* e)
 // Called by QAbstractScrollArea to notify about scrollbar changes
 void ControlFlowGraphView::scrollContentsBy(int dx, int dy)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::scrollContentBy" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     // call QGraphicsView implementation
     QGraphicsView::scrollContentsBy(dx, dy);
 
@@ -3236,10 +2836,6 @@ double calculate_zoom (QSize s, int cWidth, int cHeight)
 
 void ControlFlowGraphView::updateSizes(QSize s)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::updateSizes" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (!_scene)
         return;
 
@@ -3360,10 +2956,6 @@ void ControlFlowGraphView::updateSizes(QSize s)
 
 CostItem* ControlFlowGraphView::canShow(CostItem* i)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::canShow" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (i)
     {
         switch (i->type())
@@ -3383,10 +2975,6 @@ CostItem* ControlFlowGraphView::canShow(CostItem* i)
 
 void ControlFlowGraphView::doUpdate(int changeType, bool)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::doUpdate" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (changeType == TraceItemView::selectedItemChanged)
     {
         if (!_scene || !_selectedItem)
@@ -3451,10 +3039,6 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
 
 void ControlFlowGraphView::unselectNode()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::unselectNode" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (_selectedNode)
     {
         if (_selectedNode->canvasNode())
@@ -3466,10 +3050,6 @@ void ControlFlowGraphView::unselectNode()
 
 void ControlFlowGraphView::unselectEdge()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::unselectEdge" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (_selectedEdge)
     {
         if (_selectedEdge->canvasEdge())
@@ -3481,10 +3061,6 @@ void ControlFlowGraphView::unselectEdge()
 
 void ControlFlowGraphView::selectNode(CFGNode* node)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::selectNode" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (node && node->canvasNode())
     {
         _selectedNode = node;
@@ -3499,10 +3075,6 @@ void ControlFlowGraphView::selectNode(CFGNode* node)
 
 void ControlFlowGraphView::selectEdge(CFGEdge* edge)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::selectEdge" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (edge && edge->canvasEdge())
     {
         _selectedEdge = edge;
@@ -3512,10 +3084,6 @@ void ControlFlowGraphView::selectEdge(CFGEdge* edge)
 
 void ControlFlowGraphView::refresh(bool reset)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::refresh()" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (_renderProcess)
         stopRendering();
 
@@ -3592,10 +3160,6 @@ void ControlFlowGraphView::refresh(bool reset)
 
 void ControlFlowGraphView::clear()
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::clear" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (!_scene)
         return;
 
@@ -3607,10 +3171,6 @@ void ControlFlowGraphView::clear()
 
 void ControlFlowGraphView::showText(const QString& text)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::showText" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     clear();
     _renderTimer.stop();
 
@@ -3625,10 +3185,6 @@ void ControlFlowGraphView::showText(const QString& text)
 
 QAction* ControlFlowGraphView::addZoomPosAction(QMenu* menu, const QString& descr, ZoomPosition pos)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addZoomPosAction" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     QAction* a = menu->addAction(descr);
 
     a->setData(static_cast<int>(pos));
@@ -3641,10 +3197,6 @@ QAction* ControlFlowGraphView::addZoomPosAction(QMenu* menu, const QString& desc
 QAction* ControlFlowGraphView::addLayoutAction(QMenu* menu, const QString& descr,
                                                CFGExporter::Layout layout)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addLayoutAction" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     QAction* a = menu->addAction(descr);
 
     a->setData(static_cast<int>(layout));
@@ -3656,10 +3208,6 @@ QAction* ControlFlowGraphView::addLayoutAction(QMenu* menu, const QString& descr
 
 QAction* ControlFlowGraphView::addStopLayoutAction(QMenu& menu)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addStopLayoutAction" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     if (_renderProcess)
     {
         QAction* stopLayout_ = menu.addAction(QObject::tr("Stop Layouting"));
@@ -3674,10 +3222,6 @@ QAction* ControlFlowGraphView::addStopLayoutAction(QMenu& menu)
 QAction* ControlFlowGraphView::addOptionsAction(QMenu* menu, const QString& descr, CFGNode* node,
                                                 CFGExporter::Options option)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addDetailsAction" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     CFGExporter::Options options = _exporter.getNodeOptions(node->basicBlock());
 
     QAction* a = menu->addAction(descr);
@@ -3697,10 +3241,6 @@ QAction* ControlFlowGraphView::addOptionsAction(QMenu* menu, const QString& desc
 QAction* ControlFlowGraphView::addOptionsAction(QMenu* menu, const QString& descr, TraceFunction* func,
                                                 CFGExporter::Options option)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addOptionsAction" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     CFGExporter::Options options = _exporter.getGraphOptions(func);
 
     QAction* a = menu->addAction(descr);
@@ -3720,10 +3260,6 @@ QAction* ControlFlowGraphView::addOptionsAction(QMenu* menu, const QString& desc
 QAction* ControlFlowGraphView::addMinimizationAction(QMenu* menu, const QString& descr,
                                                      TraceFunction* func, double percentage)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addMinimizationAction" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     QAction* a = menu->addAction(descr);
 
     a->setData(percentage);
@@ -3737,10 +3273,6 @@ QAction* ControlFlowGraphView::addMinimizationAction(QMenu* menu, const QString&
 
 QMenu* ControlFlowGraphView::addZoomPosMenu(QMenu& menu)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addZoomPosMenu" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     QMenu* submenu = menu.addMenu(QObject::tr("Birds-eye View"));
 
     addZoomPosAction(submenu, QObject::tr("Top Left"), ZoomPosition::TopLeft);
@@ -3758,10 +3290,6 @@ QMenu* ControlFlowGraphView::addZoomPosMenu(QMenu& menu)
 
 QMenu* ControlFlowGraphView::addLayoutMenu(QMenu& menu)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addLayoutMenu" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     QMenu* submenu = menu.addMenu(QObject::tr("Layout"));
 
     addLayoutAction(submenu, QObject::tr("Top to Down"), CFGExporter::Layout::TopDown);
@@ -3775,10 +3303,6 @@ QMenu* ControlFlowGraphView::addLayoutMenu(QMenu& menu)
 
 QMenu* ControlFlowGraphView::addMinimizationMenu(QMenu& menu, TraceFunction* func)
 {
-    #ifdef CONTROLFLOWGRAPHVIEW_DEBUG
-    qDebug() << "\033[1;31m" << "ControlFlowGraphView::addMinimizationMenu" << "\033[0m";
-    #endif // CONTROLFLOWGRAPHVIEW_DEBUG
-
     QMenu* submenu = menu.addMenu(QObject::tr("Min. basic block cost"));
 
     addMinimizationAction(submenu, QObject::tr("Undefined"), func, -1);
