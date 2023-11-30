@@ -1421,7 +1421,7 @@ void CFGExporter::dumpEdges(QTextStream& ts)
 
 bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
                              EventType* eventType, ProfileContext::Type groupType,
-                             Layout layout, const options_map_type& map)
+                             const CFGExporter& origExporter)
 {
     static constexpr const char* filter1 = "text/vnd.graphviz";
     static constexpr const char* filter2 = "application/pdf";
@@ -1462,8 +1462,9 @@ bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
         }
 
         CFGExporter ge{func, eventType, groupType, dotName};
-        ge.setLayout(layout);
-        ge.setDetailsMap(map);
+        ge._optionsMap = origExporter._optionsMap;
+        ge._globalOptionsMap = origExporter._globalOptionsMap;
+        ge._layout = origExporter._layout;
 
         bool wrote = ge.writeDot();
         if (wrote && mime != filter1)
@@ -2570,8 +2571,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
         {
             TraceFunction* func = activeFunction();
             if (func)
-                CFGExporter::savePrompt(this, func, eventType(), groupType(), _exporter.layout(),
-                                        _exporter.detailsMap());
+                CFGExporter::savePrompt(this, func, eventType(), groupType(), _exporter);
             break;
         }
         case MenuActions::exportAsImage:
