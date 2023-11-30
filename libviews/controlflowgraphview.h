@@ -77,9 +77,8 @@ public:
                                                                 iterator_category_t<It>>::value>::type>
     void insertInstructions(It first, It last)
     {
-        using diff_type = typename std::iterator_traits<It>::difference_type;
-
-        assert(std::distance(first, last) == static_cast<diff_type>(_bb->instrNumber()));
+        assert(std::distance(first, last) ==
+               static_cast<typename std::iterator_traits<It>::difference_type>(_bb->instrNumber()));
 
         _instructions.reserve(std::distance(first, last));
         std::copy(first, last, std::back_inserter(_instructions));
