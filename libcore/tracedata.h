@@ -1139,11 +1139,6 @@ public:
 
     bool isCycle() const;
 
-    QString prettyName() const override { return QString{}; }
-    QString formattedName() const override { return QString{}; }
-
-    void update() override {};
-
 private:
 
     TraceInstr* _from = nullptr;
@@ -1165,11 +1160,6 @@ public:
                     typename TraceInstrMap::iterator last);
 
     ~TraceBasicBlock() override = default;
-
-    QString prettyName() const override;
-    QString formattedName() const override;
-
-    void update() override;
 
     size_type instrNumber() const { return _instructions.size(); }
 
