@@ -857,9 +857,6 @@ int CFGExporter::transformKeyIfNeeded(int key) const
     return key;
 }
 
-namespace
-{
-
 class LineBuffer final
 {
 public:
@@ -1370,8 +1367,6 @@ QString ObjdumpParser::parseOperands()
     else
         return QString::fromLatin1(operandsPos, operandsLen);
 }
-
-} // unnamed namespace
 
 bool CFGExporter::fillInstrStrings(TraceFunction* func)
 {
