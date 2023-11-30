@@ -1419,24 +1419,6 @@ void CFGExporter::dumpEdges(QTextStream& ts)
     }
 }
 
-CFGNode* CFGExporter::toCFGNode(QString s)
-{
-    assert(s.length() >= 3);
-
-    if (s[0] == 'b' && s[1] == 'b')
-    {
-        bool ok;
-        qulonglong ibb = s.mid(2).toULongLong(&ok, 16);
-        if (ok)
-        {
-            auto it = _nodeMap.find(reinterpret_cast<TraceBasicBlock*>(ibb));
-            return (it == _nodeMap.end()) ? nullptr : std::addressof(*it);
-        }
-    }
-
-    return nullptr;
-}
-
 bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
                              EventType* eventType, ProfileContext::Type groupType,
                              Layout layout, const options_map_type& map)
@@ -2098,40 +2080,49 @@ std::pair<int, int> ControlFlowGraphView::calculateSizes(QTextStream& lineStream
 
 void ControlFlowGraphView::parseNode(QTextStream& lineStream)
 {
-    QString nodeName;
-    lineStream >> nodeName;
+    CFGNode* node = getNodeFromDot(lineStream);
+    assert(node);
+    assert(node->instrNumber() > 0);
 
     auto [xx, yy] = calculateSizes(lineStream);
 
     QString nodeWidth, nodeHeight;
     lineStream >> nodeWidth >> nodeHeight;
 
-    CFGNode* node = _exporter.toCFGNode(nodeName);
-    if (node)
+    node->setVisible(true);
+    qreal w = (_scaleX - 4.5) * nodeWidth.toDouble();
+    qreal h = _scaleY * nodeHeight.toDouble();
+
+    auto rItem = new CanvasCFGNode{this, node, xx - w / 2, yy - h / 2, w, h};
+    rItem->setZValue(1.0);
+    rItem->show();
+
+    node->setCanvasNode(rItem);
+
+    _scene->addItem(rItem);
+
+    if (node->basicBlock() == selectedItem())
     {
-        assert(node->instrNumber() > 0);
-        node->setVisible(true);
-        qreal w = (_scaleX - 4.5) * nodeWidth.toDouble();
-        qreal h = _scaleY * nodeHeight.toDouble();
-
-        auto rItem = new CanvasCFGNode{this, node, xx - w / 2, yy - h / 2, w, h};
-        rItem->setZValue(1.0);
-        rItem->show();
-
-        node->setCanvasNode(rItem);
-
-        _scene->addItem(rItem);
-
-        if (node->basicBlock() == selectedItem())
-        {
-            _selectedNode = node;
-            rItem->setSelected(true);
-        }
-        else
-            rItem->setSelected(node == _selectedNode);
+        _selectedNode = node;
+        rItem->setSelected(true);
     }
     else
-        qDebug("Warning: Unknown basic block \'%s\' ?!", qPrintable(nodeName));
+        rItem->setSelected(node == _selectedNode);
+}
+
+CFGNode* ControlFlowGraphView::getNodeFromDot(QTextStream& lineStream)
+{
+    QString s;
+    lineStream >> s;
+
+    assert(s.length() >= 3);
+    assert (s[0] == 'b' && s[1] == 'b');
+
+    bool ok;
+    qulonglong ibb = s.mid(2).toULongLong(&ok, 16);
+    assert(ok);
+
+    return _exporter.findNode(reinterpret_cast<TraceBasicBlock*>(ibb));
 }
 
 namespace
