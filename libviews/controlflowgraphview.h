@@ -194,7 +194,6 @@ public:
     };
 
     using size_type = typename QMap<TraceBasicBlock*, CFGNode>::size_type;
-    using options_map_type = std::unordered_map<const TraceBasicBlock*, int>;
 
     CFGExporter() = default;
     CFGExporter(const CFGExporter& otherExporter, TraceFunction* func, EventType* et,
@@ -269,7 +268,7 @@ private:
     QMap<const TraceBasicBlock*, CFGNode> _nodeMap;
     QMap<std::pair<const TraceBasicBlock*, const TraceBasicBlock*>, CFGEdge> _edgeMap;
 
-    options_map_type _optionsMap;
+    std::unordered_map<const TraceBasicBlock*, int> _optionsMap;
     std::unordered_map<const TraceFunction*, std::pair<int, double>> _globalOptionsMap;
 };
 
