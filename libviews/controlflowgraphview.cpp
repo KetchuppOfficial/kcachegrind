@@ -62,7 +62,7 @@ void CFGNode::clearEdges()
     _successors.clear();
 }
 
-class SuccessorEdgesComparator
+class SuccessorEdgesComparator final
 {
 public:
     SuccessorEdgesComparator(CanvasCFGNode* cn) : _center{cn->rect().bottomLeft()} {}
@@ -94,7 +94,7 @@ private:
     QPointF _center;
 };
 
-class PredecessorEdgesComparator
+class PredecessorEdgesComparator final
 {
 public:
     PredecessorEdgesComparator(CanvasCFGNode* cn)
