@@ -240,9 +240,6 @@ public:
 
     int transformKeyIfNeeded(int key) const;
 
-    // translates string "B<firstAddr>B<lastAddr>" into appropriate CFGNode*
-    CFGNode* toCFGNode(QString s);
-
     options_map_type& detailsMap() { return _optionsMap; }
     const options_map_type& detailsMap() const { return _optionsMap; }
     void setDetailsMap(const options_map_type& map) { _optionsMap = map; }
@@ -458,6 +455,7 @@ private:
     void setupScreen(QTextStream& lineStream, int lineno);
     std::pair<int, int> calculateSizes(QTextStream& lineStream);
     void parseNode(QTextStream& lineStream);
+    CFGNode* getNodeFromDot(QTextStream& lineStream);
     void parseEdge(QTextStream& lineStream, int lineno);
     CFGEdge* getEdgeFromDot(QTextStream& lineStream, int lineno);
     QPolygon getEdgePolygon(QTextStream& lineStream, int lineno);
