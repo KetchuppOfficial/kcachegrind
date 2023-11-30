@@ -199,7 +199,7 @@ public:
     };
 
     using size_type = typename QMap<TraceBasicBlock*, CFGNode>::size_type;
-    using details_map_type = std::unordered_map<const TraceBasicBlock*, int>;
+    using options_map_type = std::unordered_map<const TraceBasicBlock*, int>;
 
     CFGExporter() = default;
     CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Type gt,
@@ -248,13 +248,13 @@ public:
     // translates string "B<firstAddr>B<lastAddr>" into appropriate CFGNode*
     CFGNode* toCFGNode(QString s);
 
-    details_map_type& detailsMap() { return _optionsMap; }
-    const details_map_type& detailsMap() const { return _optionsMap; }
-    void setDetailsMap(const details_map_type& map) { _optionsMap = map; }
+    options_map_type& detailsMap() { return _optionsMap; }
+    const options_map_type& detailsMap() const { return _optionsMap; }
+    void setDetailsMap(const options_map_type& map) { _optionsMap = map; }
 
     static bool savePrompt(QWidget* parent, TraceFunction* func,
                            EventType* eventType, ProfileContext::Type groupType,
-                           Layout layout, const details_map_type& map);
+                           Layout layout, const options_map_type& map);
 
 private:
     bool createGraph();
@@ -281,7 +281,7 @@ private:
     QMap<std::pair<Addr, Addr>, CFGNode> _nodeMap;
     QMap<std::pair<Addr, Addr>, CFGEdge> _edgeMap;
 
-    details_map_type _optionsMap;
+    options_map_type _optionsMap;
     std::unordered_map<const TraceFunction*, std::pair<int, double>> _globalOptionsMap;
 };
 
