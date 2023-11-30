@@ -141,7 +141,8 @@ void CFGNode::sortSuccessorEdges()
 
 void CFGNode::sortPredecessorEdges()
 {
-    std::sort(_predecessors.begin(), _predecessors.end(), PredecessorEdgesComparator{_cn});
+    if (!_predecessors.empty())
+        std::sort(_predecessors.begin(), _predecessors.end(), PredecessorEdgesComparator{_cn});
 }
 
 void CFGNode::selectSuccessorEdge(CFGEdge* edge)
