@@ -62,9 +62,12 @@ void CFGNode::clearEdges()
     _successors.clear();
 }
 
-void CFGNode::sortSuccessorEdges()
+class SuccessorEdgesComparator
 {
-    auto edgeComp = [canvasNode = _cn](const CFGEdge* ge1, const CFGEdge* ge2)
+public:
+    SuccessorEdgesComparator(CanvasCFGNode* cn) : _center{cn->rect().bottomLeft()} {}
+
+    bool operator()(const CFGEdge* ge1, const CFGEdge* ge2)
     {
         const CanvasCFGEdge* ce1 = ge1->canvasEdge();
         const CanvasCFGEdge* ce2 = ge2->canvasEdge();
@@ -77,25 +80,31 @@ void CFGNode::sortSuccessorEdges()
             return true;
         else
         {
-            QPointF center = canvasNode->rect().bottomLeft();
-
-            QPointF d1 = ce1->controlPoints().back() - center;
-            QPointF d2 = ce2->controlPoints().back() - center;
+            QPointF d1 = ce1->controlPoints().back() - _center;
+            QPointF d2 = ce2->controlPoints().back() - _center;
 
             qreal angle1 = std::atan2(d1.y(), d1.x());
             qreal angle2 = std::atan2(d2.y(), d2.x());
 
             return angle1 > angle2;
         }
-    };
+    }
 
-    if (!_successors.empty() && _successors[0]->branch()->brType() == TraceBranch::Type::indirect)
-        std::sort(_successors.begin(), _successors.end(), edgeComp);
-}
+private:
+    QPointF _center;
+};
 
-void CFGNode::sortPredecessorEdges()
+class PredecessorEdgesComparator
 {
-    auto edgeComp = [canvasNode = _cn](const CFGEdge* ge1, const CFGEdge* ge2)
+public:
+    PredecessorEdgesComparator(CanvasCFGNode* cn)
+    {
+        QRectF nodeRect = cn->rect();
+        _center.setX(nodeRect.center().x());
+        _center.setY(nodeRect.bottom());
+    }
+
+    bool operator()(const CFGEdge* ge1, const CFGEdge* ge2)
     {
         const CanvasCFGEdge* ce1 = ge1->canvasEdge();
         const CanvasCFGEdge* ce2 = ge2->canvasEdge();
@@ -108,12 +117,8 @@ void CFGNode::sortPredecessorEdges()
             return true;
         else
         {
-            QRectF nodeRect = canvasNode->rect();
-            QPointF center = nodeRect.center();
-            center.setY(nodeRect.bottom());
-
-            QPointF d1 = ce1->controlPoints().back() - center;
-            QPointF d2 = ce2->controlPoints().back() - center;
+            QPointF d1 = ce1->controlPoints().back() - _center;
+            QPointF d2 = ce2->controlPoints().back() - _center;
 
             /* y coordinate is negated to change orientation of the coordinate system
                from positive to negative */
@@ -124,7 +129,19 @@ void CFGNode::sortPredecessorEdges()
         }
     };
 
-    std::sort(_predecessors.begin(), _predecessors.end(), edgeComp);
+private:
+    QPointF _center;
+};
+
+void CFGNode::sortSuccessorEdges()
+{
+    if (!_successors.empty() && _successors[0]->branch()->brType() == TraceBranch::Type::indirect)
+        std::sort(_successors.begin(), _successors.end(), SuccessorEdgesComparator{_cn});
+}
+
+void CFGNode::sortPredecessorEdges()
+{
+    std::sort(_predecessors.begin(), _predecessors.end(), PredecessorEdgesComparator{_cn});
 }
 
 void CFGNode::selectSuccessorEdge(CFGEdge* edge)
@@ -691,7 +708,7 @@ bool CFGExporter::createGraph()
             edge.setNodeTo(findNode(bbTo));
             edge.count = br.executedCount();
 
-            std::pair key{bbFrom, bbTo};
+            auto key = std::make_pair(bbFrom, bbTo);
             auto edgeIt = _edgeMap.insert(key, edge);
             node.addSuccessorEdge(std::addressof(*edgeIt));
         }
@@ -770,10 +787,12 @@ private:
 class ObjdumpParser final
 {
 public:
+    using instrStringsMap = QMap<Addr, std::pair<QString, QString>>;
+
     ObjdumpParser(TraceFunction* func);
     ~ObjdumpParser() = default;
 
-    std::pair<QString, QMap<Addr, std::pair<QString, QString>>> getInstrStrings();
+    std::pair<QString, instrStringsMap> getInstrStrings();
 
 private:
     using instr_iterator = typename TraceInstrMap::iterator;
@@ -968,9 +987,9 @@ QString ObjdumpParser::getSysRoot()
     return _env.value(QStringLiteral("SYSROOT"));
 }
 
-std::pair<QString, QMap<Addr, std::pair<QString, QString>>> ObjdumpParser::getInstrStrings()
+std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrStrings()
 {
-    QMap<Addr, std::pair<QString, QString>> instrStrings;
+    instrStringsMap instrStrings;
 
     for (; ; _line.setPos(0))
     {
@@ -1043,7 +1062,7 @@ std::pair<QString, QMap<Addr, std::pair<QString, QString>>> ObjdumpParser::getIn
         {
             operands.replace('<', '[');
             operands.replace('>', ']');
-            instrStrings.insert(_objAddr, std::pair{mnemonic, operands});
+            instrStrings.insert(_objAddr, std::make_pair(mnemonic, operands));
         }
     }
 
@@ -1106,7 +1125,8 @@ void ObjdumpParser::getCostAddr()
     _needCostAddr = false;
     _costIt = _it++;
 
-    _costAddr = std::exchange(_nextCostAddr, (_it == _ite) ? Addr{0} : _it->addr());
+    _costAddr = _nextCostAddr;
+    _nextCostAddr = (_it == _ite) ? Addr{0} : _it->addr();
     if (_isArm)
         _nextCostAddr = _nextCostAddr.alignedDown(2);
 }
@@ -1193,10 +1213,10 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
         return false;
 
     ObjdumpParser parser{func};
-    auto [message, instrStrings] = parser.getInstrStrings();
-    if (instrStrings.empty())
+    std::pair<QString, ObjdumpParser::instrStringsMap> pair = parser.getInstrStrings();
+    if (pair.second.empty())
     {
-        _errorMessage = message;
+        _errorMessage = pair.first;
         return false;
     }
 
@@ -1205,10 +1225,10 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
         const TraceBasicBlock* bb = it.key();
         CFGNode& node = it.value();
 
-        auto lastIt = instrStrings.find(bb->lastAddr());
-        assert(lastIt != instrStrings.end());
+        auto lastIt = pair.second.find(bb->lastAddr());
+        assert(lastIt != pair.second.end());
 
-        node.insertInstructions(instrStrings.find(bb->firstAddr()), std::next(lastIt));
+        node.insertInstructions(pair.second.find(bb->firstAddr()), std::next(lastIt));
     }
 
     return true;
@@ -1565,7 +1585,8 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
         else
             costLen = 0;
 
-        auto mnemonicComp = [&fm](auto& pair1, auto& pair2)
+        auto mnemonicComp = [&fm](std::pair<QString, QString>& pair1,
+                                  std::pair<QString, QString>& pair2)
         {
             return fm.size(Qt::TextSingleLine, pair1.first).width() <
                    fm.size(Qt::TextSingleLine, pair2.first).width();
@@ -1579,7 +1600,7 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
         int argsLen = w - mnemonicRightBorder;
 
         auto instrIt = bb->begin();
-        for (auto &[mnemonic, args] : *_node)
+        for (auto it = _node->begin(), ite = _node->end(); it != ite; ++it, ++instrIt)
         {
             if (PCLen != 0)
                 p->drawText(x + 2, topLineY, PCLen, step,
@@ -1590,13 +1611,12 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
                             Qt::AlignLeft, (*instrIt)->subCost(_view->eventType()).pretty());
 
             p->drawText(x + costRightBorder + 2, topLineY, mnemonicLen, step,
-                        Qt::AlignLeft, mnemonic);
+                        Qt::AlignLeft, it->first);
             p->drawText(x + mnemonicRightBorder + 2, topLineY, argsLen, step,
-                        Qt::AlignLeft, args);
+                        Qt::AlignLeft, it->second);
             p->drawLine(x, topLineY, x + w, topLineY);
 
             topLineY += step;
-            ++instrIt;
         }
 
         if (PCLen != 0)
@@ -2068,7 +2088,7 @@ std::pair<int, int> ControlFlowGraphView::calculateSizes(QTextStream& lineStream
     auto xx = static_cast<int>(_scaleX * xStr.toDouble() + _xMargin);
     auto yy = static_cast<int>(_scaleY * (_dotHeight - yStr.toDouble()) + _yMargin);
 
-    return std::pair{xx, yy};
+    return std::make_pair(xx, yy);
 }
 
 void ControlFlowGraphView::parseNode(QTextStream& lineStream)
@@ -2077,7 +2097,7 @@ void ControlFlowGraphView::parseNode(QTextStream& lineStream)
     assert(node);
     assert(node->instrNumber() > 0);
 
-    auto [xx, yy] = calculateSizes(lineStream);
+    std::pair<int, int> coords = calculateSizes(lineStream);
 
     QString nodeWidth, nodeHeight;
     lineStream >> nodeWidth >> nodeHeight;
@@ -2086,7 +2106,7 @@ void ControlFlowGraphView::parseNode(QTextStream& lineStream)
     qreal w = (_scaleX - 4.5) * nodeWidth.toDouble();
     qreal h = _scaleY * nodeHeight.toDouble();
 
-    auto rItem = new CanvasCFGNode{this, node, xx - w / 2, yy - h / 2, w, h};
+    auto rItem = new CanvasCFGNode{this, node, coords.first - w / 2, coords.second - h / 2, w, h};
     rItem->setZValue(1.0);
     rItem->show();
 
@@ -2222,10 +2242,10 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
     QString label;
     lineStream >> label; // further ignored
 
-    auto [xx, yy] = calculateSizes(lineStream);
+    std::pair<int, int> coords = calculateSizes(lineStream);
     auto lItem = new CanvasCFGEdgeLabel{this, sItem,
-                                        static_cast<qreal>(xx - 60),
-                                        static_cast<qreal>(yy - 10),
+                                        static_cast<qreal>(coords.first - 60),
+                                        static_cast<qreal>(coords.second - 10),
                                         100.0, 20.0};
     _scene->addItem(lItem);
     lItem->setZValue(1.5);
@@ -2290,8 +2310,8 @@ QPolygon ControlFlowGraphView::getEdgePolygon(QTextStream& lineStream, int linen
             return QPolygon{};
         }
 
-        auto [xx, yy] = calculateSizes(lineStream);
-        poly.setPoint(i, xx, yy);
+        std::pair<int, int> coords = calculateSizes(lineStream);
+        poly.setPoint(i, coords.first, coords.second);
     }
 
     return poly;
@@ -2671,15 +2691,15 @@ std::pair<CFGNode*, CFGEdge*> getNodeOrEdgeToSelect(CFGEdge* edge, int key)
     switch (key)
     {
         case Qt::Key_Up:
-            return std::pair{edge->keyboardPrevNode(), nullptr};
+            return std::make_pair(edge->keyboardPrevNode(), nullptr);
         case Qt::Key_Down:
-            return std::pair{edge->keyboardNextNode(), nullptr};
+            return std::make_pair(edge->keyboardNextNode(), nullptr);
         case Qt::Key_Left:
-            return std::pair{nullptr, edge->priorVisibleEdge()};
+            return std::make_pair(nullptr, edge->priorVisibleEdge());
         case Qt::Key_Right:
-            return std::pair{nullptr, edge->nextVisibleEdge()};
+            return std::make_pair(nullptr, edge->nextVisibleEdge());
         default:
-            return std::pair{nullptr, nullptr};
+            return std::make_pair(nullptr, nullptr);
     }
 }
 
@@ -2709,12 +2729,12 @@ void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
         else if (_selectedEdge)
         {
             int key = _exporter.transformKeyIfNeeded(e->key());
-            auto [node, edge] = getNodeOrEdgeToSelect(_selectedEdge, key);
+            std::pair<CFGNode*, CFGEdge*> pair = getNodeOrEdgeToSelect(_selectedEdge, key);
 
-            if (node && node->basicBlock())
-                selected(node->basicBlock());
-            else if (edge && edge->branch())
-                selected(edge->branch());
+            if (pair.first && pair.first->basicBlock())
+                selected(pair.first->basicBlock());
+            else if (pair.second && pair.second->branch())
+                selected(pair.second->branch());
         }
     }
     else
