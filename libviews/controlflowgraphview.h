@@ -73,8 +73,8 @@ public:
     CFGEdge* priorVisiblePredecessorEdge(CFGEdge* edge);
 
     template<typename It,
-             typename = std::enable_if_t<std::is_base_of_v<std::forward_iterator_tag,
-                                                           iterator_category_t<It>>>>
+             typename = typename std::enable_if<std::is_base_of<std::forward_iterator_tag,
+                                                                iterator_category_t<It>>::value>::type>
     void insertInstructions(It first, It last)
     {
         using diff_type = typename std::iterator_traits<It>::difference_type;

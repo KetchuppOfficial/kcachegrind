@@ -3893,9 +3893,6 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
       _instructions(std::distance(first, last)),
       _func{first->function()}
 {
-    assert(std::all_of(first, last, [f = _func](TraceInstr& i){ return i.function() == f; }) &&
-           "TraceFunction is not the same for all instruction in the range");
-
     std::transform(first, last, _instructions.begin(),
                    [](TraceInstr &i){ return std::addressof(i); });
 
