@@ -1669,7 +1669,7 @@ CFGNode* CFGExporter::toCFGNode(QString s)
 
 bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
                              EventType* eventType, ProfileContext::Type groupType,
-                             Layout layout, const details_map_type& map)
+                             Layout layout, const options_map_type& map)
 {
     #ifdef CFGEXPORTER_DEBUG
     qDebug() << "\033[1;31m" << "CFGExporter::savePrompt()" << "\033[0m";
