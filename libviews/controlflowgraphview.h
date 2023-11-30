@@ -240,13 +240,9 @@ public:
 
     int transformKeyIfNeeded(int key) const;
 
-    options_map_type& detailsMap() { return _optionsMap; }
-    const options_map_type& detailsMap() const { return _optionsMap; }
-    void setDetailsMap(const options_map_type& map) { _optionsMap = map; }
-
     static bool savePrompt(QWidget* parent, TraceFunction* func,
                            EventType* eventType, ProfileContext::Type groupType,
-                           Layout layout, const options_map_type& map);
+                           const CFGExporter& origExporter);
 
 private:
     bool createGraph();
