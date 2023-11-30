@@ -2669,17 +2669,12 @@ void TraceFunction::constructBasicBlocks()
 
         for (auto it = std::next(from); it != ite; ++it)
         {
-            auto& jumps = it->instrJumps();
-
-            if (jumps.isEmpty())
+            if (incomingJumps.find(std::addressof(*it)) != incomingJumps.end())
             {
-                if (incomingJumps.find(std::addressof(*it)) != incomingJumps.end())
-                {
-                    to = it;
-                    break;
-                }
+                to = it;
+                break;
             }
-            else
+            else if (!it->instrJumps().isEmpty())
             {
                 to = std::next(it);
                 break;
@@ -4028,6 +4023,11 @@ Addr TraceBasicBlock::lastAddr() const
 
 void TraceBasicBlock::addIncomingBranch(TraceBranch& br)
 {
+    if (br.instrTo() != firstInstr())
+    {
+        qDebug() << "\033[1;31mbr.instrTo() == " << br.instrTo()->addr().toString();
+        qDebug() << "firstInstr() == " << firstInstr()->addr().toString() << "\033[0m";
+    }
     assert(br.instrTo() == firstInstr());
 
     _incomingBranches.push_back(std::addressof(br));
