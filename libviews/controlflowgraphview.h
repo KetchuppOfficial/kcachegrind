@@ -77,10 +77,6 @@ public:
                                                            iterator_category_t<It>>>>
     void insertInstructions(It first, It last)
     {
-        #ifdef TOTAL_DEBUG
-        qDebug() << "\033[1;31m" << "CFGNode::insertInstructions" << "\033[0m";
-        #endif // TOTAL_DEBUG
-
         using diff_type = typename std::iterator_traits<It>::difference_type;
 
         assert(std::distance(first, last) == static_cast<diff_type>(_bb->instrNumber()));
