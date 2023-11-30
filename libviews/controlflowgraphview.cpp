@@ -668,8 +668,6 @@ bool CFGExporter::createGraph()
     if (!_item || _graphCreated)
         return false;
 
-    _graphCreated = true;
-
     TraceFunction* func;
     switch(_item->type())
     {
@@ -684,7 +682,10 @@ bool CFGExporter::createGraph()
             break;
         default:
             assert(!"Unsupported type of item");
+            return false;
     }
+
+    _graphCreated = true;
 
     auto& BBs = func->basicBlocks();
     for (auto bb : BBs)
