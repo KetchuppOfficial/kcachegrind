@@ -209,6 +209,8 @@ public:
     Layout layout() const { return _layout; }
     void setLayout(Layout layout) { _layout = layout; }
 
+    int transformKeyIfNeeded(int key) const;
+
     size_type edgeCount() const { return _edgeMap.count(); }
     size_type nodeCount() const { return _nodeMap.count(); }
 
@@ -231,14 +233,12 @@ public:
     CFGEdge* findEdge(const TraceBasicBlock* bbFrom, const TraceBasicBlock* bbTo);
     const CFGEdge* findEdge(const TraceBasicBlock* bbFrom, const TraceBasicBlock* bbTo) const;
 
-    void reset(CostItem* i, EventType* et, ProfileContext::Type gt,
-               QString filename = QString{});
+    void sortEdges();
 
     bool writeDot(QIODevice* device = nullptr);
 
-    void sortEdges();
-
-    int transformKeyIfNeeded(int key) const;
+    void reset(CostItem* i, EventType* et, ProfileContext::Type gt,
+               QString filename = QString{});
 
     static bool savePrompt(QWidget* parent, TraceFunction* func,
                            EventType* eventType, ProfileContext::Type groupType,
