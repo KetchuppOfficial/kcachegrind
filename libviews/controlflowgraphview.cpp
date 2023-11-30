@@ -375,9 +375,10 @@ CFGEdge* CFGEdge::priorVisibleEdge()
 // CFGExporter
 //
 
-CFGExporter::CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Type gt,
-                         QString filename)
-                        : _item{func}, _eventType{et}, _groupType{gt}
+CFGExporter::CFGExporter(const CFGExporter& otherExporter, TraceFunction* func, EventType* et,
+                         ProfileContext::Type gt, QString filename)
+    : _item{func}, _eventType{et}, _groupType{gt}, _layout{otherExporter._layout},
+      _optionsMap{otherExporter._optionsMap}, _globalOptionsMap{otherExporter._globalOptionsMap}
 {
     if (!_item)
         return;
@@ -394,12 +395,6 @@ CFGExporter::CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Typ
         _tmpFile = nullptr;
         _dotName = filename;
     }
-
-    auto& basicBlocks = func->basicBlocks();
-    assert(!basicBlocks.empty());
-    _optionsMap.reserve(basicBlocks.size());
-    for (auto bb : basicBlocks)
-        _optionsMap.emplace(bb, Options::default_);
 }
 
 CFGExporter::~CFGExporter()
@@ -1461,10 +1456,7 @@ bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
             dotRenderType = "-Tps";
         }
 
-        CFGExporter ge{func, eventType, groupType, dotName};
-        ge._optionsMap = origExporter._optionsMap;
-        ge._globalOptionsMap = origExporter._globalOptionsMap;
-        ge._layout = origExporter._layout;
+        CFGExporter ge{origExporter, func, eventType, groupType, dotName};
 
         bool wrote = ge.writeDot();
         if (wrote && mime != filter1)

@@ -197,8 +197,8 @@ public:
     using options_map_type = std::unordered_map<const TraceBasicBlock*, int>;
 
     CFGExporter() = default;
-    CFGExporter(TraceFunction* func, EventType* et, ProfileContext::Type gt,
-                QString filename = QString{});
+    CFGExporter(const CFGExporter& otherExporter, TraceFunction* func, EventType* et,
+                ProfileContext::Type gt, QString filename = QString{});
     ~CFGExporter();
 
     QString filename() const { return _dotName; }
