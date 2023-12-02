@@ -1061,11 +1061,7 @@ std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrString
         }
 
         if (!mnemonic.isEmpty() && _currInstr)
-        {
-            operands.replace('<', '[');
-            operands.replace('>', ']');
             instrStrings.insert(_objAddr, std::make_pair(mnemonic, operands));
-        }
     }
 
     if (_noAssLines > 1)
@@ -1282,6 +1278,11 @@ void dumpCost(QTextStream& ts, SubCost cost)
                          "    <td align=\"left\">").arg(cost.pretty());
 }
 
+void convertToHTML(QString& str)
+{
+    str.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;");
+}
+
 } // unnamed namespace
 
 void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
@@ -1322,9 +1323,12 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
         if (needCost)
             dumpCost(ts, instr->subCost(_eventType));
 
+        QString operands = strIt->second;
+        convertToHTML(operands);
+
         ts << QStringLiteral("%1</td>\n"
                              "    <td align=\"left\">%2</td>\n"
-                             "  </tr>\n").arg(strIt->first).arg(strIt->second);
+                             "  </tr>\n").arg(strIt->first).arg(operands);
 
         for (++instrIt, ++strIt; instrIt != lastInstrIt; ++instrIt, ++strIt)
         {
@@ -1338,9 +1342,12 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
             if (needCost)
                 dumpCost(ts, instr->subCost(_eventType));
 
+            operands = strIt->second;
+            convertToHTML(operands);
+
             ts << QStringLiteral("%1</td>\n"
                                  "    <td align=\"left\">%2</td>\n"
-                                 "  </tr>\n").arg(strIt->first).arg(strIt->second);
+                                 "  </tr>\n").arg(strIt->first).arg(operands);
         }
     }
 
@@ -1353,10 +1360,13 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
     if (needCost)
         dumpCost(ts, (*lastInstrIt)->subCost(_eventType));
 
+    QString operands = strIt->second;
+    convertToHTML(operands);
+
     ts << QStringLiteral("%1</td>\n"
                          "    <td align=\"left\">%2</td>\n"
                          "  </tr>\n"
-                         "  </table>>]\n").arg(strIt->first).arg(strIt->second);
+                         "  </table>>]\n").arg(strIt->first).arg(operands);
 }
 
 namespace
