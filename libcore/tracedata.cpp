@@ -3917,6 +3917,14 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
 
         SubCost followed = jump->followedCount();
         SubCost exec = jump->executedCount();
+        TraceData* data = _func->data();
+        EventType* e = data ? data->eventTypes()->realType(0) : nullptr;
+        if (e)
+        {
+            SubCost trueExec = lastInstr()->subCost(e);
+            if (exec != trueExec)
+                exec = trueExec;
+        }
 
         if (jump->isCondJump())
         {
