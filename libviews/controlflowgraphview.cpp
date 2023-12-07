@@ -62,7 +62,13 @@ void CFGNode::clearEdges()
 class SuccessorEdgesComparator final
 {
 public:
-    SuccessorEdgesComparator(CanvasCFGNode* cn) : _center{cn->rect().bottomLeft()} {}
+    SuccessorEdgesComparator(CanvasCFGNode* cn)
+    {
+        assert(cn);
+        QRectF nodeRect = cn->rect();
+        _center.setX(nodeRect.center().x());
+        _center.setY(nodeRect.bottom());
+    }
 
     bool operator()(const CFGEdge* ge1, const CFGEdge* ge2)
     {
@@ -96,9 +102,10 @@ class PredecessorEdgesComparator final
 public:
     PredecessorEdgesComparator(CanvasCFGNode* cn)
     {
+        assert(cn);
         QRectF nodeRect = cn->rect();
         _center.setX(nodeRect.center().x());
-        _center.setY(nodeRect.bottom());
+        _center.setY(nodeRect.top());
     }
 
     bool operator()(const CFGEdge* ge1, const CFGEdge* ge2)
@@ -132,7 +139,7 @@ private:
 
 void CFGNode::sortSuccessorEdges()
 {
-    if (!_successors.empty() && _successors[0]->branch()->brType() == TraceBranch::Type::indirect)
+    if (!_successors.empty())
         std::sort(_successors.begin(), _successors.end(), SuccessorEdgesComparator{_cn});
 }
 
