@@ -2739,12 +2739,18 @@ void TraceFunction::constructBasicBlocks()
         }
     }
 
-    auto pred = [](TraceBranch& br){ return br.brType() == TraceBranch::Type::invalid; };
+    auto predRef = [](TraceBranch& br){ return br.brType() == TraceBranch::Type::invalid; };
+    auto predPtr = [](TraceBranch* br){ return br->brType() == TraceBranch::Type::invalid; };
 
     for (auto bb: _basicBlocks)
     {
         auto& branches = bb->branches();
-        branches.erase(std::remove_if(branches.begin(), branches.end(), pred), branches.end());
+        branches.erase(std::remove_if(branches.begin(), branches.end(), predRef),
+                       branches.end());
+
+        auto& predecessors = bb->predecessors();
+        predecessors.erase(std::remove_if(predecessors.begin(), predecessors.end(), predPtr),
+                           predecessors.end());
     }
 
     assert (std::all_of(_basicBlocks.begin(), _basicBlocks.end(),
