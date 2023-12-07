@@ -1634,37 +1634,8 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
 
     setPosition(0, DrawParams::TopCenter);
 
-    #if 0
-    auto total = calculateTotalInclusiveCost(_view);
-    auto inclPercentage = 100.0 * e->cost / total;
-
-    _percentage = std::min(inclPercentage, 100.0);
-
-    if (GlobalConfig::showPercentage())
-        setText(1, QStringLiteral("%1 %")
-                                 .arg(inclPercentage, 0, 'f', GlobalConfig::percentPrecision()));
-    else
-        setText(1, SubCost(e->cost).pretty());
-    #endif
-
     SubCost count = e->branch()->executedCount();
     setText(0, QStringLiteral("%1 x").arg(count.pretty()));
-
-    #if 0
-    int pixPos;
-    if (static_cast<TraceItemView*>(_view)->data()->maxCallCount() > 0)
-    {
-        setPosition(0, DrawParams::TopCenter);
-
-        SubCost count{std::max(e->count, 1.0)};
-        setText(0, QStringLiteral("%1 x").arg(count.pretty()));
-        setToolTip(QStringLiteral("%1 (%2)").arg(text(0)).arg(text(1)));
-
-        pixPos = 0;
-    }
-    else
-        pixPos = 1;
-    #endif
 
     if (e->bbTo() && e->bbFrom() == e->bbTo())
     {
@@ -1678,22 +1649,9 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
 
 void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
-#if 0
-#if QT_VERSION >= 0x040600
-    if (option->levelOfDetailFromTransform(p->transform()) < 0.5)
-        return;
-#else
-    if (option->levelOfDetail < 0.5)
-        return;
-#endif
-#endif
-
     RectDrawing drawer{rect().toRect()};
 
     drawer.drawField(p, 0, this);
-    #if 0
-    drawer.drawField(p, 1, this);
-    #endif
 }
 
 // ======================================================================================
@@ -1987,11 +1945,6 @@ void ControlFlowGraphView::dotExited()
 
     _scene->update();
     viewport()->setUpdatesEnabled(true);
-
-    #if 0 // I've got the strongest feeling this piece of code is useless
-    delete _renderProcess;
-    _renderProcess = nullptr;
-    #endif
 }
 
 void ControlFlowGraphView::parseDot()
