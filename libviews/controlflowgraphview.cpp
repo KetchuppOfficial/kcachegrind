@@ -1185,12 +1185,12 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
     for (auto it = _nodeMap.begin(), ite = _nodeMap.end(); it != ite; ++it)
     {
         const TraceBasicBlock* bb = it.key();
-        CFGNode& node = it.value();
 
+        auto firstIt = pair.second.find(bb->firstAddr());
         auto lastIt = pair.second.find(bb->lastAddr());
         assert(lastIt != pair.second.end());
 
-        node.insertInstructions(pair.second.find(bb->firstAddr()), std::next(lastIt));
+        it->insertInstructions(firstIt, std::next(lastIt));
     }
 
     return true;
@@ -1217,9 +1217,7 @@ void CFGExporter::dumpNodeReduced(QTextStream& ts, const CFGNode& node)
     if (_layout == Layout::TopDown)
         ts << '{';
 
-    ts << QStringLiteral(" cost: %1 | 0x%2 ")
-                        .arg(QString::number(node.self))
-                        .arg(bb->firstAddr().toString());
+    ts << QStringLiteral(" cost: %1 | 0x%2 ").arg(node.self).arg(bb->firstAddr().toString());
 
     if (_layout == Layout::TopDown)
         ts << '}';
@@ -1266,8 +1264,8 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
                          "  </tr>\n"
                          "  <tr>\n"
                          "    <td colspan=\"%4\">0x%5</td>\n"
-                         "  </tr>\n").arg(reinterpret_cast<qulonglong>(bb), 0, 16).arg(span)
-                                     .arg(QString::number(node.self)).arg(span)
+                         "  </tr>\n").arg(reinterpret_cast<qulonglong>(bb), 0, 16)
+                                     .arg(span).arg(node.self).arg(span)
                                      .arg(bb->firstAddr().toString());
 
     auto strIt = node.begin();
@@ -1355,6 +1353,7 @@ void dumpNonFalseBranchColor(QTextStream& ts, const TraceBranch* br)
             break;
         default:
             assert(false);
+            return;
     }
 
     ts << QStringLiteral("color=%1, ").arg(color);
