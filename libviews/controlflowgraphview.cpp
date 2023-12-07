@@ -3157,7 +3157,7 @@ void ControlFlowGraphView::refresh(bool reset)
             this, &ControlFlowGraphView::dotExited);
 
     QString renderProgram = QStringLiteral("dot");
-    QStringList renderArgs{QStringLiteral("-Tplain-ext")};
+    QStringList renderArgs{QStringLiteral("-Tplain")};
 
     _renderProcessCmdLine = renderProgram + QLatin1Char(' ') + renderArgs.join(QLatin1Char(' '));
 
