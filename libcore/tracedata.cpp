@@ -3905,9 +3905,10 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
     {
         TraceInstrJump* jump = jumps[0];
         assert(jump);
-        TraceInstr* from = jump->instrFrom();
 
-        SubCost followed = jump->followedCount();
+        TraceInstr* from = jump->instrFrom();
+        TraceInstr* to = jump->instrTo();
+
         SubCost exec = jump->executedCount();
         TraceData* data = _func->data();
         EventType* e = data ? data->eventTypes()->realType(0) : nullptr;
@@ -3917,6 +3918,8 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
             if (exec != trueExec)
                 exec = trueExec;
         }
+
+        auto followed = (from == to) ? SubCost{exec - _func->calledCount()} : jump->followedCount();
 
         if (jump->isCondJump())
         {
@@ -3944,7 +3947,7 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
         }
 
         _branches[0].setInstrFrom(from);
-        _branches[0].setInstrTo(jump->instrTo());
+        _branches[0].setInstrTo(to);
     }
     else if (nJumps > 1)
     {
