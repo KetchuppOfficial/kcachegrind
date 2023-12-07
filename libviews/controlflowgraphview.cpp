@@ -860,7 +860,7 @@ ObjdumpParser::ObjdumpParser(TraceFunction* func)
     _dumpStartAddr = _nextCostAddr;
     _dumpEndAddr = func->lastAddress() + 2;
 
-    [[maybe_unused]] bool res = runObjdump(func);
+    bool res = runObjdump(func);
     assert(res);
 }
 
@@ -1005,7 +1005,7 @@ std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrString
             getCostAddr();
 
         Addr addr;
-        [[maybe_unused]] QString encoding;
+        QString encoding;
         QString mnemonic, operands;
         if (_nextCostAddr == 0 || _costAddr == 0 || _objAddr < _nextCostAddr)
         {

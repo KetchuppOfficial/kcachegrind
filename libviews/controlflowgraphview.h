@@ -293,9 +293,7 @@ public:
     int type() const override { return CanvasParts::Node; }
 
     void setSelected(bool s);
-    void paint(QPainter*,
-               [[maybe_unused]] const QStyleOptionGraphicsItem*,
-               [[maybe_unused]] QWidget*) override;
+    void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 private:
     CFGNode* _node;
@@ -336,9 +334,7 @@ public:
 
     int type() const override { return CanvasParts::EdgeArrow; }
 
-    void paint(QPainter* p,
-               [[maybe_unused]] const QStyleOptionGraphicsItem*,
-               [[maybe_unused]] QWidget*) override;
+    void paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 private:
     CanvasCFGEdge* _ce;
@@ -425,7 +421,7 @@ protected:
     void mousePressEvent(QMouseEvent*) override;
     void mouseDoubleClickEvent(QMouseEvent*) override;
     void mouseMoveEvent(QMouseEvent*) override;
-    void mouseReleaseEvent([[maybe_unused]] QMouseEvent*) override;
+    void mouseReleaseEvent(QMouseEvent*) override;
     void contextMenuEvent(QContextMenuEvent*) override;
     void exportGraphAsImage();
     void keyPressEvent(QKeyEvent*) override;
