@@ -125,7 +125,7 @@ class CFGEdge final
 public:
     enum class NodeType { none, nodeTo_, nodeFrom_ };
 
-    CFGEdge(TraceBranch* branch);
+    CFGEdge(TraceBranch* branch, CFGNode* nodeFrom, CFGNode* nodeTo);
 
     CanvasCFGEdge* canvasEdge() { return _ce; }
     const CanvasCFGEdge* canvasEdge() const { return _ce; }
@@ -136,11 +136,9 @@ public:
 
     CFGNode* nodeFrom() { return _nodeFrom; }
     const CFGNode* nodeFrom() const { return _nodeFrom; }
-    void setNodeFrom(CFGNode* node) { _nodeFrom = node; }
 
     CFGNode* nodeTo() { return _nodeTo; }
     const CFGNode* nodeTo() const { return _nodeTo; }
-    void setNodeTo(CFGNode* node) { _nodeTo = node; }
 
     bool isVisible() const { return _visible; }
     void setVisible(bool v) { _visible = v; }
