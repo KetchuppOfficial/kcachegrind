@@ -401,10 +401,10 @@ CFGEdge* CFGEdge::priorVisibleEdge()
 
 CFGExporter::CFGExporter(const CFGExporter& otherExporter, TraceFunction* func, EventType* et,
                          ProfileContext::Type gt, QString filename)
-    : _item{func}, _eventType{et}, _groupType{gt}, _layout{otherExporter._layout},
+    : _func{func}, _eventType{et}, _groupType{gt}, _layout{otherExporter._layout},
       _optionsMap{otherExporter._optionsMap}, _globalOptionsMap{otherExporter._globalOptionsMap}
 {
-    if (!_item)
+    if (!_func)
         return;
 
     if (filename.isEmpty())
@@ -534,7 +534,7 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
     _nodeMap.clear();
     _edgeMap.clear();
 
-    if (_item && _tmpFile)
+    if (_func && _tmpFile)
     {
         _tmpFile->setAutoRemove(true);
         delete _tmpFile;
@@ -542,49 +542,33 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
 
     if (i)
     {
-        static const char* dumpInstrNotUsed = "Control-flow graph requires running "
-                                              "callgrind with option --dump-instr=yes";
         switch (i->type())
         {
             case ProfileContext::Function:
-            {
-                auto func = static_cast<TraceFunction*>(i);
-                auto& BBs = func->basicBlocks();
-                if (BBs.empty())
-                {
-                    _errorMessage = dumpInstrNotUsed;
-                    return;
-                }
-
-                _item = BBs.front();
-
-                _globalOptionsMap.emplace(func, std::make_pair(Options::default_, -1.0));
-                for (auto bb : BBs)
-                    _optionsMap.emplace(bb, Options::default_);
-
+                _func = static_cast<TraceFunction*>(i);
                 break;
-            }
             case ProfileContext::Call:
-            {
-                auto caller = static_cast<TraceCall*>(i)->caller(true);
-                auto& BBs = caller->basicBlocks();
-                if (BBs.empty())
-                {
-                    _errorMessage = dumpInstrNotUsed;
-                    return;
-                }
-
-                _item = BBs.front();
-
+                _func = static_cast<TraceCall*>(i)->caller(true);
                 break;
-            }
             case ProfileContext::BasicBlock:
-                _item = i;
+                _func = static_cast<TraceBasicBlock*>(i)->function();
                 break;
             default: // we ignore function cycles
-                _item = nullptr;
+                _func = nullptr;
                 return;
         }
+
+        auto& BBs = _func->basicBlocks();
+        if (BBs.empty())
+        {
+            _errorMessage = "Control-flow graph requires running "
+                            "callgrind with option --dump-instr=yes";
+            return;
+        }
+
+        _globalOptionsMap.emplace(_func, std::make_pair(Options::default_, -1.0));
+        for (auto bb : BBs)
+            _optionsMap.emplace(bb, Options::default_);
 
         if (filename.isEmpty())
         {
@@ -601,7 +585,7 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
     }
     else
     {
-        _item = nullptr;
+        _func = nullptr;
         _dotName.clear();
     }
 }
@@ -617,7 +601,7 @@ void CFGExporter::sortEdges()
 
 bool CFGExporter::writeDot(QIODevice* device)
 {
-    if (!_item)
+    if (!_func)
         return false;
 
     // copy-constructors of QFile and QTextStream are deleted
@@ -672,30 +656,12 @@ bool CFGExporter::writeDot(QIODevice* device)
 
 bool CFGExporter::createGraph()
 {
-    if (!_item || _graphCreated)
+    if (!_func || _graphCreated)
         return false;
-
-    TraceFunction* func;
-    switch(_item->type())
-    {
-        case ProfileContext::Function:
-            func = static_cast<TraceFunction*>(_item);
-            break;
-        case ProfileContext::Call:
-            func = static_cast<TraceCall*>(_item)->caller(false);
-            break;
-        case ProfileContext::BasicBlock:
-            func = static_cast<TraceBasicBlock*>(_item)->function();
-            break;
-        default:
-            assert(!"Unsupported type of item");
-            return false;
-    }
 
     _graphCreated = true;
 
-    auto& BBs = func->basicBlocks();
-    for (auto bb : BBs)
+    for (auto bb : _func->basicBlocks())
     {
         auto nodeIt = _nodeMap.insert(bb, CFGNode{bb});
         nodeIt->self = bb->subCost(_eventType);
@@ -719,7 +685,7 @@ bool CFGExporter::createGraph()
         }
     }
 
-    return fillInstrStrings(func);
+    return fillInstrStrings(_func);
 }
 
 int CFGExporter::transformKeyIfNeeded(int key) const
