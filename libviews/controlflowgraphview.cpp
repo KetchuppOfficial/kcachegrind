@@ -837,9 +837,9 @@ bool ObjdumpParser::runObjdump(TraceFunction* func)
     if (!searchFile(dir, objectFile, func->data()))
     {
         // Should be implemented in a different manner
-        qDebug() << QObject::tr("For annotated machine code, the following object file is needed");
-        qDebug() << QStringLiteral("    \'%1\'").arg(objectFile->name());
-        qDebug() << QObject::tr("This file cannot be found.");
+        qDebug() << QObject::tr("For annotated machine code, the following object file is needed\n")
+                 << QStringLiteral("    \'%1\'\n").arg(objectFile->name())
+                 << QObject::tr("This file cannot be found.");
         if (_isArm)
             qDebug() <<  QObject::tr("If cross-compiled, set SYSROOT variable.");
 
@@ -869,11 +869,10 @@ bool ObjdumpParser::runObjdump(TraceFunction* func)
         _objdump.start(objdumpFormat, args);
         if (!_objdump.waitForStarted() || !_objdump.waitForFinished())
         {
-            // Should be implemented in a different manner
-            qDebug() <<  QObject::tr("There is an error trying to execute the command");
-            qDebug() << QStringLiteral("    \'%1\'").arg(_objdumpCmd);
-            qDebug() << QObject::tr("Check that you have installed \'objdump\'.");
-            qDebug() << QObject::tr("This utility can be found in the \'binutils\' package");
+            qDebug() << QObject::tr("There is an error trying to execute the command\n")
+                     << QStringLiteral("    \'%1\'\n").arg(_objdumpCmd)
+                     << QObject::tr("Check that you have installed \'objdump\'.\n")
+                     << QObject::tr("This utility can be found in the \'binutils\' package");
 
             return false;
         }
