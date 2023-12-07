@@ -4001,13 +4001,7 @@ Addr TraceBasicBlock::lastAddr() const
 
 void TraceBasicBlock::addIncomingBranch(TraceBranch& br)
 {
-    if (br.instrTo() != firstInstr())
-    {
-        qDebug() << "\033[1;31mbr.instrTo() == " << br.instrTo()->addr().toString();
-        qDebug() << "firstInstr() == " << firstInstr()->addr().toString() << "\033[0m";
-    }
     assert(br.instrTo() == firstInstr());
-
     _incomingBranches.push_back(std::addressof(br));
 }
 
