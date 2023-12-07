@@ -550,22 +550,9 @@ GraphExporter::~GraphExporter()
 #endif
         delete _tmpFile;
     }
-
-    /*
-     * Suggestion:
-     * if (_item)
-     * {
-     *     #if DEBUG_GRAPH
-     *     if (_tmpFile) _tmpFile->setAutoRemove(true);
-     *     #endif
-     *
-     *     delete _tmpFile;
-     * }
-     */
 }
 
 
-// Question: is it even legal to leave the name of an argument
 void GraphExporter::reset(TraceData*, CostItem* i, EventType* ct,
                           ProfileContext::Type gt, QString filename)
 {
@@ -649,7 +636,6 @@ void GraphExporter::createGraph()
         _realCallLimit = _realFuncLimit * _go->callLimit();
 
         // create edge
-        // Suggestion: TraceFunction *caller = c->caller(false), *called = c->called(false);
         TraceFunction *caller, *called;
         caller = c->caller(false);
         called = c->called(false);
@@ -677,12 +663,6 @@ bool GraphExporter::writeDot(QIODevice* device)
     QFile* file = nullptr;
     QTextStream* stream = nullptr;
 
-    /*
-     * Suggestion:
-     * if (device) { .... }
-     * else if (_tmpFile) { .... }
-     * else { .... }
-     */
     if (device)
         stream = new QTextStream(device);
     else {
@@ -733,7 +713,6 @@ bool GraphExporter::writeDot(QIODevice* device)
     // for clustering
     QMap<TraceCostItem*,QList<GraphNode*> > nLists;
 
-    // Suggestion: for (auto &n : _nodeMap)
     GraphNodeMap::Iterator nit;
     for (nit = _nodeMap.begin(); nit != _nodeMap.end(); ++nit ) {
         GraphNode& n = *nit;
@@ -764,7 +743,6 @@ bool GraphExporter::writeDot(QIODevice* device)
         nLists[g].append(&n);
     }
 
-    // Suggestion: for (auto &node : nLists) { QList<GraphNode*>& l = node.second; TraceCostItem *i = node.second; ....
     QMap<TraceCostItem*,QList<GraphNode*> >::Iterator lit;
     int cluster = 0;
     for (lit = nLists.begin(); lit != nLists.end(); ++lit, cluster++) {
@@ -804,7 +782,6 @@ bool GraphExporter::writeDot(QIODevice* device)
             *stream << QStringLiteral("}\n");
     }
 
-    // Suggestion: for (auto &e : _edgeMap)
     GraphEdgeMap::Iterator eit;
     for (eit = _edgeMap.begin(); eit != _edgeMap.end(); ++eit ) {
         GraphEdge& e = *eit;
@@ -852,9 +829,7 @@ bool GraphExporter::writeDot(QIODevice* device)
 
         // Create sum-edges for skipped edges
         GraphEdge* e;
-        // Suggestion: put costSum and countSum inside for-loop
         double costSum, countSum;
-        // Suggestion: for (auto &n : _nodeMap)
         for (nit = _nodeMap.begin(); nit != _nodeMap.end(); ++nit ) {
             GraphNode& n = *nit;
             if (n.incl <= _realFuncLimit)
@@ -906,7 +881,6 @@ bool GraphExporter::writeDot(QIODevice* device)
 
     // clear edges here completely.
     // Visible edges are inserted again on parsing in CallGraphView::refresh
-    // Suggestion: for (auto &n : _nodeMap)
     for (nit = _nodeMap.begin(); nit != _nodeMap.end(); ++nit ) {
         GraphNode& n = *nit;
         n.clearEdges();
@@ -986,11 +960,6 @@ bool GraphExporter::savePrompt(QWidget *parent, TraceData *data,
 
 void GraphExporter::sortEdges()
 {
-    /*
-     * Suggestion:
-     * for (auto &node : _nodeMap)
-     *     node.sortEdges();
-     */
     GraphNodeMap::Iterator nit;
     for (nit = _nodeMap.begin(); nit != _nodeMap.end(); ++nit ) {
         GraphNode& n = *nit;
@@ -998,13 +967,11 @@ void GraphExporter::sortEdges()
     }
 }
 
-// Question: why isn't this function static or stand-alone?
 TraceFunction* GraphExporter::toFunc(QString s)
 {
     if (s[0] != 'F')
         return nullptr;
     bool ok;
-    // Suggestion: auto f = reinterpret_cast<TraceFunction *>(....)
     TraceFunction* f = (TraceFunction*) s.mid(1).toULongLong(&ok, 16);
     if (!ok)
         return nullptr;
@@ -1042,7 +1009,6 @@ GraphEdge* GraphExporter::edge(TraceFunction* f1, TraceFunction* f2)
  * If on a further visit of the node/edge the limit is reached,
  * we use the whole node/edge cost and continue search.
  */
-// Suggestion: use enum Graph_Direction { toCallees, toCallers }; instead of bool value
 void GraphExporter::buildGraph(TraceFunction* f, int depth, bool toCallees,
                                double factor)
 {
@@ -1061,7 +1027,6 @@ void GraphExporter::buildGraph(TraceFunction* f, int depth, bool toCallees,
     double incl = f->inclusive()->subCost(_eventType) * factor;
     n.incl += incl;
     n.self += f->subCost(_eventType) * factor;
-    // Suggestion: add conditional compilation directives
     if (0)
         qDebug("  Added Incl. %f, now %f", incl, n.incl);
 
@@ -1071,7 +1036,6 @@ void GraphExporter::buildGraph(TraceFunction* f, int depth, bool toCallees,
     // Never go beyond a depth of 100
     if ((maxDepth < 0) || (maxDepth>100)) maxDepth = 100;
     if (depth >= maxDepth) {
-        // Suggestion: add conditional compilation directives
         if (0)
             qDebug("  Cutoff, max depth reached");
         return;
@@ -1087,7 +1051,6 @@ void GraphExporter::buildGraph(TraceFunction* f, int depth, bool toCallees,
         // note: a 2nd visit never should happen, as we do not follow inner-cycle
         //       calls
         if (oldIncl > 0.0) {
-            // Suggestion: add conditional compilation directives
             if (0)
                 qDebug("  Cutoff, 2nd visit to Cycle Member");
             // and takeback cost addition, as it is added twice
@@ -1101,7 +1064,6 @@ void GraphExporter::buildGraph(TraceFunction* f, int depth, bool toCallees,
         return;
     }
 
-    // Suggestion: define f2 inside foreach (I'm truly sick of C90 style)
     TraceFunction* f2;
 
     // on entering a cycle, only go the FunctionCycle
@@ -1131,14 +1093,12 @@ void GraphExporter::buildGraph(TraceFunction* f, int depth, bool toCallees,
 
         e.cost += cost;
         e.count += count;
-        // Suggestion: add conditional compilation directives
         if (0)
             qDebug("  Edge to %s, added cost %f, now %f",
                    qPrintable(f2->prettyName()), cost, e.cost);
 
         // if this call goes into a FunctionCycle, we also show the real call
         if (f2->cycle() == f2) {
-            // Suggestion: join following 2 lines
             TraceFunction* realF;
             realF = toCallees ? call->called(true) : call->caller(true);
             QPair<TraceFunction*,TraceFunction*>
@@ -1169,7 +1129,6 @@ void GraphExporter::buildGraph(TraceFunction* f, int depth, bool toCallees,
         if ((e.cost >= _realCallLimit) && (oldCost < _realCallLimit))
             cost = e.cost;
         if ((cost <= 0) || (cost <= _realCallLimit)) {
-            // Suggestion: add conditional compilation directives
             if (0)
                 qDebug("  Edge Cutoff, limit not reached");
             continue;
@@ -1609,7 +1568,6 @@ CallGraphView::CallGraphView(TraceItemView* parentView, QWidget* parent,
     _zoomPosition = DEFAULT_ZOOMPOS;
     _lastAutoPosition = TopLeft;
 
-    /* Suggestion: relocate following initializations (except for _panningView) into header */
     _scene = nullptr;
     _xMargin = _yMargin = 0;
     _panningView = new PanningView(this);
@@ -1631,13 +1589,11 @@ CallGraphView::CallGraphView(TraceItemView* parentView, QWidget* parent,
     connect(_panningView, &PanningView::zoomRectMoved, this, &CallGraphView::zoomRectMoved);
     connect(_panningView, &PanningView::zoomRectMoveFinished, this, &CallGraphView::zoomRectMoveFinished);
 
-    /* Suggestion: remove explicit this-> */
     this->setWhatsThis(whatsThis() );
 
     // tooltips...
     //_tip = new CallGraphTip(this);
 
-    /* Suggestion: relocate following 2 initializations into header */
     _renderProcess = nullptr;
     _prevSelectedNode = nullptr;
     connect(&_renderTimer, &QTimer::timeout,
@@ -2809,7 +2765,6 @@ void CallGraphView::mouseDoubleClickEvent(QMouseEvent* e)
 
     if (i->type() == CANVAS_NODE) {
         GraphNode* n = ((CanvasNode*)i)->node();
-        // Suggestion: use conditional compilation directives
         if (0)
             qDebug("CallGraphView: Double Clicked on Node '%s'",
                    qPrintable(n->function()->prettyName()));
@@ -2826,7 +2781,6 @@ void CallGraphView::mouseDoubleClickEvent(QMouseEvent* e)
     if (i->type() == CANVAS_EDGE) {
         GraphEdge* e = ((CanvasEdge*)i)->edge();
         if (e->call()) {
-            // Suggestion: use conditional compilation directives
             if (0)
                 qDebug("CallGraphView: Double Clicked On Edge '%s'",
                        qPrintable(e->call()->prettyName()));

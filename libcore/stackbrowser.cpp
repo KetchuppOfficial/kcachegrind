@@ -34,7 +34,6 @@ void Stack::extendBottom()
     SubCost most;
     TraceFunction* f;
 
-    // Suggestion: TraceFunction *f = calls.isEmpty() ? _top : _calls.last()->called();
     if (!_calls.isEmpty())
         f = _calls.last()->called();
     else
@@ -316,7 +315,6 @@ HistoryItem* StackBrowser::select(TraceFunction* f)
                 s = new Stack(f);
         }
 
-        // Suggestion: item = std::exchange (_current, new HistoryItem(s, f));
         item = _current;
         _current = new HistoryItem(s, f);
         item->setNext(_current);

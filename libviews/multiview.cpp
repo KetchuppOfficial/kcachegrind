@@ -55,7 +55,6 @@ void MultiView::appendView()
     int n = _views.count()+1;
 
     TabView* tv = new TabView(this, this);
-    // Suggestion: .arg(_views.count() + 1) and remove "int n"
     tv->setObjectName(QStringLiteral("TabView-%1").arg(n));
     connect(tv, &TabView::tabActivated,
             this, &MultiView::tabActivated );
