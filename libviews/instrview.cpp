@@ -138,7 +138,6 @@ static bool parseLine(const char* buf, Addr& addr,
         pos += 9;
     }
     if (pos <= start) return false;
-    // Suggestion: code = std::move (QString::fromLatin1(buf + start, pos - start - 1))
     code = QString::fromLatin1(buf + start, pos - start - 1);
 
     // skip whitespace
@@ -147,7 +146,6 @@ static bool parseLine(const char* buf, Addr& addr,
     // check for mnemonic
     start = pos;
     while(buf[pos] && buf[pos]!=' ' && buf[pos]!='\t') pos++;
-    // Suggestion: mnemonic = std::move (QString::fromLatin1(buf + start, pos - start))
     mnemonic = QString::fromLatin1(buf + start, pos - start);
 
     // skip whitespace
@@ -161,13 +159,11 @@ static bool parseLine(const char* buf, Addr& addr,
         operandsLen--;
 
     // maximal 50 chars
-    // Suggestion: again move semantics can be used
     if (operandsLen > 50)
         operands = QString::fromLatin1(buf + pos, 47) + QStringLiteral("...");
     else
         operands = QString::fromLatin1(buf+pos, operandsLen);
 
-    // Suggestion: add conditional compilation directives
     if (0) qDebug("For 0x%s: Code '%s', Mnemonic '%s', Operands '%s'",
                   qPrintable(addr.toString()), qPrintable(code),
                   qPrintable(mnemonic), qPrintable(operands));
@@ -478,7 +474,6 @@ void getInstrJumpAddresses(const TraceInstrJump* ij, Addr& low, Addr& high)
     low  = ij->instrFrom()->addr();
     high = ij->instrTo()->addr();
 
-    // Suggestion: if (low > high) std::swap (low, high);
     if (low > high) {
         Addr t = low;
         low = high;
@@ -564,12 +559,6 @@ void InstrView::refresh()
     TraceInstrMap::Iterator itStart, it, tmpIt, itEnd;
     TraceInstrMap* instrMap = f->instrMap();
     if (instrMap) {
-        // Suggestion:
-        // for (auto &instr : *instrMap)
-        // {
-        //     if (instr.hasCost(_eventType)) break;
-        //     if (_eventType2 && instr.hasCost(_eventType2)) break;
-        // }
         it    = instrMap->begin();
         itEnd = instrMap->end();
         // get first instruction with cost of selected type
@@ -607,7 +596,6 @@ void InstrView::refresh()
     _highList.clear();
     itStart = it;
     while(1) {
-        // Suggestion: TraceInstrJumpList jlist = it->instrJumps();
         TraceInstrJumpList jlist = (*it).instrJumps();
         foreach(TraceInstrJump* ij, jlist) {
             if (ij->executedCount()==0) continue;
@@ -622,7 +610,6 @@ void InstrView::refresh()
         }
         if (it == itEnd) break;
     }
-    // Suggestion: use lambda instead of pointer to function
     std::sort(_lowList.begin(), _lowList.end(), instrJumpLowLessThan);
     std::sort(_highList.begin(), _highList.end(), instrJumpHighLessThan);
     _lowListIter = _lowList.begin(); // iterators to list start
@@ -636,7 +623,6 @@ void InstrView::refresh()
     while(1) {
         itStart = it;
         while(1) {
-            // Suggestion: tmpIt = it++;
             tmpIt = it;
             ++it;
             while(it != itEnd) {
@@ -812,25 +798,17 @@ bool InstrView::fillInstrRange(TraceFunction* function,
                                TraceInstrMap::Iterator it,
                                TraceInstrMap::Iterator itEnd)
 {
-    // Suggestion: define variables where they are needed
-    // Otherwise its hard as hell to read
-
-    // Suggestion: divide this monstrous 350+ lines function into smaller ones
-
     Addr costAddr, nextCostAddr, objAddr, addr;
     Addr dumpStartAddr, dumpEndAddr;
     TraceInstrMap::Iterator costIt;
     bool isArm = (function->data()->architecture() == TraceData::ArchARM);
 
-    // Suggestion: place this if-statement in the very beginning of the function
     // should not happen
     if (it == itEnd) return false;
 
     // calculate address range for call to objdump
-    // Suggestion: tmpIt = std:prev (itEnd);
     TraceInstrMap::Iterator tmpIt = itEnd;
     --tmpIt;
-    // Suggestion: it->addr();
     nextCostAddr = (*it).addr();
 
     if (isArm) {
@@ -838,9 +816,7 @@ bool InstrView::fillInstrRange(TraceFunction* function,
         nextCostAddr = nextCostAddr.alignedDown(2);
     }
 
-    // QUESTION: why 20?
     dumpStartAddr = (nextCostAddr<20) ? Addr(0) : nextCostAddr -20;
-    // Suggestion: tmpIt->addr()
     dumpEndAddr   = (*tmpIt).addr() +20;
 
 
@@ -890,7 +866,6 @@ bool InstrView::fillInstrRange(TraceFunction* function,
     }
 
 
-// Suggestion: constexpr std::size_t buf_size = 256;
 #define BUF_SIZE  256
 
     char buf[BUF_SIZE];
@@ -926,8 +901,6 @@ bool InstrView::fillInstrRange(TraceFunction* function,
                     qDebug("ERROR: Line %d of '%s' too long\n",
                            objdumpLineno, qPrintable(objdumpCmd));
                 }
-                // Suggestion: checking that readBytes > 0 is redundant because
-                // if readBytes <= 0, then we would have left the loop earlier
                 else if ((readBytes>0) && (buf[readBytes-1] == '\n'))
                     buf[readBytes-1] = 0;
 
@@ -935,13 +908,8 @@ bool InstrView::fillInstrRange(TraceFunction* function,
                 if ((objAddr<dumpStartAddr) || (objAddr>dumpEndAddr))
                     objAddr = 0;
                 if (objAddr != 0) break;
-                // Suggestion: maybe
-                //     if (dumpStartAddr <= objAddr && objAddr <= dumpEndAdrr) break;
-                // is more straightforward as we really don't have to set objAddr to 0
-                // if we want to continue loop
             }
 
-            // Suggestion: add conditional compilation directives
             if (0) qDebug() << "Got ObjAddr: 0x" << objAddr.toString();
         }
 
@@ -951,23 +919,19 @@ bool InstrView::fillInstrRange(TraceFunction* function,
             ((objAddr == Addr(0)) || (objAddr >= nextCostAddr)) ) {
             needCostAddr = false;
 
-            // Suggestion: costIt = it++;
             costIt = it;
             ++it;
-            // Suggestion: for (; it != itEnd; ++it)
             while(it != itEnd) {
-                // Suggestion: it->hasCost(_eventType)
                 if ((*it).hasCost(_eventType)) break;
                 if (_eventType2 && (*it).hasCost(_eventType2)) break;
                 ++it;
             }
-            // Suggestion: costAddr = std::exchange (nextCostArr, (it == itEnd) ? Addr(0): it->addr());
+
             costAddr = nextCostAddr;
             nextCostAddr = (it == itEnd) ? Addr(0) : (*it).addr();
             if (isArm)
                 nextCostAddr = nextCostAddr.alignedDown(2);
 
-            // Suggestion: add conditional compilation directives
             if (0) qDebug() << "Got nextCostAddr: 0x" << nextCostAddr.toString()
                             << ", costAddr 0x" << costAddr.toString();
         }
@@ -980,11 +944,8 @@ bool InstrView::fillInstrRange(TraceFunction* function,
             (objAddr < nextCostAddr)) {
             // next line is objAddr
 
-            // QUESTION: I don't understand why we parse address again
-
             // this sets addr, code, cmd, args
             bool isAssemblyInstr = parseLine(buf, addr, code, cmd, args);
-            // Suggestion: [[maybe_unused]] bool isAssemblyInstr (C++17 feature)
             Q_UNUSED(isAssemblyInstr);
             assert(isAssemblyInstr && (objAddr == addr));
 
@@ -997,15 +958,12 @@ bool InstrView::fillInstrRange(TraceFunction* function,
 
             needObjAddr = true;
 
-            // Suggestion: add conditional compilation directives
             if (0) qDebug() << "Dump Obj Addr: 0x" << addr.toString()
                             << " [" << cmd << " " << args << "], cost (0x"
                             << costAddr.toString() << ", next 0x"
                             << nextCostAddr.toString() << ")";
         }
         else {
-            // if (nextCostAddr != 0 && costAddr != 0 && objAddr >= nextCostAddr)
-            // QUESTION: I don't really understand how we can get here
             addr = costAddr;
             code = cmd = QString();
             args = tr("(No Instruction)");
@@ -1014,7 +972,6 @@ bool InstrView::fillInstrRange(TraceFunction* function,
             needCostAddr = true;
 
             noAssLines++;
-            // Suggestion: add conditional compilation directives
             if (0) qDebug() << "Dump Cost Addr: 0x" << addr.toString()
                             << " (no ass), objAddr 0x" << objAddr.toString();
         }
@@ -1024,7 +981,6 @@ bool InstrView::fillInstrRange(TraceFunction* function,
             if (currInstr) inside = true;
         }
         else {
-            // Suggestion: add conditional compilation directives
             if (0) qDebug() << "Check if 0x" << addr.toString() << " is in ]0x"
                             << costAddr.toString() << ",0x"
                             << (nextCostAddr - 3*GlobalConfig::noCostInside()).toString()
@@ -1065,9 +1021,7 @@ bool InstrView::fillInstrRange(TraceFunction* function,
                            code, cmd, args, currInstr);
         items.append(ii);
 
-        // Suggestion: remove this variable and substitute it by items.size() or items.count()
         dumpedLines++;
-        // Suggestion: add conditional compilation directives
         if (0) qDebug() << "Dumped 0x" << addr.toString() << " "
                         << (inside ? "Inside " : "Outside")
                         << (currInstr ? "Cost" : "");
@@ -1153,17 +1107,14 @@ bool InstrView::fillInstrRange(TraceFunction* function,
     }
 
     // for arrows: go down the list according to list sorting
-    // Suggestion: combine definition and assignment of item1 and item2 (put them inside loop)
     QTreeWidgetItem *item1, *item2;
     for (int i=0; i<topLevelItemCount(); i++) {
         item1 = topLevelItem(i);
-        // Suggestion: ii = static_cast<InstrItem *>(item1);
         ii = (InstrItem*)item1;
         updateJumpArray(ii->addr(), ii, true, false);
 
         for (int j=0; j<item1->childCount(); j++) {
             item2 = item1->child(j);
-            // Suggestion: ii2 = static_cast<InstrItem *>(item2);
             ii2 = (InstrItem*)item2;
             if (ii2->instrJump())
                 updateJumpArray(ii->addr(), ii2, false, true);

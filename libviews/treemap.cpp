@@ -285,7 +285,6 @@ void RectDrawing::drawBack(QPainter* p, DrawParams* dp)
         float factor = 0.1, forth=0.7, back1 =0.9, toBack2 = .7, back2 = 0.97;
 
         // coefficient corrections because of rectangle size
-        // Suggestion: int s = std::min (r.width(), r.height());
         int s = r.width();
         if (s > r.height()) s = r.height();
         if (s<100) {

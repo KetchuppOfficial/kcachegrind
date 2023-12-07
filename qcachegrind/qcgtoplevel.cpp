@@ -354,7 +354,6 @@ void QCGTopLevel::createDocks()
 
 void QCGTopLevel::createActions()
 {
-    // Suggestion: move definitions of hint and icon further down
     QString hint;
     QIcon icon;
 
@@ -958,7 +957,6 @@ void QCGTopLevel::exportGraph()
 
 void QCGTopLevel::setEventType(QString s)
 {
-    // Suggestion: join following 2 statements
     EventType* ct;
 
     ct = (_data) ? _data->eventTypes()->type(s) : nullptr;
@@ -1247,11 +1245,9 @@ void QCGTopLevel::setDirectionDelayed()
 
 void QCGTopLevel::setTraceItemDelayed(CostItem* i)
 {
-    // Suggestion: "a second" -> "the second"
     // no need to select same item a 2nd time...
     if (_traceItemDelayed == i) return;
     _traceItemDelayed = i;
-    // Suggestion: move following line inside TRACE_UPDATES part
     _lastSender = sender();
 
     qDebug() << "Selected " << (i ? i->fullName() : QStringLiteral("(none)"));

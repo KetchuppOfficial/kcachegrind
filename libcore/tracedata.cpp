@@ -3255,19 +3255,12 @@ int TraceData::load(QStringList files)
         QString prefix = finfo.fileName();
         QDir dir = finfo.dir();
         if (finfo.isDir()) {
-            // Suggestion: prefix = std::move (QStringLiteral("callgrind.out"));
             prefix = QStringLiteral("callgrind.out");
             _traceName += QLatin1String("/callgrind.out");
         }
 
-        // Suggestion: files = std::move (....);
         files = dir.entryList(QStringList() << prefix + '*', QDir::Files);
 
-        /*
-         * Suggestion:
-         * std::transform (files.begin(), files.end(),
-         *                 files.begin(), [&dir](QString &str){ return dir.path() + '/' + str; });
-         */
         QStringList::Iterator it = files.begin();
         for (; it != files.end(); ++it ) {
             *it = dir.path() + '/' + *it;
@@ -3279,12 +3272,6 @@ int TraceData::load(QStringList files)
         return 0;
     }
 
-    /*
-     * Suggestion:
-     * int partsLoaded = std::accumulate (files.begin(), files.end(), 0,
-     *                                    [](int val, const QString &str)
-     *                                    { QFile file{str}; return internalLoad(&file, str); });
-     */
     QStringList::const_iterator it;
     int partsLoaded = 0;
     for (it = files.constBegin(); it != files.constEnd(); ++it ) {
@@ -3293,7 +3280,6 @@ int TraceData::load(QStringList files)
     }
     if (partsLoaded == 0) return 0;
 
-    // Suggestion: using lambda will increase performance
     std::sort(_parts.begin(), _parts.end(), partLessThan);
     invalidateDynamicCost();
     updateFunctionCycles();

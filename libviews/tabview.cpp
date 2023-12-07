@@ -397,7 +397,6 @@ TabView::TabView(TraceItemView* parentView, QWidget* parent)
 
     updateVisibility();
 
-    // Suggestion: remove redundant this
     this->setWhatsThis( whatsThis() );
 }
 
@@ -461,8 +460,6 @@ TraceItemView::Position TabView::tabPosition(QWidget* w)
 
 int TabView::visibleTabs()
 {
-    // Suggestion: return std::count_if (_tabs.begin(), _tabs.end(),
-    //                                   [](TraceItemView *v){ return v->position() == Hidden; })
     int c = 0;
     foreach(TraceItemView* v, _tabs) {
         if (v->position() == Hidden) continue;
@@ -734,7 +731,6 @@ void TabView::doUpdate(int changeType, bool force)
         }
     }
 
-    // Suggestion: move canShow inside foreach
     bool canShow;
     foreach(TraceItemView *v, _tabs) {
 
