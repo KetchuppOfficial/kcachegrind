@@ -44,10 +44,7 @@ CFGNode::CFGNode(TraceBasicBlock* bb) : _bb{bb} {}
 void CFGNode::addSuccessorEdge(CFGEdge* edge)
 {
     if (edge)
-    {
         _successors.append(edge);
-        edge->setNodeFrom(this);
-    }
 }
 
 void CFGNode::addPredecessorEdge(CFGEdge* edge)
@@ -297,7 +294,9 @@ CFGEdge* CFGNode::priorVisiblePredecessorEdge(CFGEdge* edge)
 // CFGEdge
 //
 
-CFGEdge::CFGEdge(TraceBranch* branch) : _branch{branch} {}
+CFGEdge::CFGEdge(TraceBranch* branch, CFGNode* nodeFrom, CFGNode* nodeTo)
+    : count{static_cast<double>(branch->executedCount())},
+      _branch{branch}, _nodeFrom{nodeFrom}, _nodeTo{nodeTo} {}
 
 TraceBasicBlock* CFGEdge::bbFrom()
 {
@@ -698,27 +697,20 @@ bool CFGExporter::createGraph()
     for (auto& node : _nodeMap)
     {
         TraceBasicBlock* bbFrom = node.basicBlock();
-        TraceBasicBlock::size_type nBranches = bbFrom->nBranches();
 
-        for (decltype(nBranches) i = 0; i != nBranches; ++i)
+        for (auto& br : bbFrom->branches())
         {
-            TraceBranch& br = bbFrom->branch(i);
             TraceBasicBlock* bbTo = br.bbTo();
+            CFGNode* nodeTo = findNode(bbTo);
 
-            CFGEdge edge{std::addressof(br)};
-            edge.setNodeFrom(std::addressof(node));
-            edge.setNodeTo(findNode(bbTo));
-            edge.count = br.executedCount();
+            auto edgeIt = _edgeMap.insert(std::make_pair(bbFrom, bbTo),
+                                          CFGEdge{std::addressof(br), std::addressof(node), nodeTo});
+            CFGEdge* edgePtr = std::addressof(*edgeIt);
 
-            auto key = std::make_pair(bbFrom, bbTo);
-            auto edgeIt = _edgeMap.insert(key, edge);
-            node.addSuccessorEdge(std::addressof(*edgeIt));
+            node.addSuccessorEdge(edgePtr);
+            nodeTo->addPredecessorEdge(edgePtr);
         }
     }
-
-    for (auto &node : _nodeMap)
-        for (auto branch : node.basicBlock()->predecessors())
-            node.addPredecessorEdge(findEdge(branch->bbFrom(), branch->bbTo()));
 
     return fillInstrStrings(func);
 }
