@@ -542,8 +542,8 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
 
     if (i)
     {
-        QString message = QObject::tr("Control-flow graph requires running "
-                                      "callgrind with option --dump-instr=yes");
+        static const char* dumpInstrNotUsed = "Control-flow graph requires running "
+                                              "callgrind with option --dump-instr=yes";
         switch (i->type())
         {
             case ProfileContext::Function:
@@ -552,7 +552,7 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
                 auto& BBs = func->basicBlocks();
                 if (BBs.empty())
                 {
-                    _errorMessage = message;
+                    _errorMessage = dumpInstrNotUsed;
                     return;
                 }
 
@@ -570,7 +570,7 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
                 auto& BBs = caller->basicBlocks();
                 if (BBs.empty())
                 {
-                    _errorMessage = message;
+                    _errorMessage = dumpInstrNotUsed;
                     return;
                 }
 
@@ -3158,7 +3158,7 @@ void ControlFlowGraphView::refresh(bool reset)
             this, &ControlFlowGraphView::dotExited);
 
     QString renderProgram = QStringLiteral("dot");
-    QStringList renderArgs{QStringLiteral("-Tplain")};
+    QStringList renderArgs{QStringLiteral("-Tplain-ext")};
 
     _renderProcessCmdLine = renderProgram + QLatin1Char(' ') + renderArgs.join(QLatin1Char(' '));
 
