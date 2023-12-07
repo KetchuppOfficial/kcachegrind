@@ -253,7 +253,7 @@ private:
     QString _dotName;
     QTemporaryFile* _tmpFile;
 
-    CostItem* _item = nullptr;
+    TraceFunction* _func = nullptr;
     EventType* _eventType = nullptr;
     ProfileContext::Type _groupType = ProfileContext::InvalidType;
 
