@@ -1964,7 +1964,7 @@ void ControlFlowGraphView::stopRendering()
 void ControlFlowGraphView::readDotOutput()
 {
     auto process = qobject_cast<QProcess*>(sender());
-    qDebug("ControlFlowGraphView::readDotOutput: QProcess %p", process);
+    qDebug() << "ControlFlowGraphView::readDotOutput: QProcess " << process;
 
     if (_renderProcess && process == _renderProcess)
         _unparsedOutput.append(QString::fromLocal8Bit(_renderProcess->readAllStandardOutput()));
@@ -1975,7 +1975,8 @@ void ControlFlowGraphView::readDotOutput()
 void ControlFlowGraphView::dotError()
 {
     auto process = qobject_cast<QProcess*>(sender());
-    qDebug("ControlFlowGraphView::dotError: Got %d from QProcess %p", process->error(), process);
+    qDebug() << "ControlFlowGraphView::dotError: Got " << process->error()
+             << " from QProcess " << process;
 
     if (_renderProcess && process == _renderProcess)
     {
@@ -1991,7 +1992,7 @@ void ControlFlowGraphView::dotError()
 void ControlFlowGraphView::dotExited()
 {
     auto process = qobject_cast<QProcess*>(sender());
-    qDebug("ControlFlowGraphView::dotExited: QProcess %p", process);
+    qDebug() << "ControlFlowGraphView::dotExited: QProcess " << process;
 
     if (!_renderProcess || process != _renderProcess)
     {
@@ -3161,8 +3162,8 @@ void ControlFlowGraphView::refresh(bool reset)
 
     _renderProcessCmdLine = renderProgram + QLatin1Char(' ') + renderArgs.join(QLatin1Char(' '));
 
-    qDebug("ControlFlowGraphView::refresh: Starting process %p, \'%s\'",
-           _renderProcess, qPrintable(_renderProcessCmdLine));
+    qDebug() << "ControlFlowGraphView::refresh: Starting process "
+             << _renderProcess << ", \'" << _renderProcess << "\'";
 
     QProcess* process = _renderProcess;
     process->start(renderProgram, renderArgs);
