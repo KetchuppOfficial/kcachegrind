@@ -41,28 +41,28 @@
 
 CFGNode::CFGNode(TraceBasicBlock* bb) : _bb{bb} {}
 
-void CFGNode::addSuccessorEdge(CFGEdge* edge)
+void CFGNode::addOutgoingEdge(CFGEdge* edge)
 {
     if (edge)
-        _successors.append(edge);
+        _outgoingEdges.append(edge);
 }
 
-void CFGNode::addPredecessorEdge(CFGEdge* edge)
+void CFGNode::addIncomingEdge(CFGEdge* edge)
 {
     if (edge)
-        _predecessors.append(edge);
+        _incomingEdges.append(edge);
 }
 
 void CFGNode::clearEdges()
 {
-    _predecessors.clear();
-    _successors.clear();
+    _incomingEdges.clear();
+    _outgoingEdges.clear();
 }
 
-class SuccessorEdgesComparator final
+class OutgoingEdgesComparator final
 {
 public:
-    SuccessorEdgesComparator(CanvasCFGNode* cn)
+    OutgoingEdgesComparator(CanvasCFGNode* cn)
     {
         assert(cn);
         QRectF nodeRect = cn->rect();
@@ -97,10 +97,10 @@ private:
     QPointF _center;
 };
 
-class PredecessorEdgesComparator final
+class IncomingEdgesComparator final
 {
 public:
-    PredecessorEdgesComparator(CanvasCFGNode* cn)
+    IncomingEdgesComparator(CanvasCFGNode* cn)
     {
         assert(cn);
         QRectF nodeRect = cn->rect();
@@ -137,51 +137,51 @@ private:
     QPointF _center;
 };
 
-void CFGNode::sortSuccessorEdges()
+void CFGNode::sortOutgoingEdges()
 {
-    if (!_successors.empty())
-        std::sort(_successors.begin(), _successors.end(), SuccessorEdgesComparator{_cn});
+    if (!_outgoingEdges.empty())
+        std::sort(_outgoingEdges.begin(), _outgoingEdges.end(), OutgoingEdgesComparator{_cn});
 }
 
-void CFGNode::sortPredecessorEdges()
+void CFGNode::sortIncomingEdges()
 {
-    if (!_predecessors.empty())
-        std::sort(_predecessors.begin(), _predecessors.end(), PredecessorEdgesComparator{_cn});
+    if (!_incomingEdges.empty())
+        std::sort(_incomingEdges.begin(), _incomingEdges.end(), IncomingEdgesComparator{_cn});
 }
 
-void CFGNode::selectSuccessorEdge(CFGEdge* edge)
+void CFGNode::selectOutgoingEdge(CFGEdge* edge)
 {
-    _lastSuccessorIndex = _successors.indexOf(edge);
+    _lastOutgoingEdgeIndex = _outgoingEdges.indexOf(edge);
 }
 
-void CFGNode::selectPredecessorEdge(CFGEdge* edge)
+void CFGNode::selectIncomingEdge(CFGEdge* edge)
 {
-    _lastPredecessorIndex = _predecessors.indexOf(edge);
+    _lastIncomingEdgeIndex = _incomingEdges.indexOf(edge);
 }
 
 CFGEdge* CFGNode::keyboardNextEdge()
 {
-    CFGEdge* edge = _successors.value(_lastSuccessorIndex);
+    CFGEdge* edge = _outgoingEdges.value(_lastOutgoingEdgeIndex);
 
     if (edge && !edge->isVisible())
         edge = nullptr;
 
     if (edge)
         edge->setVisitedFrom(CFGEdge::NodeType::nodeFrom_);
-    else if (!_successors.isEmpty())
+    else if (!_outgoingEdges.isEmpty())
     {
-        CFGEdge* maxEdge = _successors[0];
+        CFGEdge* maxEdge = _outgoingEdges[0];
         double maxCount = maxEdge->count;
 
-        for (decltype(_successors.size()) i = 1; i < _successors.size(); ++i)
+        for (decltype(_outgoingEdges.size()) i = 1; i < _outgoingEdges.size(); ++i)
         {
-            edge = _successors[i];
+            edge = _outgoingEdges[i];
 
             if (edge->isVisible() && edge->count > maxCount)
             {
                 maxEdge = edge;
                 maxCount = maxEdge->count;
-                _lastSuccessorIndex = i;
+                _lastOutgoingEdgeIndex = i;
             }
         }
 
@@ -194,27 +194,27 @@ CFGEdge* CFGNode::keyboardNextEdge()
 
 CFGEdge* CFGNode::keyboardPrevEdge()
 {
-    CFGEdge* edge = _predecessors.value(_lastPredecessorIndex);
+    CFGEdge* edge = _incomingEdges.value(_lastIncomingEdgeIndex);
 
     if (edge && !edge->isVisible())
         edge = nullptr;
 
     if (edge)
         edge->setVisitedFrom(CFGEdge::NodeType::nodeTo_);
-    else if (!_predecessors.isEmpty())
+    else if (!_incomingEdges.isEmpty())
     {
-        CFGEdge* maxEdge = _predecessors[0];
+        CFGEdge* maxEdge = _incomingEdges[0];
         double maxCount = maxEdge->count;
 
-        for (decltype(_predecessors.size()) i = 1; i < _predecessors.size(); ++i)
+        for (decltype(_incomingEdges.size()) i = 1; i < _incomingEdges.size(); ++i)
         {
-            edge = _predecessors[i];
+            edge = _incomingEdges[i];
 
             if (edge->isVisible() && edge->count > maxCount)
             {
                 maxEdge = edge;
                 maxCount = maxEdge->count;
-                _lastPredecessorIndex = i;
+                _lastIncomingEdgeIndex = i;
             }
         }
 
@@ -225,11 +225,11 @@ CFGEdge* CFGNode::keyboardPrevEdge()
     return edge;
 }
 
-CFGEdge* CFGNode::nextVisibleSuccessorEdge(CFGEdge* edge)
+CFGEdge* CFGNode::nextVisibleOutgoingEdge(CFGEdge* edge)
 {
-    int shift = edge ? _successors.indexOf(edge) : _lastSuccessorIndex;
-    auto begin = std::next(_successors.begin(), shift + 1);
-    auto end = _successors.end();
+    int shift = edge ? _outgoingEdges.indexOf(edge) : _lastOutgoingEdgeIndex;
+    auto begin = std::next(_outgoingEdges.begin(), shift + 1);
+    auto end = _outgoingEdges.end();
 
     auto it = std::find_if(begin, end, [](CFGEdge* e){ return e->isVisible(); });
 
@@ -237,16 +237,16 @@ CFGEdge* CFGNode::nextVisibleSuccessorEdge(CFGEdge* edge)
         return nullptr;
     else
     {
-        _lastSuccessorIndex = std::distance(_successors.begin(), it);
+        _lastOutgoingEdgeIndex = std::distance(_outgoingEdges.begin(), it);
         return *it;
     }
 }
 
-CFGEdge* CFGNode::nextVisiblePredecessorEdge(CFGEdge* edge)
+CFGEdge* CFGNode::nextVisibleIncomingEdge(CFGEdge* edge)
 {
-    int shift = edge ? _predecessors.indexOf(edge) : _lastPredecessorIndex;
-    auto begin = std::next(_predecessors.begin(), shift + 1);
-    auto end = _predecessors.end();
+    int shift = edge ? _incomingEdges.indexOf(edge) : _lastIncomingEdgeIndex;
+    auto begin = std::next(_incomingEdges.begin(), shift + 1);
+    auto end = _incomingEdges.end();
 
     auto it = std::find_if(begin, end, [](CFGEdge* e){ return e->isVisible(); });
 
@@ -254,22 +254,22 @@ CFGEdge* CFGNode::nextVisiblePredecessorEdge(CFGEdge* edge)
         return nullptr;
     else
     {
-        _lastPredecessorIndex = std::distance(_predecessors.begin(), it);
+        _lastIncomingEdgeIndex = std::distance(_incomingEdges.begin(), it);
         return *it;
     }
 }
 
-CFGEdge* CFGNode::priorVisibleSuccessorEdge(CFGEdge* edge)
+CFGEdge* CFGNode::priorVisibleOutgoingEdge(CFGEdge* edge)
 {
-    int idx = edge ? _successors.indexOf(edge) : _lastSuccessorIndex;
+    int idx = edge ? _outgoingEdges.indexOf(edge) : _lastOutgoingEdgeIndex;
 
-    idx = (idx < 0) ? _successors.size() - 1 : idx - 1;
+    idx = (idx < 0) ? _outgoingEdges.size() - 1 : idx - 1;
     for (; idx >= 0; --idx)
     {
-        edge = _successors[idx];
+        edge = _outgoingEdges[idx];
         if (edge->isVisible())
         {
-            _lastSuccessorIndex = idx;
+            _lastOutgoingEdgeIndex = idx;
             return edge;
         }
     }
@@ -277,17 +277,17 @@ CFGEdge* CFGNode::priorVisibleSuccessorEdge(CFGEdge* edge)
     return nullptr;
 }
 
-CFGEdge* CFGNode::priorVisiblePredecessorEdge(CFGEdge* edge)
+CFGEdge* CFGNode::priorVisibleIncomingEdge(CFGEdge* edge)
 {
-    int idx = edge ? _predecessors.indexOf(edge) : _lastPredecessorIndex;
+    int idx = edge ? _incomingEdges.indexOf(edge) : _lastIncomingEdgeIndex;
 
-    idx = (idx < 0) ? _predecessors.size() - 1 : idx - 1;
+    idx = (idx < 0) ? _incomingEdges.size() - 1 : idx - 1;
     for (; idx >= 0; --idx)
     {
-        edge = _predecessors[idx];
+        edge = _incomingEdges[idx];
         if (edge->isVisible())
         {
-            _lastPredecessorIndex = idx;
+            _lastIncomingEdgeIndex = idx;
             return edge;
         }
     }
@@ -328,7 +328,7 @@ const TraceBasicBlock* CFGEdge::bbTo() const
 CFGNode* CFGEdge::keyboardNextNode()
 {
     if (_nodeTo)
-        _nodeTo->selectPredecessorEdge(this);
+        _nodeTo->selectIncomingEdge(this);
 
     return _nodeTo;
 }
@@ -336,7 +336,7 @@ CFGNode* CFGEdge::keyboardNextNode()
 CFGNode* CFGEdge::keyboardPrevNode()
 {
     if (_nodeFrom)
-        _nodeFrom->selectSuccessorEdge(this);
+        _nodeFrom->selectOutgoingEdge(this);
 
     return _nodeFrom;
 }
@@ -347,7 +347,7 @@ CFGEdge* CFGEdge::nextVisibleEdge()
     {
         assert(_nodeTo);
 
-        CFGEdge* edge = _nodeTo->nextVisiblePredecessorEdge(this);
+        CFGEdge* edge = _nodeTo->nextVisibleIncomingEdge(this);
         if (edge)
             edge->setVisitedFrom(NodeType::nodeTo_);
 
@@ -357,7 +357,7 @@ CFGEdge* CFGEdge::nextVisibleEdge()
     {
         assert(_nodeFrom);
 
-        CFGEdge* edge = _nodeFrom->nextVisibleSuccessorEdge(this);
+        CFGEdge* edge = _nodeFrom->nextVisibleOutgoingEdge(this);
         if (edge)
             edge->setVisitedFrom(NodeType::nodeFrom_);
 
@@ -373,7 +373,7 @@ CFGEdge* CFGEdge::priorVisibleEdge()
     {
         assert(_nodeTo);
 
-        CFGEdge* edge = _nodeTo->priorVisiblePredecessorEdge(this);
+        CFGEdge* edge = _nodeTo->priorVisibleIncomingEdge(this);
         if (edge)
             edge->setVisitedFrom(NodeType::nodeTo_);
 
@@ -383,7 +383,7 @@ CFGEdge* CFGEdge::priorVisibleEdge()
     {
         assert(_nodeFrom);
 
-        CFGEdge* edge = _nodeFrom->priorVisibleSuccessorEdge(this);
+        CFGEdge* edge = _nodeFrom->priorVisibleOutgoingEdge(this);
         if (edge)
             edge->setVisitedFrom(NodeType::nodeFrom_);
 
@@ -594,8 +594,8 @@ void CFGExporter::sortEdges()
 {
     for (auto& node : _nodeMap)
     {
-        node.sortPredecessorEdges();
-        node.sortSuccessorEdges();
+        node.sortIncomingEdges();
+        node.sortOutgoingEdges();
     }
 }
 
@@ -680,8 +680,8 @@ bool CFGExporter::createGraph()
                                           CFGEdge{std::addressof(br), std::addressof(node), nodeTo});
             CFGEdge* edgePtr = std::addressof(*edgeIt);
 
-            node.addSuccessorEdge(edgePtr);
-            nodeTo->addPredecessorEdge(edgePtr);
+            node.addOutgoingEdge(edgePtr);
+            nodeTo->addIncomingEdge(edgePtr);
         }
     }
 

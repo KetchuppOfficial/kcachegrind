@@ -52,25 +52,25 @@ public:
     bool isVisible() const { return _visible; }
     void setVisible(bool v) { _visible = v; }
 
-    void addSuccessorEdge(CFGEdge*);
-    void addPredecessorEdge(CFGEdge*);
+    void addOutgoingEdge(CFGEdge*);
+    void addIncomingEdge(CFGEdge*);
 
     void clearEdges();
-    void sortSuccessorEdges();
-    void sortPredecessorEdges();
+    void sortOutgoingEdges();
+    void sortIncomingEdges();
 
     // keyboard navigation
-    void selectSuccessorEdge(CFGEdge*);
-    void selectPredecessorEdge(CFGEdge*);
+    void selectOutgoingEdge(CFGEdge*);
+    void selectIncomingEdge(CFGEdge*);
 
     CFGEdge* keyboardNextEdge();
     CFGEdge* keyboardPrevEdge();
 
-    CFGEdge* nextVisibleSuccessorEdge(CFGEdge* edge);
-    CFGEdge* nextVisiblePredecessorEdge(CFGEdge* edge);
+    CFGEdge* nextVisibleOutgoingEdge(CFGEdge* edge);
+    CFGEdge* nextVisibleIncomingEdge(CFGEdge* edge);
 
-    CFGEdge* priorVisibleSuccessorEdge(CFGEdge* edge);
-    CFGEdge* priorVisiblePredecessorEdge(CFGEdge* edge);
+    CFGEdge* priorVisibleOutgoingEdge(CFGEdge* edge);
+    CFGEdge* priorVisibleIncomingEdge(CFGEdge* edge);
 
     template<typename It,
              typename = typename std::enable_if<std::is_base_of<std::forward_iterator_tag,
@@ -104,11 +104,11 @@ private:
 
     TraceBasicBlock* _bb;
 
-    QList<CFGEdge*> _successors;
-    int _lastSuccessorIndex = -1;
+    QList<CFGEdge*> _outgoingEdges;
+    int _lastOutgoingEdgeIndex = -1;
 
-    QList<CFGEdge*> _predecessors;
-    int _lastPredecessorIndex = -1;
+    QList<CFGEdge*> _incomingEdges;
+    int _lastIncomingEdgeIndex = -1;
 
     bool _visible = false;
     CanvasCFGNode* _cn = nullptr;
