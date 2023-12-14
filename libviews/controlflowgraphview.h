@@ -202,8 +202,6 @@ public:
     Layout layout() const { return _layout; }
     void setLayout(Layout layout) { _layout = layout; }
 
-    int transformKeyIfNeeded(int key) const;
-
     typename edgeMapType::size_type edgeCount() const { return _edgeMap.count(); }
     typename nodeMapType::size_type nodeCount() const { return _nodeMap.count(); }
 
