@@ -1335,26 +1335,6 @@ void dumpNonFalseBranchColor(QTextStream& ts, const TraceBranch* br)
     ts << QStringLiteral("color=%1, ").arg(color);
 }
 
-void dumpCyclicEdge(QTextStream& ts, const TraceBranch* br, bool isReduced)
-{
-    assert(br->bbFrom() == br->bbTo());
-
-    const TraceBasicBlock* bb = br->bbFrom();
-    auto bbI = reinterpret_cast<qulonglong>(bb);
-
-    if (isReduced)
-        ts << QStringLiteral("  bb%1:w -> bb%2:w [constraint=false, ")
-                            .arg(bbI, 0, 16).arg(bbI, 0, 16);
-    else
-    {
-        ts << QStringLiteral("  bb%1:IL%2:w -> bb%3:IL%4:w [constraint=false, ")
-                            .arg(bbI, 0, 16).arg(bb->lastAddr().toString())
-                            .arg(bbI, 0, 16).arg(bb->firstAddr().toString());
-    }
-
-    dumpNonFalseBranchColor(ts, br);
-}
-
 void dumpRegularBranch(QTextStream& ts, const TraceBranch* br)
 {
     ts << QStringLiteral("  bb%1:s -> bb%2:n [")
@@ -1377,12 +1357,32 @@ void CFGExporter::dumpEdges(QTextStream& ts)
         assert(br);
 
         if (br->isCycle())
-            dumpCyclicEdge(ts, br, getNodeOptions(br->bbFrom()) & Options::reduced);
+            dumpCyclicEdge(ts, br);
         else
             dumpRegularBranch(ts, br);
 
         ts << QStringLiteral("label=\"%1\"]\n").arg(br->executedCount().v);
     }
+}
+
+void CFGExporter::dumpCyclicEdge(QTextStream& ts, const TraceBranch* br)
+{
+    assert(br->bbFrom() == br->bbTo());
+
+    const TraceBasicBlock* bb = br->bbFrom();
+    auto bbI = reinterpret_cast<qulonglong>(bb);
+
+    if (getNodeOptions(bb) & Options::reduced)
+        ts << QStringLiteral("  bb%1:w -> bb%2:w [constraint=false, ")
+                            .arg(bbI, 0, 16).arg(bbI, 0, 16);
+    else
+    {
+        ts << QStringLiteral("  bb%1:IL%2:w -> bb%3:IL%4:w [constraint=false, ")
+                            .arg(bbI, 0, 16).arg(bb->lastAddr().toString())
+                            .arg(bbI, 0, 16).arg(bb->firstAddr().toString());
+    }
+
+    dumpNonFalseBranchColor(ts, br);
 }
 
 bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
