@@ -5,7 +5,6 @@
 #include <type_traits>
 #include <iterator>
 #include <algorithm>
-#include <unordered_map>
 #include <vector>
 
 #include <QList>
@@ -22,6 +21,7 @@
 #include <QTimer>
 #include <QPixmap>
 #include <QMenu>
+#include <QHash>
 
 #include "traceitemview.h"
 #include "callgraphview.h"
@@ -262,8 +262,8 @@ private:
     nodeMapType _nodeMap;
     edgeMapType _edgeMap;
 
-    std::unordered_map<const TraceBasicBlock*, int> _optionsMap;
-    std::unordered_map<const TraceFunction*, std::pair<int, double>> _globalOptionsMap;
+    QHash<const TraceBasicBlock*, int> _optionsMap;
+    QHash<const TraceFunction*, std::pair<int, double>> _globalOptionsMap;
 };
 
 enum CanvasParts : int
