@@ -59,6 +59,20 @@ void CFGNode::clearEdges()
     _outgoingEdges.clear();
 }
 
+namespace
+{
+
+qreal calcAngle(qreal x, qreal y)
+{
+    qreal angle = std::atan2(y, x);
+    if (angle < 0)
+        angle += 2 * M_PI;
+
+    return angle;
+}
+
+} // unnamed namespace
+
 class OutgoingEdgesComparator final
 {
 public:
@@ -86,10 +100,7 @@ public:
             QPointF d1 = ce1->controlPoints().back() - _center;
             QPointF d2 = ce2->controlPoints().back() - _center;
 
-            qreal angle1 = std::atan2(d1.y(), d1.x());
-            qreal angle2 = std::atan2(d2.y(), d2.x());
-
-            return angle1 > angle2;
+            return calcAngle(d1.x(), d1.y()) > calcAngle(d2.x(), d2.y());
         }
     }
 
@@ -121,15 +132,10 @@ public:
             return true;
         else
         {
-            QPointF d1 = ce1->controlPoints().back() - _center;
-            QPointF d2 = ce2->controlPoints().back() - _center;
+            QPointF d1 = ce1->controlPoints().front() - _center;
+            QPointF d2 = ce2->controlPoints().front() - _center;
 
-            /* y coordinate is negated to change orientation of the coordinate system
-               from positive to negative */
-            qreal angle1 = std::atan2(-d1.y(), d1.x());
-            qreal angle2 = std::atan2(-d2.y(), d2.x());
-
-            return angle1 > angle2;
+            return calcAngle(d1.x(), d1.y()) < calcAngle(d2.x(), d2.y());
         }
     };
 
@@ -139,13 +145,13 @@ private:
 
 void CFGNode::sortOutgoingEdges()
 {
-    if (!_outgoingEdges.empty())
+    if (_outgoingEdges.size() > 1)
         std::sort(_outgoingEdges.begin(), _outgoingEdges.end(), OutgoingEdgesComparator{_cn});
 }
 
 void CFGNode::sortIncomingEdges()
 {
-    if (!_incomingEdges.empty())
+    if (_incomingEdges.size() > 1)
         std::sort(_incomingEdges.begin(), _incomingEdges.end(), IncomingEdgesComparator{_cn});
 }
 
