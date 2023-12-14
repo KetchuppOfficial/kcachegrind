@@ -6,6 +6,7 @@
 #include <iterator>
 #include <algorithm>
 #include <unordered_map>
+#include <vector>
 
 #include <QList>
 #include <QString>
@@ -33,7 +34,7 @@ class CFGNode final
 {
     template<typename It>
     using iterator_category_t = typename std::iterator_traits<It>::iterator_category;
-    using instrCont = QList<std::pair<QString, QString>>;
+    using instrCont = std::vector<std::pair<QString, QString>>;
 
 public:
     using iterator = typename instrCont::iterator;
@@ -81,12 +82,12 @@ public:
                static_cast<typename std::iterator_traits<It>::difference_type>(_bb->instrNumber()));
 
         _instructions.reserve(std::distance(first, last));
-        std::copy(first, last, std::back_inserter(_instructions));
+        _instructions.insert(_instructions.end(), first, last);
     }
 
     size_type instrNumber() const
     {
-        assert(_instructions.size() == static_cast<qsizetype>(_bb->instrNumber()));
+        assert(_instructions.size() == _bb->instrNumber());
         return _instructions.size();
     }
 
