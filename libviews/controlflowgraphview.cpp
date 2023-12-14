@@ -2058,7 +2058,7 @@ CFGNode* ControlFlowGraphView::getNodeFromDot(QTextStream& lineStream)
     lineStream >> s;
 
     assert(s.length() >= 3);
-    assert (s[0] == 'b' && s[1] == 'b');
+    assert(s[0] == 'b' && s[1] == 'b');
 
     bool ok;
     qulonglong ibb = s.mid(2).toULongLong(&ok, 16);
