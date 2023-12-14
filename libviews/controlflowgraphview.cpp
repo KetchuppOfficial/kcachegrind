@@ -664,32 +664,6 @@ bool CFGExporter::createGraph()
     return fillInstrStrings(_func);
 }
 
-int CFGExporter::transformKeyIfNeeded(int key) const
-{
-    if (_layout == Layout::LeftRight)
-    {
-        switch (key)
-        {
-            case Qt::Key_Up:
-                key = Qt::Key_Left;
-                break;
-            case Qt::Key_Down:
-                key = Qt::Key_Right;
-                break;
-            case Qt::Key_Left:
-                key = Qt::Key_Up;
-                break;
-            case Qt::Key_Right:
-                key = Qt::Key_Down;
-                break;
-            default:
-                assert(false); // we should never reach here
-        }
-    }
-
-    return key;
-}
-
 class LineBuffer final
 {
 public:
@@ -2614,16 +2588,14 @@ void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
     {
         if (_selectedNode)
         {
-            int key = _exporter.transformKeyIfNeeded(e->key());
-            CFGEdge* edge = getEdgeToSelect(_selectedNode, key);
+            CFGEdge* edge = getEdgeToSelect(_selectedNode, e->key());
 
             if (edge && edge->branch())
                 selected(edge->branch());
         }
         else if (_selectedEdge)
         {
-            int key = _exporter.transformKeyIfNeeded(e->key());
-            std::pair<CFGNode*, CFGEdge*> pair = getNodeOrEdgeToSelect(_selectedEdge, key);
+            std::pair<CFGNode*, CFGEdge*> pair = getNodeOrEdgeToSelect(_selectedEdge, e->key());
 
             if (pair.first && pair.first->basicBlock())
                 selected(pair.first->basicBlock());
