@@ -39,7 +39,7 @@
 // CFGNode
 //
 
-CFGNode::CFGNode(TraceBasicBlock* bb) : _bb{bb} {}
+CFGNode::CFGNode(TraceBasicBlock* bb, uint64 cost) : _bb{bb}, _cost{cost} {}
 
 void CFGNode::addOutgoingEdge(CFGEdge* edge)
 {
@@ -171,16 +171,16 @@ CFGEdge* CFGNode::keyboardNextEdge()
     else if (!_outgoingEdges.isEmpty())
     {
         CFGEdge* maxEdge = _outgoingEdges[0];
-        double maxCount = maxEdge->count;
+        double maxCount = maxEdge->count();
 
         for (decltype(_outgoingEdges.size()) i = 1; i < _outgoingEdges.size(); ++i)
         {
             edge = _outgoingEdges[i];
 
-            if (edge->isVisible() && edge->count > maxCount)
+            if (edge->isVisible() && edge->count() > maxCount)
             {
                 maxEdge = edge;
-                maxCount = maxEdge->count;
+                maxCount = maxEdge->count();
                 _lastOutgoingEdgeIndex = i;
             }
         }
@@ -204,16 +204,16 @@ CFGEdge* CFGNode::keyboardPrevEdge()
     else if (!_incomingEdges.isEmpty())
     {
         CFGEdge* maxEdge = _incomingEdges[0];
-        double maxCount = maxEdge->count;
+        double maxCount = maxEdge->count();
 
         for (decltype(_incomingEdges.size()) i = 1; i < _incomingEdges.size(); ++i)
         {
             edge = _incomingEdges[i];
 
-            if (edge->isVisible() && edge->count > maxCount)
+            if (edge->isVisible() && edge->count() > maxCount)
             {
                 maxEdge = edge;
-                maxCount = maxEdge->count;
+                maxCount = maxEdge->count();
                 _lastIncomingEdgeIndex = i;
             }
         }
@@ -302,8 +302,7 @@ CFGEdge* CFGNode::priorVisibleIncomingEdge(CFGEdge* edge)
 //
 
 CFGEdge::CFGEdge(TraceBranch* branch, CFGNode* nodeFrom, CFGNode* nodeTo)
-    : count{static_cast<double>(branch->executedCount())},
-      _branch{branch}, _nodeFrom{nodeFrom}, _nodeTo{nodeTo} {}
+    : _branch{branch}, _count{_branch->executedCount()}, _nodeFrom{nodeFrom}, _nodeTo{nodeTo} {}
 
 CFGNode* CFGEdge::keyboardNextNode()
 {
@@ -459,7 +458,7 @@ void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
 {
     for (auto& node : _nodeMap)
     {
-        if (node.self <= minimalCost)
+        if (node.cost() <= minimalCost)
             setNodeOption(node.basicBlock(), Options::reduced);
         else
             resetNodeOption(node.basicBlock(), Options::reduced);
@@ -642,10 +641,7 @@ bool CFGExporter::createGraph()
     _graphCreated = true;
 
     for (auto bb : _func->basicBlocks())
-    {
-        auto nodeIt = _nodeMap.insert(bb, CFGNode{bb});
-        nodeIt->self = bb->subCost(_eventType);
-    }
+        _nodeMap.insert(bb, CFGNode{bb, bb->subCost(_eventType)});
 
     for (auto& node : _nodeMap)
     {
@@ -1197,7 +1193,7 @@ void CFGExporter::dumpNodeReduced(QTextStream& ts, const CFGNode& node)
     if (_layout == Layout::TopDown)
         ts << '{';
 
-    ts << QStringLiteral(" cost: %1 | 0x%2 ").arg(node.self).arg(bb->firstAddr().toString());
+    ts << QStringLiteral(" cost: %1 | 0x%2 ").arg(node.cost()).arg(bb->firstAddr().toString());
 
     if (_layout == Layout::TopDown)
         ts << '}';
@@ -1245,7 +1241,7 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
                          "  <tr>\n"
                          "    <td colspan=\"%4\">0x%5</td>\n"
                          "  </tr>\n").arg(reinterpret_cast<qulonglong>(bb), 0, 16)
-                                     .arg(span).arg(node.self).arg(span)
+                                     .arg(span).arg(node.cost()).arg(span)
                                      .arg(bb->firstAddr().toString());
 
     auto strIt = node.begin();
@@ -1473,7 +1469,7 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     update();
 
     SubCost total = node->basicBlock()->function()->subCost(view->eventType());
-    double selfPercentage = 100.0 * _node->self / total;
+    double selfPercentage = 100.0 * _node->cost() / total;
 
     setPosition(0, DrawParams::TopCenter);
 
@@ -1482,7 +1478,7 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
         setText(0, QStringLiteral("%1 %")
                                  .arg(selfPercentage, 0, 'f', GlobalConfig::percentPrecision()));
     else
-        setText(0, SubCost(_node->self).pretty());
+        setText(0, SubCost(_node->cost()).pretty());
 
     // set percentage bar
     setPixmap(0, percentagePixmap(25, 10, static_cast<int>(selfPercentage + 0.5), Qt::blue, true));
@@ -1614,8 +1610,7 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
 
     setPosition(0, DrawParams::TopCenter);
 
-    SubCost count = e->branch()->executedCount();
-    setText(0, QStringLiteral("%1 x").arg(count.pretty()));
+    setText(0, QStringLiteral("%1 x").arg(e->count()));
 
     if (e->nodeFrom() == e->nodeTo())
     {
@@ -1624,7 +1619,7 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
         setPixmap(0, pixmap);
     }
     else
-        setPixmap(0, percentagePixmap(25, 10, count, Qt::blue, true));
+        setPixmap(0, percentagePixmap(25, 10, e->count(), Qt::blue, true));
 }
 
 void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)

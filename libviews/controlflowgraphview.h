@@ -41,7 +41,7 @@ public:
     using const_iterator = typename instrCont::const_iterator;
     using size_type = typename instrCont::size_type;
 
-    CFGNode(TraceBasicBlock* bb);
+    CFGNode(TraceBasicBlock* bb, uint64 cost);
 
     TraceBasicBlock* basicBlock() { return _bb; }
     const TraceBasicBlock* basicBlock() const { return _bb; }
@@ -99,11 +99,12 @@ public:
     const_iterator end() const { return _instructions.end(); }
     const_iterator cend() const { return end(); }
 
-    double self = 0.0;
+    uint64 cost() const { return _cost; }
 
 private:
 
     TraceBasicBlock* _bb;
+    uint64 _cost;
 
     QList<CFGEdge*> _outgoingEdges;
     int _lastOutgoingEdgeIndex = -1;
@@ -151,11 +152,12 @@ public:
 
     void setVisitedFrom(NodeType node) { _visitedFrom = node; }
 
-    double count = 0.0;
+    uint64 count() const { return _count; }
 
 private:
 
     TraceBranch* _branch;
+    uint64 _count;
 
     CFGNode* _nodeFrom = nullptr;
     CFGNode* _nodeTo = nullptr;
