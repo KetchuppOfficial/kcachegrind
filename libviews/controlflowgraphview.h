@@ -86,7 +86,7 @@ public:
 
     size_type instrNumber() const
     {
-        assert (_instructions.size() == static_cast<qsizetype>(_bb->instrNumber()));
+        assert(_instructions.size() == static_cast<qsizetype>(_bb->instrNumber()));
         return _instructions.size();
     }
 
