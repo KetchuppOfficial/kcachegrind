@@ -246,6 +246,7 @@ private:
     void dumpNodeExtended(QTextStream& ts, const CFGNode& node);
 
     void dumpEdges(QTextStream& ts);
+    void dumpCyclicEdge(QTextStream& ts, const TraceBranch *br);
 
     QString _dotName;
     QTemporaryFile* _tmpFile;
