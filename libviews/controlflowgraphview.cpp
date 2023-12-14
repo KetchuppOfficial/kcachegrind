@@ -414,9 +414,10 @@ CFGExporter::~CFGExporter()
 CFGExporter::Options CFGExporter::getNodeOptions(const TraceBasicBlock* bb) const
 {
     auto it = _optionsMap.find(bb);
-    assert(it != _optionsMap.end());
-
-    return static_cast<Options>(*it);
+    if (it == _optionsMap.end())
+        return Options::invalid;
+    else
+        return static_cast<Options>(*it);
 }
 
 void CFGExporter::setNodeOption(const TraceBasicBlock* bb, Options option)
@@ -437,9 +438,10 @@ void CFGExporter::switchNodeOption(const TraceBasicBlock* bb, Options option)
 CFGExporter::Options CFGExporter::getGraphOptions(TraceFunction* func) const
 {
     auto it = _globalOptionsMap.find(func);
-    assert(it != _globalOptionsMap.end());
-
-    return static_cast<Options>(it->first);
+    if (it == _globalOptionsMap.end())
+        return Options::invalid;
+    else
+        return static_cast<Options>(it->first);
 }
 
 void CFGExporter::setGraphOption(TraceFunction* func, Options option)
@@ -474,9 +476,10 @@ void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
 double CFGExporter::minimalCostPercentage(TraceFunction* func) const
 {
     auto it = _globalOptionsMap.find(func);
-    assert(it != _globalOptionsMap.end());
-
-    return it->second;
+    if (it == _globalOptionsMap.end())
+        return NAN;
+    else
+        return it->second;
 }
 
 void CFGExporter::setMinimalCostPercentage(TraceFunction* func, double percentage)
@@ -551,9 +554,12 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
             return;
         }
 
-        _globalOptionsMap.insert(_func, std::make_pair(Options::default_, -1.0));
-        for (auto bb : BBs)
-            _optionsMap.insert(bb, Options::default_);
+        if (!_globalOptionsMap.contains(_func))
+        {
+            _globalOptionsMap.insert(_func, std::make_pair(Options::default_, -1.0));
+            for (auto bb : BBs)
+                _optionsMap.insert(bb, Options::default_);
+        }
 
         if (filename.isEmpty())
         {

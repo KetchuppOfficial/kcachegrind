@@ -183,10 +183,11 @@ public:
 
     enum Options : int
     {
-        default_ = 0,
-        reduced = 1 << 1,
-        showInstrCost = 1 << 2,
-        showInstrPC = 1 << 3
+        invalid       = 0,
+        default_      = 1 << 1,
+        reduced       = 1 << 2,
+        showInstrCost = 1 << 3,
+        showInstrPC   = 1 << 4
     };
 
     CFGExporter() = default;
