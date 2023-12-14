@@ -1405,51 +1405,41 @@ bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
             return false;
 
         QTemporaryFile maybeTemp;
-        maybeTemp.open();
-
         QString dotName;
-        QString dotRenderType;
 
         QString mime = saveDialog.selectedMimeTypeFilter();
         if (mime == filter1)
-        {
             dotName = intendedName;
-            dotRenderType = "";
-        }
-        else if (mime == filter2)
+        else
         {
+            maybeTemp.open();
             dotName = maybeTemp.fileName();
-            dotRenderType = "-Tpdf";
-        }
-        else // mime == filter3
-        {
-            dotName = maybeTemp.fileName();
-            dotRenderType = "-Tps";
         }
 
         CFGExporter ge{origExporter, func, eventType, groupType, dotName};
 
-        bool wrote = ge.writeDot();
-        if (wrote && mime != filter1)
+        if (ge.writeDot())
         {
-            QProcess proc;
-            proc.setStandardOutputFile(intendedName, QFile::Truncate);
-            proc.start("dot", QStringList{dotRenderType, dotName}, QProcess::ReadWrite);
-            proc.waitForFinished();
-
-            if (proc.exitStatus() == QProcess::NormalExit)
-            {
-                QDesktopServices::openUrl(QUrl::fromLocalFile(intendedName));
+            if (mime == filter1)
                 return true;
-            }
             else
-                return false;
+            {
+                QProcess proc;
+                proc.setStandardOutputFile(intendedName, QFile::Truncate);
+                proc.start("dot", QStringList{(mime == filter2) ? "-Tpdf" : "-Tps", dotName},
+                           QProcess::ReadWrite);
+                proc.waitForFinished();
+
+                if (proc.exitStatus() == QProcess::NormalExit)
+                {
+                    QDesktopServices::openUrl(QUrl::fromLocalFile(intendedName));
+                    return true;
+                }
+            }
         }
-        else
-            return wrote;
     }
-    else
-        return false;
+
+    return false;
 }
 
 // ======================================================================================
