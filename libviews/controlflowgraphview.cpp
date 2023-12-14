@@ -727,7 +727,7 @@ private:
     using instr_iterator = typename TraceInstrMap::iterator;
 
     bool runObjdump(TraceFunction* func);
-    bool searchFile(QString& dir, TraceObject* o, TraceData* data);
+    bool searchFile(QString& dir, const QString& filename, TraceData* data);
     QString getObjDump();
     QString getObjDumpFormat();
     QString getSysRoot();
@@ -796,7 +796,7 @@ bool ObjdumpParser::runObjdump(TraceFunction* func)
     TraceObject* objectFile = func->object();
     QString dir = objectFile->directory();
 
-    if (!searchFile(dir, objectFile, func->data()))
+    if (!searchFile(dir, objectFile->shortName(), func->data()))
     {
         // Should be implemented in a different manner
         qDebug() << QObject::tr("For annotated machine code, the following object file is needed\n")
@@ -843,10 +843,8 @@ bool ObjdumpParser::runObjdump(TraceFunction* func)
     }
 }
 
-bool ObjdumpParser::searchFile(QString& dir, TraceObject* o, TraceData* data)
+bool ObjdumpParser::searchFile(QString& dir, const QString& filename, TraceData* data)
 {
-    QString filename = o->shortName();
-
     if (QDir::isAbsolutePath(dir))
     {
         if (QFile::exists(dir + '/' + filename))
@@ -855,13 +853,13 @@ bool ObjdumpParser::searchFile(QString& dir, TraceObject* o, TraceData* data)
         {
             QString sysRoot = getSysRoot();
 
-            if (sysRoot.isEmpty())
-                return false;
-            else
+            if (!sysRoot.isEmpty())
             {
                 if (!dir.startsWith('/') && !sysRoot.endsWith('/'))
-                    sysRoot += '/';
+                    sysRoot.append('/');
+
                 dir.prepend(sysRoot);
+
                 return QFile::exists(dir + '/' + filename);
             }
         }
@@ -878,17 +876,17 @@ bool ObjdumpParser::searchFile(QString& dir, TraceObject* o, TraceData* data)
             TracePart* firstPart = data->parts().first();
             if (firstPart)
             {
-                QFileInfo partFile(firstPart->name());
-                if (QFileInfo(partFile.absolutePath(), filename).exists())
+                QFileInfo partFile{firstPart->name()};
+                if (QFileInfo{partFile.absolutePath(), filename}.exists())
                 {
                     dir = partFile.absolutePath();
                     return true;
                 }
             }
-
-            return false;
         }
     }
+
+    return false;
 }
 
 QString ObjdumpParser::getObjDump()
