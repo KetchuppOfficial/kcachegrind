@@ -144,18 +144,11 @@ public:
     bool isVisible() const { return _visible; }
     void setVisible(bool v) { _visible = v; }
 
-    TraceBasicBlock* bbFrom();
-    const TraceBasicBlock* bbFrom() const;
-
-    TraceBasicBlock* bbTo();
-    const TraceBasicBlock* bbTo() const;
-
     CFGNode* keyboardNextNode();
     CFGNode* keyboardPrevNode();
     CFGEdge* nextVisibleEdge();
     CFGEdge* priorVisibleEdge();
 
-    NodeType visitedFrom() const { return _visitedFrom; }
     void setVisitedFrom(NodeType node) { _visitedFrom = node; }
 
     double count = 0.0;

@@ -305,26 +305,6 @@ CFGEdge::CFGEdge(TraceBranch* branch, CFGNode* nodeFrom, CFGNode* nodeTo)
     : count{static_cast<double>(branch->executedCount())},
       _branch{branch}, _nodeFrom{nodeFrom}, _nodeTo{nodeTo} {}
 
-TraceBasicBlock* CFGEdge::bbFrom()
-{
-    return _nodeFrom ? _nodeFrom->basicBlock() : nullptr;
-}
-
-const TraceBasicBlock* CFGEdge::bbFrom() const
-{
-    return _nodeFrom ? _nodeFrom->basicBlock() : nullptr;
-}
-
-TraceBasicBlock* CFGEdge::bbTo()
-{
-    return _nodeTo ? _nodeTo->basicBlock() : nullptr;
-}
-
-const TraceBasicBlock* CFGEdge::bbTo() const
-{
-    return _nodeTo ? _nodeTo->basicBlock() : nullptr;
-}
-
 CFGNode* CFGEdge::keyboardNextNode()
 {
     if (_nodeTo)
@@ -1637,7 +1617,7 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
     SubCost count = e->branch()->executedCount();
     setText(0, QStringLiteral("%1 x").arg(count.pretty()));
 
-    if (e->bbTo() && e->bbFrom() == e->bbTo())
+    if (e->nodeFrom() == e->nodeTo())
     {
         QFontMetrics fm{font()};
         QPixmap pixmap = QIcon::fromTheme(QStringLiteral("edit-undo")).pixmap(fm.height());
