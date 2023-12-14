@@ -174,6 +174,9 @@ class ControlFlowGraphView;
 
 class CFGExporter final
 {
+    using nodeMapType = QMap<const TraceBasicBlock*, CFGNode>;
+    using edgeMapType = QMap<std::pair<const TraceBasicBlock*, const TraceBasicBlock*>, CFGEdge>;
+
 public:
 
     enum class Layout { TopDown, LeftRight };
@@ -185,8 +188,6 @@ public:
         showInstrCost = 1 << 2,
         showInstrPC = 1 << 3
     };
-
-    using size_type = typename QMap<TraceBasicBlock*, CFGNode>::size_type;
 
     CFGExporter() = default;
     CFGExporter(const CFGExporter& otherExporter, TraceFunction* func, EventType* et,
@@ -203,8 +204,8 @@ public:
 
     int transformKeyIfNeeded(int key) const;
 
-    size_type edgeCount() const { return _edgeMap.count(); }
-    size_type nodeCount() const { return _nodeMap.count(); }
+    typename edgeMapType::size_type edgeCount() const { return _edgeMap.count(); }
+    typename nodeMapType::size_type nodeCount() const { return _nodeMap.count(); }
 
     Options getNodeOptions(const TraceBasicBlock* bb) const;
     void setNodeOption(const TraceBasicBlock* bb, Options option);
@@ -258,8 +259,8 @@ private:
     bool _graphCreated = false;
     Layout _layout = Layout::TopDown;
 
-    QMap<const TraceBasicBlock*, CFGNode> _nodeMap;
-    QMap<std::pair<const TraceBasicBlock*, const TraceBasicBlock*>, CFGEdge> _edgeMap;
+    nodeMapType _nodeMap;
+    edgeMapType _edgeMap;
 
     std::unordered_map<const TraceBasicBlock*, int> _optionsMap;
     std::unordered_map<const TraceFunction*, std::pair<int, double>> _globalOptionsMap;
