@@ -209,7 +209,7 @@ public:
 
     CFGExporter() = default;
     CFGExporter(const CFGExporter& otherExporter, TraceFunction* func, EventType* et,
-                ProfileContext::Type gt, QString filename = QString{});
+                ProfileContext::Type gt, const QString& filename = QString{});
     ~CFGExporter();
 
     QString filename() const { return _dotName; }
