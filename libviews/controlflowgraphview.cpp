@@ -385,7 +385,7 @@ CFGEdge* CFGEdge::priorVisibleEdge()
 //
 
 CFGExporter::CFGExporter(const CFGExporter& otherExporter, TraceFunction* func, EventType* et,
-                         ProfileContext::Type gt, QString filename)
+                         ProfileContext::Type gt, const QString& filename)
     : _func{func}, _eventType{et}, _groupType{gt}, _layout{otherExporter._layout},
       _optionsMap{otherExporter._optionsMap}, _globalOptionsMap{otherExporter._globalOptionsMap}
 {
