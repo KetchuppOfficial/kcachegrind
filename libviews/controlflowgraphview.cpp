@@ -1238,7 +1238,7 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
         TraceInstr* instr = *instrIt;
 
         ts << QStringLiteral("  <tr>\n"
-                             "    <td port=\"IL%1\" align=\"left\">")
+                             "    <td port=\"%1\" align=\"left\">")
                             .arg(instr->addr().toString());
 
         if (needPC)
@@ -1276,7 +1276,7 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
 
     Addr lastAddr = bb->lastAddr();
     ts << QStringLiteral("  <tr>\n"
-                         "    <td port=\"IL%1\" align=\"left\">").arg(lastAddr.toString());
+                         "    <td port=\"%1\" align=\"left\">").arg(lastAddr.toString());
 
     if (needPC)
         dumpPC(ts, lastAddr);
@@ -1362,7 +1362,7 @@ void CFGExporter::dumpCyclicEdge(QTextStream& ts, const TraceBranch* br)
                             .arg(bbI, 0, 16).arg(bbI, 0, 16);
     else
     {
-        ts << QStringLiteral("  bb%1:IL%2:w -> bb%3:IL%4:w [constraint=false, ")
+        ts << QStringLiteral("  bb%1:%2:w -> bb%3:%4:w [constraint=false, ")
                             .arg(bbI, 0, 16).arg(bb->lastAddr().toString())
                             .arg(bbI, 0, 16).arg(bb->firstAddr().toString());
     }
