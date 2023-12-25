@@ -34,9 +34,24 @@ class CFGNode final
 {
     template<typename It>
     using iterator_category_t = typename std::iterator_traits<It>::iterator_category;
-    using instrCont = std::vector<std::pair<QString, QString>>;
 
 public:
+
+    struct instrString
+    {
+        QString _mnemonic;
+        QString _operands;
+        QString _operandsHTML;
+
+        instrString(const QString& mnemonic, const QString& operands)
+            : _mnemonic{mnemonic}, _operands{operands}, _operandsHTML{operands}
+        {
+            _operandsHTML.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;");
+        }
+    };
+
+    using instrCont = std::vector<instrString>;
+
     using iterator = typename instrCont::iterator;
     using const_iterator = typename instrCont::const_iterator;
     using size_type = typename instrCont::size_type;
@@ -82,7 +97,9 @@ public:
                static_cast<typename std::iterator_traits<It>::difference_type>(_bb->instrNumber()));
 
         _instructions.reserve(std::distance(first, last));
-        _instructions.insert(_instructions.end(), first, last);
+
+        for (auto it = first; it != last; ++it)
+            _instructions.emplace_back(it->first, it->second);
     }
 
     size_type instrNumber() const

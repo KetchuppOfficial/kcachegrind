@@ -1137,7 +1137,8 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
 
     ObjdumpParser parser{func};
     std::pair<QString, ObjdumpParser::instrStringsMap> pair = parser.getInstrStrings();
-    if (pair.second.empty())
+    auto& instrStrings = pair.second;
+    if (instrStrings.empty())
     {
         _errorMessage = pair.first;
         return false;
@@ -1147,9 +1148,9 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
     {
         const TraceBasicBlock* bb = it.key();
 
-        auto firstIt = pair.second.find(bb->firstAddr());
-        auto lastIt = pair.second.find(bb->lastAddr());
-        assert(lastIt != pair.second.end());
+        auto firstIt = instrStrings.find(bb->firstAddr());
+        auto lastIt = instrStrings.find(bb->lastAddr());
+        assert(lastIt != instrStrings.end());
 
         it->insertInstructions(firstIt, std::next(lastIt));
     }
@@ -1201,11 +1202,6 @@ void dumpCost(QTextStream& ts, SubCost cost)
                          "    <td align=\"left\">").arg(cost.pretty());
 }
 
-void convertToHTML(QString& str)
-{
-    str.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;");
-}
-
 } // unnamed namespace
 
 void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
@@ -1238,7 +1234,7 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
         TraceInstr* instr = *instrIt;
 
         ts << QStringLiteral("  <tr>\n"
-                             "    <td port=\"%1\" align=\"left\">")
+                             "    <td port=\"IL%1\" align=\"left\">")
                             .arg(instr->addr().toString());
 
         if (needPC)
@@ -1246,12 +1242,9 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
         if (needCost)
             dumpCost(ts, instr->subCost(_eventType));
 
-        QString operands = strIt->second;
-        convertToHTML(operands);
-
         ts << QStringLiteral("%1</td>\n"
                              "    <td align=\"left\">%2</td>\n"
-                             "  </tr>\n").arg(strIt->first).arg(operands);
+                             "  </tr>\n").arg(strIt->_mnemonic).arg(strIt->_operandsHTML);
 
         for (++instrIt, ++strIt; instrIt != lastInstrIt; ++instrIt, ++strIt)
         {
@@ -1265,31 +1258,25 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
             if (needCost)
                 dumpCost(ts, instr->subCost(_eventType));
 
-            operands = strIt->second;
-            convertToHTML(operands);
-
             ts << QStringLiteral("%1</td>\n"
                                  "    <td align=\"left\">%2</td>\n"
-                                 "  </tr>\n").arg(strIt->first).arg(operands);
+                                 "  </tr>\n").arg(strIt->_mnemonic).arg(strIt->_operandsHTML);
         }
     }
 
     Addr lastAddr = bb->lastAddr();
     ts << QStringLiteral("  <tr>\n"
-                         "    <td port=\"%1\" align=\"left\">").arg(lastAddr.toString());
+                         "    <td port=\"IL%1\" align=\"left\">").arg(lastAddr.toString());
 
     if (needPC)
         dumpPC(ts, lastAddr);
     if (needCost)
         dumpCost(ts, (*lastInstrIt)->subCost(_eventType));
 
-    QString operands = strIt->second;
-    convertToHTML(operands);
-
     ts << QStringLiteral("%1</td>\n"
                          "    <td align=\"left\">%2</td>\n"
                          "  </tr>\n"
-                         "  </table>>]\n").arg(strIt->first).arg(operands);
+                         "  </table>>]\n").arg(strIt->_mnemonic).arg(strIt->_operandsHTML);
 }
 
 namespace
@@ -1362,7 +1349,7 @@ void CFGExporter::dumpCyclicEdge(QTextStream& ts, const TraceBranch* br)
                             .arg(bbI, 0, 16).arg(bbI, 0, 16);
     else
     {
-        ts << QStringLiteral("  bb%1:%2:w -> bb%3:%4:w [constraint=false, ")
+        ts << QStringLiteral("  bb%1:IL%2:w -> bb%3:IL%4:w [constraint=false, ")
                             .arg(bbI, 0, 16).arg(bb->lastAddr().toString())
                             .arg(bbI, 0, 16).arg(bb->firstAddr().toString());
     }
@@ -1511,16 +1498,15 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
         else
             costLen = 0;
 
-        auto mnemonicComp = [&fm](std::pair<QString, QString>& pair1,
-                                  std::pair<QString, QString>& pair2)
+        auto mnemonicComp = [&fm](CFGNode::instrString& pair1, CFGNode::instrString& pair2)
         {
-            return fm.size(Qt::TextSingleLine, pair1.first).width() <
-                   fm.size(Qt::TextSingleLine, pair2.first).width();
+            return fm.size(Qt::TextSingleLine, pair1._mnemonic).width() <
+                   fm.size(Qt::TextSingleLine, pair2._mnemonic).width();
         };
 
         auto maxLenIt = std::max_element(_node->begin(), _node->end(), mnemonicComp);
 
-        int mnemonicLen = fm.size(Qt::TextSingleLine, maxLenIt->first).width() + 4;
+        int mnemonicLen = fm.size(Qt::TextSingleLine, maxLenIt->_mnemonic).width() + 4;
         int costRightBorder = PCLen + costLen;
         int mnemonicRightBorder = costRightBorder + mnemonicLen;
         int argsLen = w - mnemonicRightBorder;
@@ -1537,9 +1523,9 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
                             Qt::AlignLeft, (*instrIt)->subCost(_view->eventType()).pretty());
 
             p->drawText(x + costRightBorder + 2, topLineY, mnemonicLen, step,
-                        Qt::AlignLeft, it->first);
+                        Qt::AlignLeft, it->_mnemonic);
             p->drawText(x + mnemonicRightBorder + 2, topLineY, argsLen, step,
-                        Qt::AlignLeft, it->second);
+                        Qt::AlignLeft, it->_operands);
             p->drawLine(x, topLineY, x + w, topLineY);
 
             topLineY += step;
