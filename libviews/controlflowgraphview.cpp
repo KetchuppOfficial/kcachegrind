@@ -762,10 +762,8 @@ private:
 
     bool _needObjAddr = true;
     bool _needCostAddr = true;
-    bool _skipLineWritten = true;
     bool _isArm;
 
-    int _noAssLines = 0;
     int _objdumpLineno = 0;
 
     TraceInstr* _currInstr;
@@ -917,6 +915,9 @@ std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrString
 {
     instrStringsMap instrStrings;
 
+    int noAssLines = 0;
+    bool skipLineWritten = true;
+
     for (; ; _line.setPos(0))
     {
         if (_needObjAddr)
@@ -943,14 +944,14 @@ std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrString
             if ((_costAddr == 0 || _costAddr + 3 * GlobalConfig::context() < _objAddr) &&
                 (_nextCostAddr == 0 || _objAddr < _nextCostAddr - 3 * GlobalConfig::context()))
             {
-                if (_skipLineWritten || _it == _ite)
+                if (skipLineWritten || _it == _ite)
                     continue;
                 else
                 {
                     encoding = mnemonic = QString{};
                     operands = QStringLiteral("...");
 
-                    _skipLineWritten = true;
+                    skipLineWritten = true;
                 }
             }
             else
@@ -961,7 +962,7 @@ std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrString
                 mnemonic = parseMnemonic();
                 operands = parseOperands();
 
-                _skipLineWritten = false;
+                skipLineWritten = false;
             }
 
             if (_costAddr == _objAddr)
@@ -980,15 +981,15 @@ std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrString
             _currInstr = std::addressof(*_costIt);
 
             _needCostAddr = true;
-            _skipLineWritten = false;
-            _noAssLines++;
+            skipLineWritten = false;
+            noAssLines++;
         }
 
         if (!mnemonic.isEmpty() && _currInstr)
             instrStrings.insert(_objAddr, std::make_pair(mnemonic, operands));
     }
 
-    if (_noAssLines > 1)
+    if (noAssLines > 1)
     {
         QString message = QStringLiteral("There are %1 cost line(s) without machine code.\n"
                                          "This happens because the code of %2 does not seem "
@@ -996,7 +997,7 @@ std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrString
                                          "Are you using an old profile data file or is the above"
                                          "mentioned\n"
                                          "ELF object from an updated installation/another"
-                                         "machine?\n").arg(_noAssLines).arg(_objFile);
+                                         "machine?\n").arg(noAssLines).arg(_objFile);
 
         return {message, {}};
     }
