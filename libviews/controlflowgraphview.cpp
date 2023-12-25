@@ -1086,9 +1086,9 @@ QString ObjdumpParser::parseEncoding()
         else if (_line.elem(4) == ' ')
             _line.advance(5);
         else if (!isHexDigit(_line.elem(4)) ||
-                !isHexDigit(_line.elem(5)) ||
-                !isHexDigit(_line.elem(6)) ||
-                !isHexDigit(_line.elem(7)) ||
+                 !isHexDigit(_line.elem(5)) ||
+                 !isHexDigit(_line.elem(6)) ||
+                 !isHexDigit(_line.elem(7)) ||
                 _line.elem(8) != ' ')
             break;
         else
