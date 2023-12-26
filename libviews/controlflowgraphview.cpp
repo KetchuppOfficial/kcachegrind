@@ -3088,18 +3088,18 @@ QAction* ControlFlowGraphView::addStopLayoutAction(QMenu& menu)
 QAction* ControlFlowGraphView::addOptionsAction(QMenu* menu, const QString& descr, CFGNode* node,
                                                 CFGExporter::Options option)
 {
-    CFGExporter::Options options = _exporter.getNodeOptions(node->basicBlock());
+    CFGExporter::Options graphOptions = _exporter.getNodeOptions(node->basicBlock());
 
     QAction* a = menu->addAction(descr);
 
     a->setData(option);
     a->setCheckable(true);
 
-    if ((options & CFGExporter::Options::reduced) &&
+    if ((graphOptions & CFGExporter::Options::reduced) &&
         (option & (CFGExporter::Options::showInstrPC | CFGExporter::Options::showInstrCost)))
         a->setEnabled(false);
 
-    a->setChecked(options & option);
+    a->setChecked(graphOptions & option);
 
     return a;
 }
@@ -3107,18 +3107,18 @@ QAction* ControlFlowGraphView::addOptionsAction(QMenu* menu, const QString& desc
 QAction* ControlFlowGraphView::addOptionsAction(QMenu* menu, const QString& descr, TraceFunction* func,
                                                 CFGExporter::Options option)
 {
-    CFGExporter::Options options = _exporter.getGraphOptions(func);
+    CFGExporter::Options graphOptions = _exporter.getGraphOptions(func);
 
     QAction* a = menu->addAction(descr);
 
     a->setData(option);
     a->setCheckable(true);
 
-    if ((options & CFGExporter::Options::reduced) &&
+    if ((graphOptions & CFGExporter::Options::reduced) &&
         (option & (CFGExporter::Options::showInstrPC | CFGExporter::Options::showInstrCost)))
         a->setEnabled(false);
 
-    a->setChecked(options & option);
+    a->setChecked(graphOptions & option);
 
     return a;
 }
