@@ -2012,7 +2012,7 @@ QColor getArrowColor(CFGEdge* edge)
     assert(edge->branch());
 
     QColor arrowColor;
-    switch(edge->branch()->brType())
+    switch (edge->branch()->brType())
     {
         case TraceBranch::Type::unconditional:
             arrowColor = Qt::black;
@@ -2610,7 +2610,7 @@ void ControlFlowGraphView::movePointOfView(QKeyEvent* e)
     auto dy = [this]{ return mapToScene(0, height()) - mapToScene(0, 0); };
 
     QPointF center = mapToScene(viewport()->rect().center());
-    switch(e->key())
+    switch (e->key())
     {
         case Qt::Key_Home:
             centerOn(center + QPointF{-_scene->width(), 0});
@@ -2846,7 +2846,7 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
         if (!_scene || !_selectedItem)
             return;
 
-        switch(_selectedItem->type())
+        switch (_selectedItem->type())
         {
             case ProfileContext::BasicBlock:
             {
@@ -2967,7 +2967,7 @@ void ControlFlowGraphView::refresh(bool reset)
         showText(QObject::tr("No trace data"));
         return;
     }
-    else if(!_activeItem)
+    else if (!_activeItem)
     {
         showText(QObject::tr("No item activated for which to draw the control-flow graph."));
         return;
