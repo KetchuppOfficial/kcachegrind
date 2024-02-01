@@ -2690,7 +2690,7 @@ void TraceFunction::constructBasicBlocks()
 
     for (auto bb : _basicBlocks)
     {
-        for (auto& br : bb->branches())
+        for (auto& br : bb->outgoingBranches())
         {
             TraceBasicBlock* bbTo = br.bbTo();
             if (bbTo)
@@ -2707,7 +2707,7 @@ void TraceFunction::constructBasicBlocks()
             auto& br = bb->branch(0);
             if (br.brType() == TraceBranch::Type::invalid)
             {
-                auto& incoming = bb->predecessors();
+                auto& incoming = bb->incomingBranches();
 
                 uint64 execCount;
                 if (incoming.empty())
@@ -2725,12 +2725,12 @@ void TraceFunction::constructBasicBlocks()
 
     for (auto bb : _basicBlocks)
     {
-        auto& incoming = bb->predecessors();
+        auto& incoming = bb->incomingBranches();
 
         auto invBrIt = std::find_if(incoming.begin(), incoming.end(), isInvalid);
         if (invBrIt != incoming.end())
         {
-            auto& outgoing = bb->branches();
+            auto& outgoing = bb->outgoingBranches();
             uint64 incomingCount = std::accumulate(incoming.begin(), incoming.end(), 0, adder);
             uint64 outgoingCount = std::accumulate(outgoing.begin(), outgoing.end(), 0, refAdder);
 
@@ -2744,13 +2744,13 @@ void TraceFunction::constructBasicBlocks()
 
     for (auto bb: _basicBlocks)
     {
-        auto& branches = bb->branches();
-        branches.erase(std::remove_if(branches.begin(), branches.end(), predRef),
-                       branches.end());
+        auto& outgoing = bb->outgoingBranches();
+        outgoing.erase(std::remove_if(outgoing.begin(), outgoing.end(), predRef),
+                       outgoing.end());
 
-        auto& predecessors = bb->predecessors();
-        predecessors.erase(std::remove_if(predecessors.begin(), predecessors.end(), predPtr),
-                           predecessors.end());
+        auto& incoming = bb->incomingBranches();
+        incoming.erase(std::remove_if(incoming.begin(), incoming.end(), predPtr),
+                       incoming.end());
     }
 
     assert (std::all_of(_basicBlocks.begin(), _basicBlocks.end(),

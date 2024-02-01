@@ -1182,11 +1182,11 @@ public:
     TraceBranch& branch(size_type i) { return _branches[i]; }
     const TraceBranch& branch(size_type i) const { return _branches[i]; }
 
-    std::vector<TraceBranch>& branches() { return _branches; }
-    const std::vector<TraceBranch>& branches() const { return _branches; }
+    std::vector<TraceBranch>& outgoingBranches() { return _branches; }
+    const std::vector<TraceBranch>& outgoingBranches() const { return _branches; }
 
-    std::vector<TraceBranch*>& predecessors() { return _incomingBranches; };
-    const std::vector<TraceBranch*>& predecessors() const { return _incomingBranches; };
+    std::vector<TraceBranch*>& incomingBranches() { return _incomingBranches; };
+    const std::vector<TraceBranch*>& incomingBranches() const { return _incomingBranches; };
 
     void addIncomingBranch(TraceBranch& br);
 

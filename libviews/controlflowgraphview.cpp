@@ -666,7 +666,7 @@ bool CFGExporter::createGraph()
     {
         TraceBasicBlock* bbFrom = node.basicBlock();
 
-        for (auto& br : bbFrom->branches())
+        for (auto& br : bbFrom->outgoingBranches())
         {
             TraceBasicBlock* bbTo = br.bbTo();
             CFGNode* nodeTo = findNode(bbTo);
