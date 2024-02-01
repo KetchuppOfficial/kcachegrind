@@ -820,12 +820,13 @@ public:
     ObjdumpParser(TraceFunction* func);
     ~ObjdumpParser() = default;
 
-    std::pair<QString, instrStringsMap> getInstrStrings();
+    const instrStringsMap& getInstrStrings();
+    const QString& errorMessage() const { return _errorMessage; }
 
 private:
     using instr_iterator = typename TraceInstrMap::iterator;
 
-    QString runObjdump();
+    void runObjdump();
 
     static bool isHexDigit(char c);
 
@@ -862,6 +863,9 @@ private:
     int _objdumpLineno = 0;
 
     TraceInstr* _currInstr;
+
+    instrStringsMap _instrStrings;
+    QString _errorMessage;
 };
 
 ObjdumpParser::ObjdumpParser(TraceFunction* func)
@@ -886,7 +890,7 @@ ObjdumpParser::ObjdumpParser(TraceFunction* func)
     _dumpEndAddr = _func->lastAddress() + 2;
 }
 
-QString ObjdumpParser::runObjdump()
+void ObjdumpParser::runObjdump()
 {
     TraceObject* objectFile = _func->object();
     QString dir = objectFile->directory();
@@ -894,14 +898,12 @@ QString ObjdumpParser::runObjdump()
     FileSearcher searcher{_func->data(), objectFile->shortName()};
     if (!searcher.searchFile(dir))
     {
-        QString message =
+        _errorMessage =
             QStringLiteral("For annotated machine code, the following object file is needed\n"
                            "    \'%1\'\n"
                            "This file cannot be found.\n").arg(objectFile->name());
         if (_isArm)
-            message += QObject::tr("If cross-compiled, set SYSROOT variable.");
-
-        return message;
+            _errorMessage += QObject::tr("If cross-compiled, set SYSROOT variable.");
     }
     else
     {
@@ -927,24 +929,20 @@ QString ObjdumpParser::runObjdump()
         _objdump.start(objdumpFormat, args);
         if (!_objdump.waitForStarted() || !_objdump.waitForFinished())
         {
-            return QStringLiteral("There is an error trying to execute the command\n"
-                                  "    \'%1\'\n"
-                                  "Check that you have installed \'objdump\'.\n"
-                                  "This utility can be found in the \'binutils\' package")
-                                 .arg(_objdumpCmd);
+            _errorMessage = QStringLiteral("There is an error trying to execute the command\n"
+                                           "    \'%1\'\n"
+                                           "Check that you have installed \'objdump\'.\n"
+                                           "This utility can be found in the \'binutils\' package")
+                                          .arg(_objdumpCmd);
         }
-        else
-            return {};
     }
 }
 
-std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrStrings()
+const ObjdumpParser::instrStringsMap& ObjdumpParser::getInstrStrings()
 {
-    QString message = runObjdump();
-    if (!message.isEmpty())
-        return {message, {}};
-
-    instrStringsMap instrStrings;
+    runObjdump();
+    if (!_errorMessage.isEmpty())
+        return _instrStrings;
 
     int noAssLines = 0;
     bool skipLineWritten = true;
@@ -1010,34 +1008,30 @@ std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrString
         }
 
         if (!mnemonic.isEmpty() && _currInstr)
-            instrStrings.insert(_objAddr, std::make_pair(mnemonic, operands));
+            _instrStrings.insert(_objAddr, std::make_pair(mnemonic, operands));
     }
 
     if (noAssLines > 1)
     {
-        QString message = QStringLiteral("There are %1 cost line(s) without machine code.\n"
-                                         "This happens because the code of %2 does not seem "
-                                         "to match the profile data file.\n"
-                                         "Are you using an old profile data file or is the above"
-                                         "mentioned\n"
-                                         "ELF object from an updated installation/another"
-                                         "machine?\n").arg(noAssLines).arg(_objFile);
-
-        return {message, {}};
+        _errorMessage = QStringLiteral("There are %1 cost line(s) without machine code.\n"
+                                       "This happens because the code of %2 does not seem "
+                                       "to match the profile data file.\n"
+                                       "Are you using an old profile data file or is the above"
+                                       "mentioned\n"
+                                       "ELF object from an updated installation/another"
+                                       "machine?\n").arg(noAssLines).arg(_objFile);
     }
-    else if (instrStrings.empty())
+    else if (_instrStrings.empty())
     {
-        QString message = QStringLiteral("There seems to be an error trying to execute the command"
-                                         "\'%1\'.\n"
-                                         "Check that the ELF object used in the command exists.\n"
-                                         "Check that you have installed \'objdump\'.\n"
-                                         "This utility can be found in the \'binutils\' package.")
-                                        .arg(_objdumpCmd);
-
-        return {message, {}};
+        _errorMessage = QStringLiteral("There seems to be an error trying to execute the command"
+                                       "\'%1\'.\n"
+                                       "Check that the ELF object used in the command exists.\n"
+                                       "Check that you have installed \'objdump\'.\n"
+                                       "This utility can be found in the \'binutils\' package.")
+                                      .arg(_objdumpCmd);
     }
-    else
-        return {{}, instrStrings};
+
+    return _instrStrings;
 }
 
 void ObjdumpParser::getObjAddr()
@@ -1162,11 +1156,10 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
         return false;
 
     ObjdumpParser parser{func};
-    std::pair<QString, ObjdumpParser::instrStringsMap> pair = parser.getInstrStrings();
-    auto& instrStrings = pair.second;
+    ObjdumpParser::instrStringsMap instrStrings = parser.getInstrStrings();
     if (instrStrings.empty())
     {
-        _errorMessage = pair.first;
+        _errorMessage = parser.errorMessage();
         return false;
     }
 
