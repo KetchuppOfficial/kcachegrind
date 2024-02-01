@@ -958,7 +958,7 @@ const ObjdumpParser::instrStringsMap& ObjdumpParser::getInstrStrings()
             getCostAddr();
 
         QString mnemonic, operands;
-        if (_nextCostAddr == 0 || _costAddr == 0 || _objAddr < _nextCostAddr)
+        if (_objAddr < _nextCostAddr || _nextCostAddr == 0 || _costAddr == 0)
         {
             _needObjAddr = true;
 
