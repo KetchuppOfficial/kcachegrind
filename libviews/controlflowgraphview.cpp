@@ -233,8 +233,9 @@ CFGEdge* CFGNode::keyboardPrevEdge()
 
 CFGEdge* CFGNode::nextVisibleOutgoingEdge(CFGEdge* edge)
 {
-    int shift = edge ? _outgoingEdges.indexOf(edge) : _lastOutgoingEdgeIndex;
-    auto begin = std::next(_outgoingEdges.begin(), shift + 1);
+    assert(edge);
+
+    auto begin = std::next(_outgoingEdges.begin(), _outgoingEdges.indexOf(edge) + 1);
     auto end = _outgoingEdges.end();
 
     auto it = std::find_if(begin, end, [](CFGEdge* e){ return e->isVisible(); });
@@ -250,8 +251,9 @@ CFGEdge* CFGNode::nextVisibleOutgoingEdge(CFGEdge* edge)
 
 CFGEdge* CFGNode::nextVisibleIncomingEdge(CFGEdge* edge)
 {
-    int shift = edge ? _incomingEdges.indexOf(edge) : _lastIncomingEdgeIndex;
-    auto begin = std::next(_incomingEdges.begin(), shift + 1);
+    assert(edge);
+
+    auto begin = std::next(_incomingEdges.begin(), _incomingEdges.indexOf(edge) + 1);
     auto end = _incomingEdges.end();
 
     auto it = std::find_if(begin, end, [](CFGEdge* e){ return e->isVisible(); });
@@ -267,7 +269,9 @@ CFGEdge* CFGNode::nextVisibleIncomingEdge(CFGEdge* edge)
 
 CFGEdge* CFGNode::priorVisibleOutgoingEdge(CFGEdge* edge)
 {
-    int idx = edge ? _outgoingEdges.indexOf(edge) : _lastOutgoingEdgeIndex;
+    assert(edge);
+
+    int idx = _outgoingEdges.indexOf(edge);
 
     idx = (idx < 0) ? _outgoingEdges.size() - 1 : idx - 1;
     for (; idx >= 0; --idx)
@@ -285,7 +289,9 @@ CFGEdge* CFGNode::priorVisibleOutgoingEdge(CFGEdge* edge)
 
 CFGEdge* CFGNode::priorVisibleIncomingEdge(CFGEdge* edge)
 {
-    int idx = edge ? _incomingEdges.indexOf(edge) : _lastIncomingEdgeIndex;
+    assert(edge);
+
+    int idx = _incomingEdges.indexOf(edge);
 
     idx = (idx < 0) ? _incomingEdges.size() - 1 : idx - 1;
     for (; idx >= 0; --idx)
