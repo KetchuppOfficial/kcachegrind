@@ -698,13 +698,13 @@ public:
     char elem(pos_type offset = 0) const { return _buf[_pos + offset]; }
     void setElem(pos_type pos, char c) { _buf[pos] = c; }
 
-    // relatively to _pos
-    char* relData(pos_type offset = 0) { return _buf + _pos + offset; }
-    const char* relData(pos_type offset = 0) const { return _buf + _pos + offset; }
-
     // relatively to the beginning of _buf
-    char* absData(pos_type offset = 0) { return _buf + offset; }
-    const char* absData(pos_type offset = 0) const { return _buf + offset; }
+    char* data(pos_type offset = 0) { return _buf + offset; }
+    const char* data(pos_type offset = 0) const { return _buf + offset; }
+
+    // relatively to _pos
+    char* relData() { return data(_pos); }
+    const char* relData() const { return data(_pos); }
 
     void advance(pos_type offset) { _pos += offset; }
 
@@ -720,6 +720,98 @@ private:
     pos_type _pos = 0;
 };
 
+class FileSearcher final
+{
+public:
+    FileSearcher(const TraceData* data, const QString& filename);
+    ~FileSearcher() = default;
+
+    bool searchFile(QString& dir);
+
+    QString getObjDump();
+    QString getObjDumpFormat();
+
+private:
+    QString getSysRoot();
+
+    QProcessEnvironment _env;
+    const TraceData* _data;
+    QString _filename;
+};
+
+FileSearcher::FileSearcher(const TraceData* data, const QString& filename)
+    : _data{data}, _filename{filename} {}
+
+bool FileSearcher::searchFile(QString& dir)
+{
+    if (QDir::isAbsolutePath(dir))
+    {
+        if (QFile::exists(dir + '/' + _filename))
+            return true;
+        else
+        {
+            QString sysRoot = getSysRoot();
+
+            if (!sysRoot.isEmpty())
+            {
+                if (!dir.startsWith('/') && !sysRoot.endsWith('/'))
+                    sysRoot.append('/');
+
+                dir.prepend(sysRoot);
+
+                return QFile::exists(dir + '/' + _filename);
+            }
+        }
+    }
+    else
+    {
+        QFileInfo fi(dir, _filename);
+        if (fi.exists()) {
+            dir = fi.absolutePath();
+            return true;
+        }
+        else
+        {
+            TracePart* firstPart = _data->parts().first();
+            if (firstPart)
+            {
+                QFileInfo partFile{firstPart->name()};
+                if (QFileInfo{partFile.absolutePath(), _filename}.exists())
+                {
+                    dir = partFile.absolutePath();
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+QString FileSearcher::getObjDump()
+{
+    if (_env.isEmpty())
+        _env = QProcessEnvironment::systemEnvironment();
+
+    return _env.value(QStringLiteral("OBJDUMP"), QStringLiteral("objdump"));
+}
+
+QString FileSearcher::getObjDumpFormat()
+{
+    if (_env.isEmpty())
+        _env = QProcessEnvironment::systemEnvironment();
+
+    return _env.value(QStringLiteral("OBJDUMP_FORMAT"));
+}
+
+QString FileSearcher::getSysRoot()
+{
+    if (_env.isEmpty())
+        _env = QProcessEnvironment::systemEnvironment();
+
+    return _env.value(QStringLiteral("SYSROOT"));
+}
+
 class ObjdumpParser final
 {
 public:
@@ -734,10 +826,6 @@ private:
     using instr_iterator = typename TraceInstrMap::iterator;
 
     bool runObjdump(TraceFunction* func);
-    bool searchFile(QString& dir, const QString& filename, TraceData* data);
-    QString getObjDump();
-    QString getObjDumpFormat();
-    QString getSysRoot();
 
     static bool isHexDigit(char c);
 
@@ -750,7 +838,6 @@ private:
     void getCostAddr();
 
     QProcess _objdump;
-    QProcessEnvironment _env;
 
     QString _objFile;
     QString _objdumpCmd;
@@ -801,7 +888,8 @@ bool ObjdumpParser::runObjdump(TraceFunction* func)
     TraceObject* objectFile = func->object();
     QString dir = objectFile->directory();
 
-    if (!searchFile(dir, objectFile->shortName(), func->data()))
+    FileSearcher searcher{func->data(), objectFile->shortName()};
+    if (!searcher.searchFile(dir))
     {
         // Should be implemented in a different manner
         qDebug() << QObject::tr("For annotated machine code, the following object file is needed\n")
@@ -818,9 +906,9 @@ bool ObjdumpParser::runObjdump(TraceFunction* func)
 
         _objFile = dir + '/' + objectFile->shortName();
 
-        QString objdumpFormat = getObjDumpFormat();
+        QString objdumpFormat = searcher.getObjDumpFormat();
         if (objdumpFormat.isEmpty())
-            objdumpFormat = getObjDump();
+            objdumpFormat = searcher.getObjDump();
 
         int margin = _isArm ? 4 : 20;
 
@@ -846,76 +934,6 @@ bool ObjdumpParser::runObjdump(TraceFunction* func)
         else
             return true;
     }
-}
-
-bool ObjdumpParser::searchFile(QString& dir, const QString& filename, TraceData* data)
-{
-    if (QDir::isAbsolutePath(dir))
-    {
-        if (QFile::exists(dir + '/' + filename))
-            return true;
-        else
-        {
-            QString sysRoot = getSysRoot();
-
-            if (!sysRoot.isEmpty())
-            {
-                if (!dir.startsWith('/') && !sysRoot.endsWith('/'))
-                    sysRoot.append('/');
-
-                dir.prepend(sysRoot);
-
-                return QFile::exists(dir + '/' + filename);
-            }
-        }
-    }
-    else
-    {
-        QFileInfo fi(dir, filename);
-        if (fi.exists()) {
-            dir = fi.absolutePath();
-            return true;
-        }
-        else
-        {
-            TracePart* firstPart = data->parts().first();
-            if (firstPart)
-            {
-                QFileInfo partFile{firstPart->name()};
-                if (QFileInfo{partFile.absolutePath(), filename}.exists())
-                {
-                    dir = partFile.absolutePath();
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
-}
-
-QString ObjdumpParser::getObjDump()
-{
-    if (_env.isEmpty())
-        _env = QProcessEnvironment::systemEnvironment();
-
-    return _env.value(QStringLiteral("OBJDUMP"), QStringLiteral("objdump"));
-}
-
-QString ObjdumpParser::getObjDumpFormat()
-{
-    if (_env.isEmpty())
-        _env = QProcessEnvironment::systemEnvironment();
-
-    return _env.value(QStringLiteral("OBJDUMP_FORMAT"));
-}
-
-QString ObjdumpParser::getSysRoot()
-{
-    if (_env.isEmpty())
-        _env = QProcessEnvironment::systemEnvironment();
-
-    return _env.value(QStringLiteral("SYSROOT"));
 }
 
 std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrStrings()
@@ -1028,7 +1046,7 @@ void ObjdumpParser::getObjAddr()
     _needObjAddr = false;
     while (true)
     {
-        qint64 readBytes = _objdump.readLine(_line.absData(), _line.capacity());
+        qint64 readBytes = _objdump.readLine(_line.data(), _line.capacity());
         if (readBytes <= 0)
         {
             _objAddr = Addr{0};
@@ -1039,7 +1057,7 @@ void ObjdumpParser::getObjAddr()
             _objdumpLineno++;
             if (readBytes == static_cast<qint64>(_line.capacity()))
                 qDebug("ERROR: Line %d is too long\n", _objdumpLineno);
-            else if (_line.absData()[readBytes - 1] == '\n')
+            else if (_line.data()[readBytes - 1] == '\n')
                 _line.setElem(readBytes - 1, '\0');
 
             _objAddr = parseAddress();
@@ -1103,7 +1121,7 @@ QString ObjdumpParser::parseEncoding()
     }
 
     if (_line.getPos() > start)
-        return QString::fromLatin1(_line.absData(start), _line.getPos() - start - 1);
+        return QString::fromLatin1(_line.data(start), _line.getPos() - start - 1);
     else
         return QString{};
 }
@@ -1116,7 +1134,7 @@ QString ObjdumpParser::parseMnemonic()
     while (_line.elem() && _line.elem() != ' ' && _line.elem() != '\t')
         _line.advance(1);
 
-    return QString::fromLatin1(_line.absData(start), _line.getPos() - start);
+    return QString::fromLatin1(_line.data(start), _line.getPos() - start);
 }
 
 QString ObjdumpParser::parseOperands()
