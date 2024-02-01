@@ -177,7 +177,7 @@ CFGEdge* CFGNode::keyboardNextEdge()
     else if (!_outgoingEdges.isEmpty())
     {
         CFGEdge* maxEdge = _outgoingEdges[0];
-        double maxCount = maxEdge->count();
+        uint64 maxCount = maxEdge->count();
 
         for (decltype(_outgoingEdges.size()) i = 1; i < _outgoingEdges.size(); ++i)
         {
@@ -210,7 +210,7 @@ CFGEdge* CFGNode::keyboardPrevEdge()
     else if (!_incomingEdges.isEmpty())
     {
         CFGEdge* maxEdge = _incomingEdges[0];
-        double maxCount = maxEdge->count();
+        uint64 maxCount = maxEdge->count();
 
         for (decltype(_incomingEdges.size()) i = 1; i < _incomingEdges.size(); ++i)
         {
