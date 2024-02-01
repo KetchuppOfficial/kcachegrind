@@ -393,7 +393,8 @@ CFGEdge* CFGEdge::priorVisibleEdge()
 CFGExporter::CFGExporter(const CFGExporter& otherExporter, TraceFunction* func, EventType* et,
                          ProfileContext::Type gt, const QString& filename)
     : _func{func}, _eventType{et}, _groupType{gt}, _layout{otherExporter._layout},
-      _optionsMap{otherExporter._optionsMap}, _globalOptionsMap{otherExporter._globalOptionsMap}
+      _graphOptions{otherExporter._graphOptions},
+      _globalGraphOptions{otherExporter._globalGraphOptions}
 {
     if (!_func)
         return;
@@ -419,8 +420,8 @@ CFGExporter::~CFGExporter()
 
 CFGExporter::Options CFGExporter::getNodeOptions(const TraceBasicBlock* bb) const
 {
-    auto it = _optionsMap.find(bb);
-    if (it == _optionsMap.end())
+    auto it = _graphOptions.find(bb);
+    if (it == _graphOptions.end())
         return Options::invalid;
     else
         return static_cast<Options>(*it);
@@ -428,23 +429,23 @@ CFGExporter::Options CFGExporter::getNodeOptions(const TraceBasicBlock* bb) cons
 
 void CFGExporter::setNodeOption(const TraceBasicBlock* bb, Options option)
 {
-    _optionsMap[bb] |= option;
+    _graphOptions[bb] |= option;
 }
 
 void CFGExporter::resetNodeOption(const TraceBasicBlock* bb, Options option)
 {
-    _optionsMap[bb] &= ~option;
+    _graphOptions[bb] &= ~option;
 }
 
 void CFGExporter::switchNodeOption(const TraceBasicBlock* bb, Options option)
 {
-    _optionsMap[bb] ^= option;
+    _graphOptions[bb] ^= option;
 }
 
 CFGExporter::Options CFGExporter::getGraphOptions(TraceFunction* func) const
 {
-    auto it = _globalOptionsMap.find(func);
-    if (it == _globalOptionsMap.end())
+    auto it = _globalGraphOptions.find(func);
+    if (it == _globalGraphOptions.end())
         return Options::invalid;
     else
         return static_cast<Options>(it->first);
@@ -456,7 +457,7 @@ void CFGExporter::setGraphOption(TraceFunction* func, Options option)
     for (auto bb : func->basicBlocks())
         setNodeOption(bb, option);
 
-    _globalOptionsMap[func].first |= option;
+    _globalGraphOptions[func].first |= option;
 }
 
 void CFGExporter::resetGraphOption(TraceFunction* func, Options option)
@@ -465,7 +466,7 @@ void CFGExporter::resetGraphOption(TraceFunction* func, Options option)
     for (auto bb : func->basicBlocks())
         resetNodeOption(bb, option);
 
-    _globalOptionsMap[func].first &= ~option;
+    _globalGraphOptions[func].first &= ~option;
 }
 
 void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
@@ -481,8 +482,8 @@ void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
 
 double CFGExporter::minimalCostPercentage(TraceFunction* func) const
 {
-    auto it = _globalOptionsMap.find(func);
-    if (it == _globalOptionsMap.end())
+    auto it = _globalGraphOptions.find(func);
+    if (it == _globalGraphOptions.end())
         return NAN;
     else
         return it->second;
@@ -490,7 +491,7 @@ double CFGExporter::minimalCostPercentage(TraceFunction* func) const
 
 void CFGExporter::setMinimalCostPercentage(TraceFunction* func, double percentage)
 {
-    _globalOptionsMap[func].second = percentage;
+    _globalGraphOptions[func].second = percentage;
 }
 
 const CFGNode* CFGExporter::findNode(const TraceBasicBlock* bb) const
@@ -560,11 +561,11 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
             return;
         }
 
-        if (!_globalOptionsMap.contains(_func))
+        if (!_globalGraphOptions.contains(_func))
         {
-            _globalOptionsMap.insert(_func, std::make_pair(Options::default_, -1.0));
+            _globalGraphOptions.insert(_func, std::make_pair(Options::default_, -1.0));
             for (auto bb : BBs)
-                _optionsMap.insert(bb, Options::default_);
+                _graphOptions.insert(bb, Options::default_);
         }
 
         if (filename.isEmpty())
