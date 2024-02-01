@@ -825,7 +825,7 @@ public:
 private:
     using instr_iterator = typename TraceInstrMap::iterator;
 
-    bool runObjdump(TraceFunction* func);
+    QString runObjdump();
 
     static bool isHexDigit(char c);
 
@@ -837,6 +837,7 @@ private:
     void getObjAddr();
     void getCostAddr();
 
+    TraceFunction* _func;
     QProcess _objdump;
 
     QString _objFile;
@@ -864,9 +865,14 @@ private:
 };
 
 ObjdumpParser::ObjdumpParser(TraceFunction* func)
-    : _isArm{func->data()->architecture() == TraceData::ArchARM}
+    : _func{func}
 {
-    auto instrMap = func->instrMap();
+    assert(_func);
+    assert(_func->data());
+
+    _isArm = (_func->data()->architecture() == TraceData::ArchARM);
+
+    auto instrMap = _func->instrMap();
     assert(!instrMap->empty());
 
     _it = instrMap->begin();
@@ -877,28 +883,25 @@ ObjdumpParser::ObjdumpParser(TraceFunction* func)
         _nextCostAddr = _nextCostAddr.alignedDown(2);
 
     _dumpStartAddr = _nextCostAddr;
-    _dumpEndAddr = func->lastAddress() + 2;
-
-    bool res = runObjdump(func);
-    assert(res);
+    _dumpEndAddr = _func->lastAddress() + 2;
 }
 
-bool ObjdumpParser::runObjdump(TraceFunction* func)
+QString ObjdumpParser::runObjdump()
 {
-    TraceObject* objectFile = func->object();
+    TraceObject* objectFile = _func->object();
     QString dir = objectFile->directory();
 
-    FileSearcher searcher{func->data(), objectFile->shortName()};
+    FileSearcher searcher{_func->data(), objectFile->shortName()};
     if (!searcher.searchFile(dir))
     {
-        // Should be implemented in a different manner
-        qDebug() << QObject::tr("For annotated machine code, the following object file is needed\n")
-                 << QStringLiteral("    \'%1\'\n").arg(objectFile->name())
-                 << QObject::tr("This file cannot be found.");
+        QString message =
+            QStringLiteral("For annotated machine code, the following object file is needed\n"
+                           "    \'%1\'\n"
+                           "This file cannot be found.\n").arg(objectFile->name());
         if (_isArm)
-            qDebug() <<  QObject::tr("If cross-compiled, set SYSROOT variable.");
+            message += QObject::tr("If cross-compiled, set SYSROOT variable.");
 
-        return false;
+        return message;
     }
     else
     {
@@ -924,20 +927,23 @@ bool ObjdumpParser::runObjdump(TraceFunction* func)
         _objdump.start(objdumpFormat, args);
         if (!_objdump.waitForStarted() || !_objdump.waitForFinished())
         {
-            qDebug() << QObject::tr("There is an error trying to execute the command\n")
-                     << QStringLiteral("    \'%1\'\n").arg(_objdumpCmd)
-                     << QObject::tr("Check that you have installed \'objdump\'.\n")
-                     << QObject::tr("This utility can be found in the \'binutils\' package");
-
-            return false;
+            return QStringLiteral("There is an error trying to execute the command\n"
+                                  "    \'%1\'\n"
+                                  "Check that you have installed \'objdump\'.\n"
+                                  "This utility can be found in the \'binutils\' package")
+                                 .arg(_objdumpCmd);
         }
         else
-            return true;
+            return {};
     }
 }
 
 std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrStrings()
 {
+    QString message = runObjdump();
+    if (!message.isEmpty())
+        return {message, {}};
+
     instrStringsMap instrStrings;
 
     int noAssLines = 0;
