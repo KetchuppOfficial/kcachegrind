@@ -1054,10 +1054,7 @@ void ObjdumpParser::getObjAddr()
 
             _objAddr = parseAddress();
             if (_dumpStartAddr <= _objAddr && _objAddr <= _dumpEndAddr)
-            {
-                _line.advance(1);
                 break;
-            }
         }
     }
 }
@@ -1084,9 +1081,14 @@ Addr ObjdumpParser::parseAddress()
 
     Addr addr;
     int digits = addr.set(_line.relData());
-    _line.advance(digits);
 
-    return (digits == 0 || _line.elem() != ':') ? Addr{0} : addr;
+    if (digits == 0 || _line.elem(digits) != ':')
+        return Addr{0};
+    else
+    {
+        _line.advance(digits + 1);
+        return addr;
+    }
 }
 
 QString ObjdumpParser::parseEncoding()
