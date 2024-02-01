@@ -279,8 +279,8 @@ private:
     nodeMapType _nodeMap;
     edgeMapType _edgeMap;
 
-    QHash<const TraceBasicBlock*, int> _optionsMap;
-    QHash<const TraceFunction*, std::pair<int, double>> _globalOptionsMap;
+    QHash<const TraceBasicBlock*, int> _graphOptions;
+    QHash<const TraceFunction*, std::pair<int, double>> _globalGraphOptions;
 };
 
 enum CanvasParts : int
