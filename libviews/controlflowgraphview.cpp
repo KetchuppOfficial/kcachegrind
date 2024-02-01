@@ -945,9 +945,8 @@ const ObjdumpParser::instrStringsMap& ObjdumpParser::getInstrStrings()
         return _instrStrings;
 
     int noAssLines = 0;
-    bool skipLineWritten = true;
 
-    for (; ; _line.setPos(0))
+    for (bool skipLineWritten = true; ; _line.setPos(0))
     {
         if (_needObjAddr)
             getObjAddr();
