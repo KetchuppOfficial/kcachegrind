@@ -960,18 +960,12 @@ std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrString
         if (_needCostAddr && Addr{0} < _nextCostAddr && _nextCostAddr <= _objAddr)
             getCostAddr();
 
-        Addr addr;
-        QString encoding;
         QString mnemonic, operands;
         if (_nextCostAddr == 0 || _costAddr == 0 || _objAddr < _nextCostAddr)
         {
-            addr = parseAddress();
-            assert(addr == _objAddr);
-
-            _line.advance(1);
-
             _needObjAddr = true;
 
+            QString encoding;
             if ((_costAddr == 0 || _costAddr + 3 * GlobalConfig::context() < _objAddr) &&
                 (_nextCostAddr == 0 || _objAddr < _nextCostAddr - 3 * GlobalConfig::context()))
             {
@@ -1006,7 +1000,6 @@ std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrString
         }
         else
         {
-            addr = _costAddr;
             operands = QObject::tr("(No Instruction)");
 
             _currInstr = std::addressof(*_costIt);
@@ -1050,7 +1043,7 @@ std::pair<QString, ObjdumpParser::instrStringsMap> ObjdumpParser::getInstrString
 void ObjdumpParser::getObjAddr()
 {
     _needObjAddr = false;
-    while (true)
+    for (; ; _line.setPos(0))
     {
         qint64 readBytes = _objdump.readLine(_line.data(), _line.capacity());
         if (readBytes <= 0)
@@ -1067,9 +1060,11 @@ void ObjdumpParser::getObjAddr()
                 _line.setElem(readBytes - 1, '\0');
 
             _objAddr = parseAddress();
-            _line.setPos(0);
             if (_dumpStartAddr <= _objAddr && _objAddr <= _dumpEndAddr)
+            {
+                _line.advance(1);
                 break;
+            }
         }
     }
 }
