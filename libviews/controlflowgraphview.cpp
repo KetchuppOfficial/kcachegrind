@@ -1166,15 +1166,15 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
         return false;
     }
 
-    for (auto it = _nodeMap.begin(), ite = _nodeMap.end(); it != ite; ++it)
+    for (auto& node : _nodeMap)
     {
-        const TraceBasicBlock* bb = it.key();
+        const TraceBasicBlock* bb = node.basicBlock();
 
         auto firstIt = instrStrings.find(bb->firstAddr());
         auto lastIt = instrStrings.find(bb->lastAddr());
         assert(lastIt != instrStrings.end());
 
-        it->insertInstructions(firstIt, std::next(lastIt));
+        node.insertInstructions(firstIt, std::next(lastIt));
     }
 
     return true;
