@@ -1061,10 +1061,7 @@ void ObjdumpParser::getCostAddr()
 {
     _needCostAddr = false;
 
-    // I'd really prefer to use std::find_if, but we don't have lambda capture in C++11
-    for(++_it; _it != _ite; ++_it)
-        if (_it->hasCost(_eventType))
-            break;
+    _it = std::find_if(++_it, _ite, [this](TraceInstr& i){ return i.hasCost(_eventType); });
 
     _costAddr = _nextCostAddr;
     _nextCostAddr = (_it == _ite) ? Addr{0} : _it->addr();
