@@ -817,7 +817,7 @@ class ObjdumpParser final
 public:
     using instrStringsMap = QMap<Addr, std::pair<QString, QString>>;
 
-    ObjdumpParser(TraceFunction* func);
+    ObjdumpParser(TraceFunction* func, EventType* et);
     ~ObjdumpParser() = default;
 
     const instrStringsMap& getInstrStrings();
@@ -839,16 +839,18 @@ private:
     void getCostAddr();
 
     TraceFunction* _func;
+    EventType* _eventType;
+
     QProcess _objdump;
 
     QString _objFile;
     QString _objdumpCmd;
+    QString _errorMessage;
 
     LineBuffer _line;
 
     instr_iterator _it;
     instr_iterator _ite;
-    instr_iterator _costIt;
 
     Addr _objAddr;
     Addr _costAddr;
@@ -862,14 +864,11 @@ private:
 
     int _objdumpLineno = 0;
 
-    TraceInstr* _currInstr;
-
     instrStringsMap _instrStrings;
-    QString _errorMessage;
 };
 
-ObjdumpParser::ObjdumpParser(TraceFunction* func)
-    : _func{func}
+ObjdumpParser::ObjdumpParser(TraceFunction* func, EventType* et)
+    : _func{func}, _eventType{et}
 {
     assert(_func);
     assert(_func->data());
@@ -957,57 +956,51 @@ const ObjdumpParser::instrStringsMap& ObjdumpParser::getInstrStrings()
         if (_needCostAddr && Addr{0} < _nextCostAddr && _nextCostAddr <= _objAddr)
             getCostAddr();
 
+        Addr addr;
         QString mnemonic, operands;
         if (_objAddr < _nextCostAddr || _nextCostAddr == 0 || _costAddr == 0)
         {
-            _needObjAddr = true;
+            addr = parseAddress();
+            assert(addr == _objAddr);
 
-            QString encoding;
-            if ((_costAddr == 0 || _costAddr + 3 * GlobalConfig::context() < _objAddr) &&
-                (_nextCostAddr == 0 || _objAddr < _nextCostAddr - 3 * GlobalConfig::context()))
-            {
-                if (skipLineWritten || _it == _ite)
-                    continue;
-                else
-                {
-                    encoding = mnemonic = QString{};
-                    operands = QStringLiteral("...");
+            QString encoding = parseEncoding();
+            assert(!encoding.isNull());
 
-                    skipLineWritten = true;
-                }
-            }
-            else
-            {
-                encoding = parseEncoding();
-                assert(!encoding.isNull());
-
-                mnemonic = parseMnemonic();
-                operands = parseOperands();
-
-                skipLineWritten = false;
-            }
+            mnemonic = parseMnemonic();
+            operands = parseOperands();
 
             if (_costAddr == _objAddr)
-            {
-                _currInstr = std::addressof(*_costIt);
                 _needCostAddr = true;
-            }
-            else
-                _currInstr = nullptr;
+
+            _needObjAddr = true;
         }
         else
         {
+            addr = _costAddr;
             operands = QObject::tr("(No Instruction)");
-
-            _currInstr = std::addressof(*_costIt);
+            noAssLines++;
 
             _needCostAddr = true;
-            skipLineWritten = false;
-            noAssLines++;
         }
 
-        if (!mnemonic.isEmpty() && _currInstr)
-            _instrStrings.insert(_objAddr, std::make_pair(mnemonic, operands));
+        if ((_costAddr == 0     || addr > _costAddr + 3 * GlobalConfig::context()) &&
+            (_nextCostAddr == 0 || addr < _nextCostAddr - 3 * GlobalConfig::context()))
+        {
+            if (skipLineWritten || _it == _ite)
+                continue;
+            else
+            {
+                skipLineWritten = true;
+
+                mnemonic.clear();
+                operands = QStringLiteral("...");
+            }
+        }
+        else
+            skipLineWritten = false;
+
+        if (!mnemonic.isEmpty())
+            _instrStrings.insert(addr, std::make_pair(mnemonic, operands));
     }
 
     if (noAssLines > 1)
@@ -1057,12 +1050,18 @@ void ObjdumpParser::getObjAddr()
                 break;
         }
     }
+
+    _line.setPos(0);
 }
 
 void ObjdumpParser::getCostAddr()
 {
     _needCostAddr = false;
-    _costIt = _it++;
+
+    // I'd really prefer to use std::find_if, but we don't have lambda capture in C++11
+    for(++_it; _it != _ite; ++_it)
+        if (_it->hasCost(_eventType))
+            break;
 
     _costAddr = _nextCostAddr;
     _nextCostAddr = (_it == _ite) ? Addr{0} : _it->addr();
@@ -1156,9 +1155,9 @@ bool CFGExporter::fillInstrStrings(TraceFunction* func)
     if (_nodeMap.empty())
         return false;
 
-    ObjdumpParser parser{func};
-    ObjdumpParser::instrStringsMap instrStrings = parser.getInstrStrings();
-    if (instrStrings.empty())
+    ObjdumpParser parser{func, _eventType};
+    const ObjdumpParser::instrStringsMap& instrStrings = parser.getInstrStrings();
+    if (!parser.errorMessage().isEmpty())
     {
         _errorMessage = parser.errorMessage();
         return false;
