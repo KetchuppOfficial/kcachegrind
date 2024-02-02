@@ -2645,7 +2645,7 @@ void TraceFunction::constructBasicBlocks()
     {
         auto& jumps = it->instrJumps();
 
-        if (jumps.isEmpty())
+        if (jumps.empty())
             continue;
         else if (jumps.size() == 1)
         {
@@ -2673,7 +2673,7 @@ void TraceFunction::constructBasicBlocks()
                 to = it;
                 break;
             }
-            else if (!it->instrJumps().isEmpty())
+            else if (!it->instrJumps().empty())
             {
                 to = std::next(it);
                 break;
