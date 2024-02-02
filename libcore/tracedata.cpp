@@ -2639,7 +2639,7 @@ void TraceFunction::constructBasicBlocks()
     if (!instructions || instructions->empty())
         return;
 
-    QSet<TraceInstr*> incomingJumps;
+    QSet<TraceInstr*> jumpDestinations;
 
     for (auto it = instructions->begin(), ite = instructions->end(); it != ite; ++it)
     {
@@ -2647,19 +2647,18 @@ void TraceFunction::constructBasicBlocks()
 
         if (jumps.isEmpty())
             continue;
-
-        if (jumps.size() == 1)
+        else if (jumps.size() == 1)
         {
             TraceInstrJump* jmp = jumps.front();
-            incomingJumps.insert(jmp->instrTo());
+            jumpDestinations.insert(jmp->instrTo());
 
             if (jmp->isCondJump() && it != std::prev(ite))
-                incomingJumps.insert(std::addressof(*std::next(it)));
+                jumpDestinations.insert(std::addressof(*std::next(it)));
         }
         else
         {
             for (auto jmp : jumps)
-                incomingJumps.insert(jmp->instrTo());
+                jumpDestinations.insert(jmp->instrTo());
         }
     }
 
@@ -2669,7 +2668,7 @@ void TraceFunction::constructBasicBlocks()
 
         for (auto it = std::next(from); it != ite; ++it)
         {
-            if (incomingJumps.find(std::addressof(*it)) != incomingJumps.end())
+            if (jumpDestinations.find(std::addressof(*it)) != jumpDestinations.end())
             {
                 to = it;
                 break;
@@ -2686,7 +2685,7 @@ void TraceFunction::constructBasicBlocks()
         from = to;
     }
 
-    incomingJumps.clear();
+    jumpDestinations.clear();
 
     for (auto bb : _basicBlocks)
     {
