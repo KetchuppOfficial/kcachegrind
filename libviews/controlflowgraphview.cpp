@@ -2169,7 +2169,6 @@ CFGEdge* ControlFlowGraphView::getEdgeFromDot(QTextStream& lineStream, int linen
     return edge;
 }
 
-
 QPolygon ControlFlowGraphView::getEdgePolygon(QTextStream& lineStream, int lineno)
 {
     int nPoints;
