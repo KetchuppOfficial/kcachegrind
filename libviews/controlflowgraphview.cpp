@@ -939,6 +939,9 @@ void ObjdumpParser::runObjdump()
 
 const ObjdumpParser::instrStringsMap& ObjdumpParser::getInstrStrings()
 {
+    if (!_instrStrings.empty())
+        return _instrStrings;
+
     runObjdump();
     if (!_errorMessage.isEmpty())
         return _instrStrings;
