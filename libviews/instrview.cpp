@@ -939,7 +939,6 @@ bool InstrView::fillInstrRange(TraceFunction* function,
         // if we have no more address from objdump, stop
         if (objAddr == 0) break;
 
-        // HINT: parsing of instructions with 0 cost
         if ((nextCostAddr==0) || (costAddr == 0) ||
             (objAddr < nextCostAddr)) {
             // next line is objAddr
@@ -986,17 +985,15 @@ bool InstrView::fillInstrRange(TraceFunction* function,
                             << (nextCostAddr - 3*GlobalConfig::noCostInside()).toString()
                             << "[";
 
-            // Mistake: "a average" -> "an average"
             // Suppose a average instruction len of 3 bytes
             if ( (addr > costAddr) &&
                  ((nextCostAddr==0) ||
-                  (addr < nextCostAddr - 3*GlobalConfig::noCostInside()) )) // WTF?
+                  (addr < nextCostAddr - 3*GlobalConfig::noCostInside()) ))
                 inside = false;
         }
 
         int context = GlobalConfig::context();
 
-        // HINT: skip lines if they are of 0 cost and there are too many of them
         if ( ((costAddr==0)     || (addr > costAddr + 3*context)) &&
              ((nextCostAddr==0) || (addr < nextCostAddr - 3*context)) ) {
 
