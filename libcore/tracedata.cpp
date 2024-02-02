@@ -2641,6 +2641,7 @@ void TraceFunction::constructBasicBlocks()
 
     QSet<TraceInstr*> jumpDestinations;
 
+    // 1. collecting all instructions that are destination points for jumps
     for (auto it = instructions->begin(), ite = instructions->end(); it != ite; ++it)
     {
         auto& jumps = it->instrJumps();
@@ -2662,6 +2663,7 @@ void TraceFunction::constructBasicBlocks()
         }
     }
 
+    // 2. dividing instructions into basic blocks
     for (auto from = instructions->begin(), ite = instructions->end(); from != ite; )
     {
         auto to = ite;
@@ -2687,6 +2689,7 @@ void TraceFunction::constructBasicBlocks()
 
     jumpDestinations.clear();
 
+    // 3. adding incoming branches to each basic block
     for (auto bb : _basicBlocks)
     {
         for (auto& br : bb->outgoingBranches())
@@ -2697,6 +2700,13 @@ void TraceFunction::constructBasicBlocks()
         }
     }
 
+    /*
+     * There are 2 types of invalid branches:
+     *   Type 1: fallthrough branches which cost was measured incorrectly
+     *   Type 2: branches from ret (truly invalid)
+     */
+
+    // 4. calculating costs of invalid branches
     auto adder = [](uint64 val, TraceBranch* br){ return val + br->executedCount().v; };
 
     for (auto bb: _basicBlocks)
@@ -2719,6 +2729,7 @@ void TraceFunction::constructBasicBlocks()
         }
     }
 
+    // 5. turning invalid branches of type 1 into fallthrough branches
     auto refAdder = [](uint64 val, TraceBranch& br){ return val + br.executedCount().v; };
     auto isInvalid = [](TraceBranch* br) { return br->brType() == TraceBranch::Type::invalid; };
 
@@ -2726,6 +2737,7 @@ void TraceFunction::constructBasicBlocks()
     {
         auto& incoming = bb->incomingBranches();
 
+        // can't be more than 1 invalid incoming branch
         auto invBrIt = std::find_if(incoming.begin(), incoming.end(), isInvalid);
         if (invBrIt != incoming.end())
         {
@@ -2738,6 +2750,7 @@ void TraceFunction::constructBasicBlocks()
         }
     }
 
+    // 6. removing invalid branches of type 2
     auto predRef = [](TraceBranch& br){ return br.brType() == TraceBranch::Type::invalid; };
     auto predPtr = [](TraceBranch* br){ return br->brType() == TraceBranch::Type::invalid; };
 
