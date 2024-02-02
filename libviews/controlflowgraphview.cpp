@@ -2050,18 +2050,18 @@ QColor getArrowColor(CFGEdge* edge)
 
 CanvasCFGEdge* createEdge(CFGEdge* edge, const QPolygon& poly, QColor arrowColor)
 {
-    auto sItem = new CanvasCFGEdge{edge};
-    sItem->setControlPoints(poly);
-    sItem->setPen(QPen{arrowColor});
-    sItem->setZValue(0.5);
-    sItem->show();
+    auto cEdge = new CanvasCFGEdge{edge};
+    cEdge->setControlPoints(poly);
+    cEdge->setPen(QPen{arrowColor});
+    cEdge->setZValue(0.5);
+    cEdge->show();
 
-    edge->setCanvasEdge(sItem);
+    edge->setCanvasEdge(cEdge);
 
-    return sItem;
+    return cEdge;
 }
 
-CanvasCFGEdgeArrow* createArrow(CanvasCFGEdge* sItem, const QPolygon& poly, QColor arrowColor)
+CanvasCFGEdgeArrow* createArrow(CanvasCFGEdge* cEdge, const QPolygon& poly, QColor arrowColor)
 {
     QPoint headPoint{poly.point(poly.size() - 1)};
     QPoint arrowDir{headPoint - poly.point(poly.size() - 2)};
@@ -2076,15 +2076,15 @@ CanvasCFGEdgeArrow* createArrow(CanvasCFGEdge* sItem, const QPolygon& poly, QCol
     arrow << QPoint{headPoint + QPoint{arrowDir.y() / 2, -arrowDir.x() / 2}};
     arrow << QPoint{headPoint + QPoint{-arrowDir.y() / 2, arrowDir.x() / 2}};
 
-    auto aItem = new CanvasCFGEdgeArrow{sItem};
-    aItem->setPolygon(arrow);
-    aItem->setBrush(arrowColor);
-    aItem->setZValue(1.5);
-    aItem->show();
+    auto cArrow = new CanvasCFGEdgeArrow{cEdge};
+    cArrow->setPolygon(arrow);
+    cArrow->setBrush(arrowColor);
+    cArrow->setZValue(1.5);
+    cArrow->show();
 
-    sItem->setArrow(aItem);
+    cEdge->setArrow(cArrow);
 
-    return aItem;
+    return cArrow;
 }
 
 } // unnamed namespace
@@ -2103,38 +2103,38 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
 
     QColor arrowColor = getArrowColor(edge);
 
-    CanvasCFGEdge* sItem = createEdge(edge, poly, arrowColor);
+    CanvasCFGEdge* cEdge = createEdge(edge, poly, arrowColor);
 
-    _scene->addItem(sItem);
-    _scene->addItem(createArrow(sItem, poly, arrowColor));
+    _scene->addItem(cEdge);
+    _scene->addItem(createArrow(cEdge, poly, arrowColor));
 
     if (edge->branch() == selectedItem())
     {
         _selectedEdge = edge;
-        sItem->setSelected(true);
+        cEdge->setSelected(true);
     }
     else
-        sItem->setSelected(edge == _selectedEdge);
+        cEdge->setSelected(edge == _selectedEdge);
 
     QString label;
     lineStream >> label; // further ignored
 
     std::pair<int, int> coords = calculateSizes(lineStream);
-    auto lItem = new CanvasCFGEdgeLabel{this, sItem,
-                                        static_cast<qreal>(coords.first - 60),
-                                        static_cast<qreal>(coords.second - 10),
-                                        100.0, 20.0};
-    _scene->addItem(lItem);
-    lItem->setZValue(1.5);
-    sItem->setLabel(lItem);
+    auto cLabel = new CanvasCFGEdgeLabel{this, cEdge,
+                                         static_cast<qreal>(coords.first - 60),
+                                         static_cast<qreal>(coords.second - 10),
+                                         100.0, 20.0};
+    _scene->addItem(cLabel);
+    cLabel->setZValue(1.5);
+    cEdge->setLabel(cLabel);
 
-    lItem->show();
+    cLabel->show();
 }
 
 namespace
 {
 
-TraceBasicBlock* getNodeForEdge(QTextStream& lineStream)
+TraceBasicBlock* getEdgeEndpoint(QTextStream& lineStream)
 {
     QString bbStr;
     lineStream >> bbStr;
@@ -2154,9 +2154,9 @@ TraceBasicBlock* getNodeForEdge(QTextStream& lineStream)
 
 CFGEdge* ControlFlowGraphView::getEdgeFromDot(QTextStream& lineStream, int lineno)
 {
-    TraceBasicBlock* bbFrom = getNodeForEdge(lineStream);
+    TraceBasicBlock* bbFrom = getEdgeEndpoint(lineStream);
     assert(bbFrom);
-    TraceBasicBlock* bbTo = getNodeForEdge(lineStream);
+    TraceBasicBlock* bbTo = getEdgeEndpoint(lineStream);
     assert(bbTo);
 
     CFGEdge* edge = _exporter.findEdge(bbFrom, bbTo);
