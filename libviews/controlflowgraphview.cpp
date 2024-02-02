@@ -1444,7 +1444,7 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
 
     SubCost total = node->basicBlock()->function()->subCost(view->eventType());
     double selfPercentage = 100.0 * _node->cost() / total;
-    int paramI = 0; // we've got the only parameter; so its index is 0
+    const int paramI = 0; // we've got the only parameter; so its index is 0
 
     setPosition(paramI, DrawParams::TopCenter);
 
@@ -1590,24 +1590,23 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* c
     if (!e)
         return;
 
-    setPosition(0, DrawParams::TopCenter);
+    const int paramI = 0; // we've got the only parameter; so its index is 0
 
-    setText(0, QStringLiteral("%1 x").arg(e->count()));
+    setPosition(paramI, DrawParams::TopCenter);
+    setText(paramI, QStringLiteral("%1 x").arg(e->count()));
 
     if (e->nodeFrom() == e->nodeTo())
     {
         QFontMetrics fm{font()};
-        QPixmap pixmap = QIcon::fromTheme(QStringLiteral("edit-undo")).pixmap(fm.height());
-        setPixmap(0, pixmap);
+        setPixmap(paramI, QIcon::fromTheme(QStringLiteral("edit-undo")).pixmap(fm.height()));
     }
     else
-        setPixmap(0, percentagePixmap(25, 10, e->count(), Qt::blue, true));
+        setPixmap(paramI, percentagePixmap(25, 10, e->count(), Qt::blue, true));
 }
 
 void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
     RectDrawing drawer{rect().toRect()};
-
     drawer.drawField(p, 0, this);
 }
 
@@ -1643,13 +1642,11 @@ void CanvasCFGEdge::setLabel(CanvasCFGEdgeLabel* l)
 
     if (_label)
     {
-        QString tip = QStringLiteral("%1 (%2)").arg(l->text(0)).arg(l->text(1));
+        QString tip = QStringLiteral("%1").arg(_label->text(0));
 
         setToolTip(tip);
         if (_arrow)
             _arrow->setToolTip(tip);
-
-        _thickness = 0.9;
     }
 }
 
@@ -1658,8 +1655,7 @@ void CanvasCFGEdge::setArrow(CanvasCFGEdgeArrow* a)
     _arrow = a;
 
     if (_arrow && _label)
-        a->setToolTip(QStringLiteral("%1 (%2)")
-                                    .arg(_label->text(0)).arg(_label->text(1)));
+        a->setToolTip(QStringLiteral("%1").arg(_label->text(0)));
 }
 
 void CanvasCFGEdge::setControlPoints(const QPolygon& p)
@@ -1690,8 +1686,9 @@ void CanvasCFGEdge::paint(QPainter* p, const QStyleOptionGraphicsItem* option, Q
     qreal levelOfDetail = option->levelOfDetail;
 #endif
 
-    QPen mypen = pen();
+    static const double _thickness = 0.9;
 
+    QPen mypen = pen();
     mypen.setWidthF(isSelected() ? 2.0 : 1.0 / levelOfDetail * _thickness);
     p->setPen(mypen);
     p->drawPath(path());
