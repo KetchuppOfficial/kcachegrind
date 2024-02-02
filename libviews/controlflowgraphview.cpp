@@ -1778,9 +1778,6 @@ TraceFunction* ControlFlowGraphView::getFunction()
 
 void ControlFlowGraphView::zoomRectMoved(qreal dx, qreal dy)
 {
-    //FIXME if (leftMargin()>0) dx = 0;
-    //FIXME if (topMargin()>0) dy = 0;
-
     QScrollBar* hBar = horizontalScrollBar();
     QScrollBar* vBar = verticalScrollBar();
     hBar->setValue(hBar->value() + static_cast<int>(dx));
