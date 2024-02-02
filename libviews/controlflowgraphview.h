@@ -394,8 +394,6 @@ private:
     CanvasCFGEdgeLabel* _label = nullptr;
     CanvasCFGEdgeArrow* _arrow = nullptr;
     QPolygon _points;
-
-    double _thickness = 0.0;
 };
 
 
