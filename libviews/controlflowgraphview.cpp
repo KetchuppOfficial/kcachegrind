@@ -1209,22 +1209,12 @@ void CFGExporter::dumpNodeReduced(QTextStream& ts, const CFGNode& node)
     ts << "\"]\n";
 }
 
-namespace
+enum DumpMode
 {
-
-void dumpPC(QTextStream& ts, Addr addr)
-{
-    ts << QStringLiteral("0x%1</td>\n"
-                         "    <td align=\"left\">").arg(addr.toString());
-}
-
-void dumpCost(QTextStream& ts, SubCost cost)
-{
-    ts << QStringLiteral("%1</td>\n"
-                         "    <td align=\"left\">").arg(cost.pretty());
-}
-
-} // unnamed namespace
+    none = 0,
+    pc   = 1 << 0,
+    cost = 1 << 1
+};
 
 void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
 {
@@ -1232,9 +1222,19 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
     assert(bb);
 
     Options options = getNodeOptions(bb);
-    bool needPC = options & Options::showInstrPC;
-    bool needCost = options & Options::showInstrCost;
-    int span = 2 + needPC + needCost;
+
+    int mode = DumpMode::none;
+    int span = 2;
+    if (options & Options::showInstrPC)
+    {
+        mode &= DumpMode::pc;
+        span++;
+    }
+    if (options & Options::showInstrCost)
+    {
+        mode &= DumpMode::cost;
+        span++;
+    }
 
     ts << QStringLiteral("  bb%1 [shape=plaintext, label=<\n"
                          "  <table border=\"0\" cellborder=\"1\" cellspacing=\"0\">\n"
@@ -1254,51 +1254,42 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
     if (instrIt != lastInstrIt)
     {
         TraceInstr* instr = *instrIt;
-
         ts << QStringLiteral("  <tr>\n"
-                             "    <td port=\"IL%1\" align=\"left\">")
-                            .arg(instr->addr().toString());
+                             "    <td port=\"IL%1\" align=\"left\">").arg(instr->addr().toString());
 
-        if (needPC)
-            dumpPC(ts, instr->addr());
-        if (needCost)
-            dumpCost(ts, instr->subCost(_eventType));
-
-        ts << QStringLiteral("%1</td>\n"
-                             "    <td align=\"left\">%2</td>\n"
-                             "  </tr>\n").arg(strIt->_mnemonic).arg(strIt->_operandsHTML);
+        dumpAlmostEntireInstr(ts, strIt, instr, mode);
 
         for (++instrIt, ++strIt; instrIt != lastInstrIt; ++instrIt, ++strIt)
         {
-            instr = *instrIt;
-
             ts << "  <tr>\n"
                   "    <td align=\"left\">";
 
-            if (needPC)
-                dumpPC(ts, instr->addr());
-            if (needCost)
-                dumpCost(ts, instr->subCost(_eventType));
-
-            ts << QStringLiteral("%1</td>\n"
-                                 "    <td align=\"left\">%2</td>\n"
-                                 "  </tr>\n").arg(strIt->_mnemonic).arg(strIt->_operandsHTML);
+            dumpAlmostEntireInstr(ts, strIt, *instrIt, mode);
         }
     }
 
-    Addr lastAddr = bb->lastAddr();
     ts << QStringLiteral("  <tr>\n"
-                         "    <td port=\"IL%1\" align=\"left\">").arg(lastAddr.toString());
+                         "    <td port=\"IL%1\" align=\"left\">").arg(bb->lastAddr().toString());
 
-    if (needPC)
-        dumpPC(ts, lastAddr);
-    if (needCost)
-        dumpCost(ts, (*lastInstrIt)->subCost(_eventType));
+    dumpAlmostEntireInstr(ts, strIt, *lastInstrIt, mode);
+
+    ts << "  </table>>]\n";
+}
+
+void CFGExporter::dumpAlmostEntireInstr(QTextStream& ts, CFGNode::const_iterator strIt, TraceInstr* instr,
+                                        int mode)
+{
+    if (mode & DumpMode::pc)
+        ts << QStringLiteral("0x%1</td>\n"
+                             "    <td align=\"left\">").arg(instr->addr().toString());
+
+    if (mode & DumpMode::cost)
+        ts << QStringLiteral("%1</td>\n"
+                             "    <td align=\"left\">").arg(instr->subCost(_eventType).pretty());
 
     ts << QStringLiteral("%1</td>\n"
                          "    <td align=\"left\">%2</td>\n"
-                         "  </tr>\n"
-                         "  </table>>]\n").arg(strIt->_mnemonic).arg(strIt->_operandsHTML);
+                         "  </tr>\n").arg(strIt->_mnemonic).arg(strIt->_operandsHTML);
 }
 
 namespace

@@ -260,6 +260,8 @@ private:
     void dumpNodes(QTextStream& ts);
     void dumpNodeReduced(QTextStream& ts, const CFGNode& node);
     void dumpNodeExtended(QTextStream& ts, const CFGNode& node);
+    void dumpAlmostEntireInstr(QTextStream& ts, CFGNode::const_iterator strIt, TraceInstr* instr,
+                               int mode);
 
     void dumpEdges(QTextStream& ts);
     void dumpCyclicEdge(QTextStream& ts, const TraceBranch *br);
