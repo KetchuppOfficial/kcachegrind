@@ -1702,7 +1702,7 @@ void CanvasCFGEdge::paint(QPainter* p, const QStyleOptionGraphicsItem* option, Q
 
 ControlFlowGraphView::ControlFlowGraphView(TraceItemView* parentView, QWidget* parent,
                                            const QString& name) :
-    QGraphicsView(parent), TraceItemView(parentView)
+    QGraphicsView{parent}, TraceItemView{parentView}
 {
     setObjectName(name);
     setWhatsThis(whatsThis());
