@@ -306,12 +306,21 @@ public:
 
     int type() const override { return CanvasParts::Node; }
 
-    void setSelected(bool s);
+    void setSelected(bool condition);
     void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 private:
     CFGNode* _node;
     ControlFlowGraphView* _view;
+
+    int _pcLen;
+    int _costLen;
+    int _mnemonicLen;
+    int _costRightBorder;
+    int _mnemonicRightBorder;
+    int _argsLen;
+
+    static const int _margin = 4;
 };
 
 

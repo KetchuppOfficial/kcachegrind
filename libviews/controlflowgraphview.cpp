@@ -1440,117 +1440,125 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     if (!_node || !_view)
         return;
 
-    setBackColor(Qt::white);
     update();
 
     SubCost total = node->basicBlock()->function()->subCost(view->eventType());
     double selfPercentage = 100.0 * _node->cost() / total;
+    int paramI = 0; // we've got the only parameter; so its index is 0
 
-    setPosition(0, DrawParams::TopCenter);
+    setPosition(paramI, DrawParams::TopCenter);
 
-    // set inclusive cost
     if (GlobalConfig::showPercentage())
-        setText(0, QStringLiteral("%1 %")
+        setText(paramI, QStringLiteral("%1 %")
                                  .arg(selfPercentage, 0, 'f', GlobalConfig::percentPrecision()));
     else
-        setText(0, SubCost(_node->cost()).pretty());
+        setText(paramI, SubCost{_node->cost()}.pretty());
 
-    // set percentage bar
-    setPixmap(0, percentagePixmap(25, 10, static_cast<int>(selfPercentage + 0.5), Qt::blue, true));
+    setPixmap(paramI,
+              percentagePixmap(25, 10, static_cast<int>(selfPercentage + 0.5), Qt::blue, true));
 
     // set tool tip (balloon help) with the name of a basic block and percentage
-    setToolTip(QStringLiteral("%1").arg(text(0)));
+    setToolTip(QStringLiteral("%1").arg(text(paramI)));
+
+    QFontMetrics fm = _view->fontMetrics();
+
+    TraceBasicBlock* bb = _node->basicBlock();
+    if (_view->showInstrPC(_node))
+        _pcLen = fm.size(Qt::TextSingleLine, "0x" + bb->firstAddr().toString()).width() + _margin;
+    else
+        _pcLen = 0;
+
+    if (_view->showInstrCost(_node))
+    {
+        QString costStr = bb->firstInstr()->subCost(_view->eventType()).pretty();
+        _costLen = fm.size(Qt::TextSingleLine, costStr).width() + _margin;
+    }
+    else
+        _costLen = 0;
+
+    auto mnemonicComp = [&fm](CFGNode::instrString& pair1, CFGNode::instrString& pair2)
+    {
+        return fm.size(Qt::TextSingleLine, pair1._mnemonic).width() <
+               fm.size(Qt::TextSingleLine, pair2._mnemonic).width();
+    };
+
+    auto maxLenIt = std::max_element(_node->begin(), _node->end(), mnemonicComp);
+
+    _mnemonicLen = fm.size(Qt::TextSingleLine, maxLenIt->_mnemonic).width() + _margin;
+    _costRightBorder = _pcLen + _costLen;
+    _mnemonicRightBorder = _costRightBorder + _mnemonicLen;
+    _argsLen = w - _mnemonicRightBorder;
 }
 
-void CanvasCFGNode::setSelected(bool s)
+void CanvasCFGNode::setSelected(bool condition)
 {
-    StoredDrawParams::setSelected(s);
+    StoredDrawParams::setSelected(condition);
     update();
 }
 
 void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
+    QRectF rectangle = rect();
+    const qreal x = rectangle.x();
+    const qreal y = rectangle.y();
+    const qreal w = rectangle.width();
+    const qreal h = rectangle.height();
+
     bool reduced = _view->isReduced(_node);
 
-    QRectF rectangle = rect();
-    qreal x = rectangle.x();
-    qreal y = rectangle.y();
-    qreal w = rectangle.width();
-    qreal h = rectangle.height();
     qreal topLineY = y;
-
     qreal step = h / (reduced ? 2 : _node->instrNumber() + 2);
 
     p->fillRect(x + 1, topLineY + 1, w, step * 2, Qt::gray);
     topLineY += step;
 
+    TraceBasicBlock* bb = _node->basicBlock();
     p->drawText(x, topLineY, w, step,
-                Qt::AlignCenter, "0x" + _node->basicBlock()->firstAddr().toString());
-    p->drawLine(x, topLineY,
+                Qt::AlignCenter, "0x" + bb->firstAddr().toString());
+    p->drawLine(x,     topLineY,
                 x + w, topLineY);
 
     if (!reduced)
     {
         topLineY += step;
 
-        QFontMetrics fm = _view->fontMetrics();
-        TraceBasicBlock* bb = _node->basicBlock();
-
-        int PCLen;
-        if (_view->showInstrPC(_node))
-            PCLen = fm.size(Qt::TextSingleLine, "0x" + bb->firstAddr().pretty()).width() + 4;
-        else
-            PCLen = 0;
-
-        int costLen;
-        if (_view->showInstrCost(_node))
-        {
-            QString costStr = bb->firstInstr()->subCost(_view->eventType()).pretty();
-            costLen = fm.size(Qt::TextSingleLine, costStr).width() + 4;
-        }
-        else
-            costLen = 0;
-
-        auto mnemonicComp = [&fm](CFGNode::instrString& pair1, CFGNode::instrString& pair2)
-        {
-            return fm.size(Qt::TextSingleLine, pair1._mnemonic).width() <
-                   fm.size(Qt::TextSingleLine, pair2._mnemonic).width();
-        };
-
-        auto maxLenIt = std::max_element(_node->begin(), _node->end(), mnemonicComp);
-
-        int mnemonicLen = fm.size(Qt::TextSingleLine, maxLenIt->_mnemonic).width() + 4;
-        int costRightBorder = PCLen + costLen;
-        int mnemonicRightBorder = costRightBorder + mnemonicLen;
-        int argsLen = w - mnemonicRightBorder;
-
         auto instrIt = bb->begin();
-        for (auto it = _node->begin(), ite = _node->end(); it != ite; ++it, ++instrIt)
+        for (auto& str : *_node)
         {
-            if (PCLen != 0)
-                p->drawText(x + 2, topLineY, PCLen, step,
-                            Qt::AlignLeft, "0x" + (*instrIt)->addr().pretty());
+            TraceInstr* instr = *instrIt;
 
-            if (costLen != 0)
-                p->drawText(x + PCLen + 2, topLineY, costLen, step,
-                            Qt::AlignLeft, (*instrIt)->subCost(_view->eventType()).pretty());
+            if (_pcLen != 0)
+                p->drawText(x + 2, topLineY, _pcLen, step,
+                            Qt::AlignLeft, "0x" + instr->addr().toString());
 
-            p->drawText(x + costRightBorder + 2, topLineY, mnemonicLen, step,
-                        Qt::AlignLeft, it->_mnemonic);
-            p->drawText(x + mnemonicRightBorder + 2, topLineY, argsLen, step,
-                        Qt::AlignLeft, it->_operands);
-            p->drawLine(x, topLineY, x + w, topLineY);
+            if (_costLen != 0)
+                p->drawText(x + _pcLen + 2, topLineY, _costLen, step,
+                            Qt::AlignLeft, instr->subCost(_view->eventType()).pretty());
+
+            p->drawText(x + _costRightBorder + 2, topLineY, _mnemonicLen, step,
+                        Qt::AlignLeft, str._mnemonic);
+            p->drawText(x + _mnemonicRightBorder + 2, topLineY, _argsLen, step,
+                        Qt::AlignLeft, str._operands);
+            p->drawLine(x,     topLineY,
+                        x + w, topLineY);
 
             topLineY += step;
+            ++instrIt;
         }
 
-        if (PCLen != 0)
-            p->drawLine(x + PCLen, y + step * 2, x + PCLen, y + h);
+        qreal bottomLineY = y + h;
+        qreal firstInstrTopLineY = y + step * 2;
 
-        if (costLen != 0)
-            p->drawLine(x + costRightBorder, y + step * 2, x + costRightBorder, y + h);
+        if (_pcLen != 0)
+            p->drawLine(x + _pcLen, firstInstrTopLineY,
+                        x + _pcLen, bottomLineY);
 
-        p->drawLine(x + mnemonicRightBorder, y + step * 2, x + mnemonicRightBorder, y + h);
+        if (_costLen != 0)
+            p->drawLine(x + _costRightBorder, firstInstrTopLineY,
+                        x + _costRightBorder, bottomLineY);
+
+        p->drawLine(x + _mnemonicRightBorder, firstInstrTopLineY,
+                    x + _mnemonicRightBorder, bottomLineY);
     }
 
     if (StoredDrawParams::selected())
