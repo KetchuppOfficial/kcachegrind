@@ -2260,7 +2260,7 @@ void ControlFlowGraphView::minimizationTriggered(QAction* a)
     double percentage = a->data().toDouble();
 
     _exporter.setMinimalCostPercentage(func, percentage);
-    _exporter.minimizeBBsWithCostLessThan(percentage * totalCost / 100);
+    _exporter.minimizeBBsWithCostLessThan(totalCost * percentage / 100);
     refresh(false);
 }
 
