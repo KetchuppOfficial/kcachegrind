@@ -1807,8 +1807,8 @@ void ControlFlowGraphView::showRenderError(const QString& text)
     QString err = QObject::tr("No graph available because the layouting process failed.\n");
     if (_renderProcess)
         err += QObject::tr("Trying to run the following command did not work:\n"
-                           "'%1'\n").arg(_renderProcessCmdLine);
-    err += QObject::tr("Please check that 'dot' is installed (package GraphViz).");
+                           "\'%1\'\n").arg(_renderProcessCmdLine);
+    err += QObject::tr("Please check that \'dot\' is installed (package GraphViz).");
 
     if (!text.isEmpty())
         err += QStringLiteral("\n\n%1").arg(text);
@@ -2405,11 +2405,11 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
                                      CFGExporter::Options::reduced);
 
             actions[MenuActions::showInstrPC] =
-                    addOptionsAction(detailsMenu, QObject::tr("Show instructions' PC"), node,
+                    addOptionsAction(detailsMenu, QObject::tr("Show instructions\' PC"), node,
                                      CFGExporter::Options::showInstrPC);
 
             actions[MenuActions::showInstrCost] =
-                    addOptionsAction(detailsMenu, QObject::tr("Show instructions' cost"), node,
+                    addOptionsAction(detailsMenu, QObject::tr("Show instructions\' cost"), node,
                                      CFGExporter::Options::showInstrCost);
 
             popup.addSeparator();
@@ -2425,11 +2425,11 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
                              CFGExporter::Options::reduced);
 
     actions[MenuActions::showInstrPCGlobal] =
-            addOptionsAction(std::addressof(popup), QObject::tr("Show instructions' PC"), func,
+            addOptionsAction(std::addressof(popup), QObject::tr("Show instructions\' PC"), func,
                              CFGExporter::Options::showInstrPC);
 
     actions[MenuActions::showInstrCostGlobal] =
-            addOptionsAction(std::addressof(popup), QObject::tr("Show instructions' cost"), func,
+            addOptionsAction(std::addressof(popup), QObject::tr("Show instructions\' cost"), func,
                              CFGExporter::Options::showInstrCost);
 
     popup.addSeparator();
