@@ -556,8 +556,8 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
         auto& BBs = _func->basicBlocks();
         if (BBs.empty())
         {
-            _errorMessage = "Control-flow graph requires running "
-                            "callgrind with option --dump-instr=yes";
+            _errorMessage = QObject::tr("Control-flow graph requires running "
+                                        "callgrind with option --dump-instr=yes");
             return;
         }
 
@@ -628,7 +628,7 @@ bool CFGExporter::writeDot(QIODevice* device)
         *stream << "digraph \"control-flow graph\" {\n";
 
         if (_layout == Layout::LeftRight)
-            *stream << QStringLiteral("  rankdir=LR;\n");
+            *stream << "  rankdir=LR;\n";
 
         dumpNodes(*stream);
         dumpEdges(*stream);
@@ -898,9 +898,9 @@ void ObjdumpParser::runObjdump()
     if (!searcher.searchFile(dir))
     {
         _errorMessage =
-            QStringLiteral("For annotated machine code, the following object file is needed\n"
-                           "    \'%1\'\n"
-                           "This file cannot be found.\n").arg(objectFile->name());
+            QObject::tr("For annotated machine code, the following object file is needed\n"
+                        "    \'%1\'\n"
+                        "This file cannot be found.\n").arg(objectFile->name());
         if (_isArm)
             _errorMessage += QObject::tr("If cross-compiled, set SYSROOT variable.");
     }
@@ -928,11 +928,11 @@ void ObjdumpParser::runObjdump()
         _objdump.start(objdumpFormat, args);
         if (!_objdump.waitForStarted() || !_objdump.waitForFinished())
         {
-            _errorMessage = QStringLiteral("There is an error trying to execute the command\n"
-                                           "    \'%1\'\n"
-                                           "Check that you have installed \'objdump\'.\n"
-                                           "This utility can be found in the \'binutils\' package")
-                                          .arg(_objdumpCmd);
+            _errorMessage = QObject::tr("There is an error trying to execute the command\n"
+                                        "    \'%1\'\n"
+                                        "Check that you have installed \'objdump\'.\n"
+                                        "This utility can be found in the \'binutils\' package")
+                                       .arg(_objdumpCmd);
         }
     }
 }
@@ -980,7 +980,7 @@ const ObjdumpParser::instrStringsMap& ObjdumpParser::getInstrStrings()
         else
         {
             addr = _costAddr;
-            operands = QObject::tr("(No Instruction)");
+            operands = QStringLiteral("(No Instruction)");
             noAssLines++;
 
             _needCostAddr = true;
@@ -1008,22 +1008,22 @@ const ObjdumpParser::instrStringsMap& ObjdumpParser::getInstrStrings()
 
     if (noAssLines > 1)
     {
-        _errorMessage = QStringLiteral("There are %1 cost line(s) without machine code.\n"
-                                       "This happens because the code of %2 does not seem "
-                                       "to match the profile data file.\n"
-                                       "Are you using an old profile data file or is the above"
-                                       "mentioned\n"
-                                       "ELF object from an updated installation/another"
-                                       "machine?\n").arg(noAssLines).arg(_objFile);
+        _errorMessage = QObject::tr("There are %1 cost line(s) without machine code.\n"
+                                    "This happens because the code of %2 does not seem "
+                                    "to match the profile data file.\n"
+                                    "Are you using an old profile data file or is the above"
+                                    "mentioned\n"
+                                    "ELF object from an updated installation/another machine?")
+                                   .arg(noAssLines).arg(_objFile);
     }
     else if (_instrStrings.empty())
     {
-        _errorMessage = QStringLiteral("There seems to be an error trying to execute the command"
-                                       "\'%1\'.\n"
-                                       "Check that the ELF object used in the command exists.\n"
-                                       "Check that you have installed \'objdump\'.\n"
-                                       "This utility can be found in the \'binutils\' package.")
-                                      .arg(_objdumpCmd);
+        _errorMessage = QObject::tr("There seems to be an error trying to execute the command"
+                                    "\'%1\'.\n"
+                                    "Check that the ELF object used in the command exists.\n"
+                                    "Check that you have installed \'objdump\'.\n"
+                                    "This utility can be found in the \'binutils\' package.")
+                                   .arg(_objdumpCmd);
     }
 
     return _instrStrings;
@@ -1371,9 +1371,9 @@ bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
                              EventType* eventType, ProfileContext::Type groupType,
                              const CFGExporter& origExporter)
 {
-    static constexpr const char* filter1 = "text/vnd.graphviz";
-    static constexpr const char* filter2 = "application/pdf";
-    static constexpr const char* filter3 = "application/postscript";
+    QString filter1 = QStringLiteral("text/vnd.graphviz");
+    QString filter2 = QStringLiteral("application/pdf");
+    QString filter3 = QStringLiteral("application/postscript");
 
     QFileDialog saveDialog{parent, QObject::tr("Export Graph")};
     saveDialog.setMimeTypeFilters(QStringList{filter1, filter2, filter3});
@@ -1446,8 +1446,8 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     setPosition(paramI, DrawParams::TopCenter);
 
     if (GlobalConfig::showPercentage())
-        setText(paramI, QStringLiteral("%1 %")
-                                 .arg(selfPercentage, 0, 'f', GlobalConfig::percentPrecision()));
+        setText(paramI, QStringLiteral("%1 %").arg(selfPercentage, 0, 'f',
+                                                   GlobalConfig::percentPrecision()));
     else
         setText(paramI, SubCost{_node->cost()}.pretty());
 
@@ -1845,8 +1845,8 @@ void ControlFlowGraphView::readDotOutput()
 void ControlFlowGraphView::dotError()
 {
     auto process = qobject_cast<QProcess*>(sender());
-    qDebug() << "ControlFlowGraphView::dotError: Got " << process->error()
-             << " from QProcess " << process;
+    qDebug() << "ControlFlowGraphView::dotError: Got " << process->error() << " from QProcess "
+             << process;
 
     if (_renderProcess && process == _renderProcess)
     {
@@ -2200,8 +2200,9 @@ void ControlFlowGraphView::checkScene()
         _scene = new QGraphicsScene;
 
         if (_exporter.CFGAvailable())
-            _scene->addSimpleText("Error running the graph layouting tool.\n"
-                                  "Please check that \'dot\' is installed (package Graphviz).");
+            _scene->addSimpleText(QObject::tr("Error running the graph layouting tool.\n"
+                                              "Please check that \'dot\' is installed "
+                                              "(package Graphviz)."));
         else
             _scene->addSimpleText(_exporter.errorMessage());
 
@@ -2381,30 +2382,29 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
 
     TraceFunction* func = getFunction();
 
-    TraceBasicBlock* bb = nullptr;
-    if (item)
+    TraceBasicBlock* bb;
+    if (item && item->type() == CanvasParts::Node)
     {
-        if (item->type() == CanvasParts::Node)
-        {
-            CFGNode* node = static_cast<CanvasCFGNode*>(item)->node();
-            bb = node->basicBlock();
+        CFGNode* node = static_cast<CanvasCFGNode*>(item)->node();
+        bb = node->basicBlock();
 
-            QMenu* detailsMenu = popup.addMenu(QObject::tr("This basic block"));
-            actions[MenuActions::pcOnly] =
-                    addOptionsAction(detailsMenu, QObject::tr("PC only"), node,
-                                     CFGExporter::Options::reduced);
+        QMenu* detailsMenu = popup.addMenu(QObject::tr("This basic block"));
+        actions[MenuActions::pcOnly] =
+                addOptionsAction(detailsMenu, QObject::tr("PC only"), node,
+                                 CFGExporter::Options::reduced);
 
-            actions[MenuActions::showInstrPC] =
-                    addOptionsAction(detailsMenu, QObject::tr("Show instructions\' PC"), node,
-                                     CFGExporter::Options::showInstrPC);
+        actions[MenuActions::showInstrPC] =
+                addOptionsAction(detailsMenu, QObject::tr("Show instructions\' PC"), node,
+                                 CFGExporter::Options::showInstrPC);
 
-            actions[MenuActions::showInstrCost] =
-                    addOptionsAction(detailsMenu, QObject::tr("Show instructions\' cost"), node,
-                                     CFGExporter::Options::showInstrCost);
+        actions[MenuActions::showInstrCost] =
+                addOptionsAction(detailsMenu, QObject::tr("Show instructions\' cost"), node,
+                                 CFGExporter::Options::showInstrCost);
 
-            popup.addSeparator();
-        }
+        popup.addSeparator();
     }
+    else
+        bb = nullptr;
 
     actions[MenuActions::stopLayout] = addStopLayoutAction(popup);
 
