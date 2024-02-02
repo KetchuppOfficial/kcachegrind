@@ -2335,12 +2335,7 @@ void ControlFlowGraphView::mouseMoveEvent(QMouseEvent* event)
     if (_isMoving)
     {
         QPoint delta = event->pos() - _lastPos;
-        QScrollBar* hBar = horizontalScrollBar();
-        QScrollBar* vBar = verticalScrollBar();
-
-        hBar->setValue(hBar->value() - delta.x());
-        vBar->setValue(vBar->value() - delta.y());
-
+        zoomRectMoved(-delta.x(), -delta.y());
         _lastPos = event->pos();
     }
 }
