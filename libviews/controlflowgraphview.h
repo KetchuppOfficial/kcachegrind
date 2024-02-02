@@ -265,7 +265,7 @@ private:
     void dumpCyclicEdge(QTextStream& ts, const TraceBranch *br);
 
     QString _dotName;
-    QTemporaryFile* _tmpFile;
+    QTemporaryFile* _tmpFile = nullptr;
 
     TraceFunction* _func = nullptr;
     EventType* _eventType = nullptr;
