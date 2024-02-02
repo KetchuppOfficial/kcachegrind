@@ -2668,7 +2668,7 @@ void TraceFunction::constructBasicBlocks()
 
         for (auto it = std::next(from); it != ite; ++it)
         {
-            if (jumpDestinations.find(std::addressof(*it)) != jumpDestinations.end())
+            if (jumpDestinations.contains(std::addressof(*it)))
             {
                 to = it;
                 break;
