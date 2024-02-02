@@ -2211,19 +2211,19 @@ void ControlFlowGraphView::checkScene()
 
 void ControlFlowGraphView::centerOnSelectedNodeOrEdge()
 {
-    CanvasCFGNode* sNode = nullptr;
+    CanvasCFGNode* cNode = nullptr;
     if (_selectedNode)
-        sNode = _selectedNode->canvasNode();
+        cNode = _selectedNode->canvasNode();
     else if (_selectedEdge)
     {
         if (_selectedEdge->nodeFrom())
-            sNode = _selectedEdge->nodeFrom()->canvasNode();
+            cNode = _selectedEdge->nodeFrom()->canvasNode();
 
-        if (!sNode && _selectedEdge->nodeTo())
-            sNode = _selectedEdge->nodeTo()->canvasNode();
+        if (!cNode && _selectedEdge->nodeTo())
+            cNode = _selectedEdge->nodeTo()->canvasNode();
     }
 
-    if (sNode)
+    if (cNode)
     {
         if (_prevSelectedNode)
         {
@@ -2231,13 +2231,13 @@ void ControlFlowGraphView::centerOnSelectedNodeOrEdge()
             {
                 QPointF wCenter = mapToScene(viewport()->rect().center());
                 QPointF prevPos = mapToScene(_prevSelectedPos);
-                centerOn(sNode->rect().center() + wCenter - prevPos);
+                centerOn(cNode->rect().center() + wCenter - prevPos);
             }
             else
-                ensureVisible(sNode);
+                ensureVisible(cNode);
         }
         else
-            centerOn(sNode);
+            centerOn(cNode);
     }
 }
 
