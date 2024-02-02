@@ -2200,12 +2200,8 @@ void ControlFlowGraphView::checkScene()
         _scene = new QGraphicsScene;
 
         if (_exporter.CFGAvailable())
-        {
-            QString message = QObject::tr("Error running the graph layouting tool.\n"
-                                          "Please check that \'dot\' is installed"
-                                          "(package Graphviz).");
-            _scene->addSimpleText(message);
-        }
+            _scene->addSimpleText("Error running the graph layouting tool.\n"
+                                  "Please check that \'dot\' is installed (package Graphviz).");
         else
             _scene->addSimpleText(_exporter.errorMessage());
 
