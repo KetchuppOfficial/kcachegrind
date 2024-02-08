@@ -1178,8 +1178,8 @@ public:
     TraceFunction* function() { return _func; }
     const TraceFunction* function() const { return _func; }
 
-    std::vector<TraceBranch>& outgoingBranches() { return _branches; }
-    const std::vector<TraceBranch>& outgoingBranches() const { return _branches; }
+    std::vector<TraceBranch>& outgoingBranches() { return _outgoingBranches; }
+    const std::vector<TraceBranch>& outgoingBranches() const { return _outgoingBranches; }
 
     std::vector<TraceBranch*>& incomingBranches() { return _incomingBranches; };
     const std::vector<TraceBranch*>& incomingBranches() const { return _incomingBranches; };
@@ -1197,7 +1197,7 @@ public:
 private:
     std::vector<TraceInstr*> _instructions;
 
-    std::vector<TraceBranch> _branches;
+    std::vector<TraceBranch> _outgoingBranches;
     std::vector<TraceBranch*> _incomingBranches;
 
     TraceFunction* _func;
