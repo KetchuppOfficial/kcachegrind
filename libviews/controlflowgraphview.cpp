@@ -2678,7 +2678,7 @@ void ControlFlowGraphView::scrollContentsBy(int dx, int dy)
 namespace
 {
 
-double calculate_zoom (QSize s, int cWidth, int cHeight)
+double calculate_zoom(QSize s, int cWidth, int cHeight)
 {
     // first, assume use of 1/3 of width/height (possible larger)
     qreal zoom = (s.width() * cHeight < s.height() * cWidth) ? .33 * s.height() / cHeight
@@ -2722,7 +2722,7 @@ void ControlFlowGraphView::updateSizes(QSize s)
         return;
     }
 
-    double zoom = calculate_zoom (s, cWidth, cHeight);
+    double zoom = calculate_zoom(s, cWidth, cHeight);
 
     if (zoom != _panningZoom)
     {
