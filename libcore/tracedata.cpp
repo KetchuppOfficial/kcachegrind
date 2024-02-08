@@ -2722,7 +2722,7 @@ void TraceFunction::constructBasicBlocks()
                 if (incoming.empty())
                     execCount = calledCount();
                 else
-                    execCount = std::accumulate(incoming.begin(), incoming.end(), 0, adder);
+                    execCount = std::accumulate(incoming.begin(), incoming.end(), uint64{0}, adder);
 
                 br.addExecutedCount(execCount);
             }
@@ -2742,8 +2742,10 @@ void TraceFunction::constructBasicBlocks()
         if (invBrIt != incoming.end())
         {
             auto& outgoing = bb->outgoingBranches();
-            uint64 incomingCount = std::accumulate(incoming.begin(), incoming.end(), 0, adder);
-            uint64 outgoingCount = std::accumulate(outgoing.begin(), outgoing.end(), 0, refAdder);
+            auto incomingCount
+                = std::accumulate(incoming.begin(), incoming.end(), uint64{0}, adder);
+            auto outgoingCount
+                = std::accumulate(outgoing.begin(), outgoing.end(), uint64{0}, refAdder);
 
             if (incomingCount == 0 || incomingCount == outgoingCount)
                 (*invBrIt)->setType(TraceBranch::Type::fallThrough);
