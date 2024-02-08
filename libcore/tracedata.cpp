@@ -4037,4 +4037,3 @@ bool TraceBranch::isCycle() const
 {
     return (_type == Type::true_ || _type == Type::unconditional) && (bbFrom() == bbTo());
 }
-
