@@ -3906,16 +3906,11 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
     if (nJumps == 0)
     {
         if (last != _func->instrMap()->end())
-        {
-            _branches.resize(1);
-            _branches[0].setInstrFrom(lastInstr());
-            _branches[0].setInstrTo(std::addressof(*last));
-            _branches[0].setType(TraceBranch::Type::invalid);
-        }
+            _branches.emplace_back(lastInstr(), std::addressof(*last), TraceBranch::Type::invalid);
     }
     else if (nJumps == 1)
     {
-        TraceInstrJump* jump = jumps[0];
+        TraceInstrJump* jump = jumps.back();
         assert(jump);
 
         TraceInstr* from = jump->instrFrom();
@@ -3935,45 +3930,30 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
 
         if (jump->isCondJump())
         {
-            if (exec.v == followed.v)
-                _branches.resize(1);
-            else
+            _branches.emplace_back(from, to, TraceBranch::Type::true_);
+            _branches.back().addExecutedCount(followed);
+
+            if (exec.v != followed.v)
             {
-                _branches.resize(2);
-                _branches[1].setInstrFrom(from);
-                _branches[1].setType(TraceBranch::Type::false_);
-                _branches[1].addExecutedCount(exec - followed);
-
-                if (last != _func->instrMap()->end())
-                    _branches[1].setInstrTo(std::addressof(*last));
+                assert(last != _func->instrMap()->end());
+                _branches.emplace_back(from, std::addressof(*last), TraceBranch::Type::false_);
+                _branches.back().addExecutedCount(exec - followed);
             }
-
-            _branches[0].setType(TraceBranch::Type::true_);
-            _branches[0].addExecutedCount(followed);
         }
         else
         {
-            _branches.resize(1);
-            _branches[0].setType(TraceBranch::Type::unconditional);
-            _branches[0].addExecutedCount(exec);
+            _branches.emplace_back(from, to, TraceBranch::Type::unconditional);
+            _branches.back().addExecutedCount(exec);
         }
-
-        _branches[0].setInstrFrom(from);
-        _branches[0].setInstrTo(to);
     }
-    else if (nJumps > 1)
+    else
     {
-        _branches.resize(nJumps);
-
-        for (decltype(nJumps) i = 0; i != nJumps; ++i)
+        _branches.reserve(nJumps);
+        for (auto jump : jumps)
         {
-            TraceInstrJump* jump = jumps[i];
             assert(jump);
-
-            _branches[i].setInstrFrom(jump->instrFrom());
-            _branches[i].setInstrTo(jump->instrTo());
-            _branches[i].setType(TraceBranch::Type::indirect);
-            _branches[i].addExecutedCount(jump->executedCount());
+            _branches.emplace_back(jump->instrFrom(), jump->instrTo(), TraceBranch::Type::indirect);
+            _branches.back().addExecutedCount(jump->executedCount());
         }
     }
 
@@ -4033,6 +4013,10 @@ void TraceBasicBlock::addIncomingBranch(TraceBranch& br)
 //
 
 TraceBranch::TraceBranch() : TraceJumpCost{ProfileContext::context(ProfileContext::Branch)} {}
+
+TraceBranch::TraceBranch(TraceInstr* from, TraceInstr* to, Type type)
+    : TraceJumpCost{ProfileContext::context(ProfileContext::Branch)},
+      _from{from}, _to{to}, _type{type} {}
 
 TraceBasicBlock* TraceBranch::bbFrom()
 {
