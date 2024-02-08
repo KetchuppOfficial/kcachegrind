@@ -3909,7 +3909,8 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
     if (nJumps == 0)
     {
         if (last != _func->instrMap()->end())
-            _branches.emplace_back(lastInstr(), std::addressof(*last), TraceBranch::Type::invalid);
+            _outgoingBranches.emplace_back(lastInstr(), std::addressof(*last),
+                                           TraceBranch::Type::invalid);
     }
     else if (nJumps == 1)
     {
@@ -3927,29 +3928,31 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
 
         if (jump->isCondJump())
         {
-            _branches.emplace_back(from, to, TraceBranch::Type::true_);
-            _branches.back().addExecutedCount(followed);
+            _outgoingBranches.emplace_back(from, to, TraceBranch::Type::true_);
+            _outgoingBranches.back().addExecutedCount(followed);
 
             if (exec.v != followed.v && last != _func->instrMap()->end())
             {
-                _branches.emplace_back(from, std::addressof(*last), TraceBranch::Type::false_);
-                _branches.back().addExecutedCount(exec - followed);
+                _outgoingBranches.emplace_back(from, std::addressof(*last),
+                                               TraceBranch::Type::false_);
+                _outgoingBranches.back().addExecutedCount(exec - followed);
             }
         }
         else
         {
-            _branches.emplace_back(from, to, TraceBranch::Type::unconditional);
-            _branches.back().addExecutedCount(exec);
+            _outgoingBranches.emplace_back(from, to, TraceBranch::Type::unconditional);
+            _outgoingBranches.back().addExecutedCount(exec);
         }
     }
     else
     {
-        _branches.reserve(nJumps);
+        _outgoingBranches.reserve(nJumps);
         for (auto jump : jumps)
         {
             assert(jump);
-            _branches.emplace_back(jump->instrFrom(), jump->instrTo(), TraceBranch::Type::indirect);
-            _branches.back().addExecutedCount(jump->executedCount());
+            _outgoingBranches.emplace_back(jump->instrFrom(), jump->instrTo(),
+                                           TraceBranch::Type::indirect);
+            _outgoingBranches.back().addExecutedCount(jump->executedCount());
         }
     }
 
