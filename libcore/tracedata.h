@@ -1118,6 +1118,7 @@ public:
     enum class Type {invalid, unconditional, indirect, fallThrough, true_, false_};
 
     TraceBranch();
+    TraceBranch(TraceInstr* from, TraceInstr* to, Type type);
     ~TraceBranch() override = default;
 
     Type brType() const { return _type; }
