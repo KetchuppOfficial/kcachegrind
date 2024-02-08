@@ -2711,9 +2711,10 @@ void TraceFunction::constructBasicBlocks()
 
     for (auto bb: _basicBlocks)
     {
-        if (bb->nBranches() == 1)
+        auto& outgoing = bb->outgoingBranches();
+        if (outgoing.size() == 1)
         {
-            auto& br = bb->branch(0);
+            auto& br = outgoing.back();
             if (br.brType() == TraceBranch::Type::invalid)
             {
                 auto& incoming = bb->incomingBranches();
