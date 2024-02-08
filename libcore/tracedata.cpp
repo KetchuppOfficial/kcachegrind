@@ -3916,16 +3916,10 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
         TraceInstr* from = jump->instrFrom();
         TraceInstr* to = jump->instrTo();
 
-        SubCost exec = jump->executedCount();
         TraceData* data = _func->data();
         EventType* e = data ? data->eventTypes()->realType(0) : nullptr;
-        if (e)
-        {
-            SubCost trueExec = lastInstr()->subCost(e);
-            if (exec != trueExec)
-                exec = trueExec;
-        }
 
+        SubCost exec = e ? lastInstr()->subCost(e) : jump->executedCount();
         auto followed = (from == to) ? SubCost{exec - _func->calledCount()} : jump->followedCount();
 
         if (jump->isCondJump())
@@ -3933,9 +3927,8 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
             _branches.emplace_back(from, to, TraceBranch::Type::true_);
             _branches.back().addExecutedCount(followed);
 
-            if (exec.v != followed.v)
+            if (exec.v != followed.v && last != _func->instrMap()->end())
             {
-                assert(last != _func->instrMap()->end());
                 _branches.emplace_back(from, std::addressof(*last), TraceBranch::Type::false_);
                 _branches.back().addExecutedCount(exec - followed);
             }
