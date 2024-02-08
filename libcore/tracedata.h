@@ -1178,11 +1178,6 @@ public:
     TraceFunction* function() { return _func; }
     const TraceFunction* function() const { return _func; }
 
-    size_type nBranches() const { return _branches.size(); }
-
-    TraceBranch& branch(size_type i) { return _branches[i]; }
-    const TraceBranch& branch(size_type i) const { return _branches[i]; }
-
     std::vector<TraceBranch>& outgoingBranches() { return _branches; }
     const std::vector<TraceBranch>& outgoingBranches() const { return _branches; }
 
