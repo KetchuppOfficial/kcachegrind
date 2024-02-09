@@ -1,4 +1,3 @@
-#include <numeric>
 #include <algorithm>
 #include <iterator>
 #include <memory>
