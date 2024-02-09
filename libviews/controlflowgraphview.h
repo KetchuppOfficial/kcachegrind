@@ -175,8 +175,8 @@ private:
     TraceBranch* _branch;
     uint64 _count;
 
-    CFGNode* _nodeFrom = nullptr;
-    CFGNode* _nodeTo = nullptr;
+    CFGNode* _nodeFrom;
+    CFGNode* _nodeTo;
 
     CanvasCFGEdge* _ce = nullptr;
     bool _visible = false;
