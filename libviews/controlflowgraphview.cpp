@@ -1776,8 +1776,8 @@ void ControlFlowGraphView::showRenderWarning()
     else
         s = QObject::tr("Layouting stopped.\n");
 
-    s.append(QObject::tr("The call graph has %1 nodes and %2 edges.\n")
-                        .arg(_exporter.nodeCount()).arg(_exporter.edgeCount()));
+    s += QObject::tr("The call graph has %1 nodes and %2 edges.\n")
+                    .arg(_exporter.nodeCount()).arg(_exporter.edgeCount());
 
     showText(s);
 }
@@ -1817,7 +1817,7 @@ void ControlFlowGraphView::readDotOutput()
     qDebug() << "ControlFlowGraphView::readDotOutput: QProcess " << process;
 
     if (_renderProcess && process == _renderProcess)
-        _unparsedOutput.append(QString::fromLocal8Bit(_renderProcess->readAllStandardOutput()));
+        _unparsedOutput += QString::fromLocal8Bit(_renderProcess->readAllStandardOutput());
     else
         process->deleteLater();
 }
@@ -1850,7 +1850,7 @@ void ControlFlowGraphView::dotExited()
         return;
     }
 
-    _unparsedOutput.append(QString::fromLocal8Bit(_renderProcess->readAllStandardOutput()));
+    _unparsedOutput += QString::fromLocal8Bit(_renderProcess->readAllStandardOutput());
     _renderProcess->deleteLater();
     _renderProcess = nullptr;
 
