@@ -143,14 +143,11 @@ private:
     QPointF _center;
 };
 
-void CFGNode::sortOutgoingEdges()
+void CFGNode::sortEdges()
 {
     if (_outgoingEdges.size() > 1)
         std::sort(_outgoingEdges.begin(), _outgoingEdges.end(), OutgoingEdgesComparator{_cn});
-}
 
-void CFGNode::sortIncomingEdges()
-{
     if (_incomingEdges.size() > 1)
         std::sort(_incomingEdges.begin(), _incomingEdges.end(), IncomingEdgesComparator{_cn});
 }
@@ -591,10 +588,7 @@ void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QSt
 void CFGExporter::sortEdges()
 {
     for (auto& node : _nodeMap)
-    {
-        node.sortIncomingEdges();
-        node.sortOutgoingEdges();
-    }
+        node.sortEdges();
 }
 
 bool CFGExporter::writeDot(QIODevice* device)

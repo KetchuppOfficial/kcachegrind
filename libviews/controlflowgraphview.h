@@ -72,8 +72,7 @@ public:
     void addIncomingEdge(CFGEdge*);
 
     void clearEdges();
-    void sortOutgoingEdges();
-    void sortIncomingEdges();
+    void sortEdges();
 
     // keyboard navigation
     void selectOutgoingEdge(CFGEdge*);
