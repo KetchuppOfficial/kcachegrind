@@ -97,8 +97,8 @@ public:
 
         _instructions.reserve(std::distance(first, last));
 
-        for (auto it = first; it != last; ++it)
-            _instructions.emplace_back(it->first, it->second);
+        for (; first != last; ++first)
+            _instructions.emplace_back(first->first, first->second);
     }
 
     size_type instrNumber() const
