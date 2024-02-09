@@ -185,9 +185,6 @@ private:
 };
 
 
-class ControlFlowGraphView;
-
-
 class CFGExporter final
 {
     using nodeMapType = QMap<const TraceBasicBlock*, CFGNode>;
@@ -292,6 +289,8 @@ enum CanvasParts : int
     EdgeArrow,
     Frame
 };
+
+class ControlFlowGraphView;
 
 class CanvasCFGNode : public QGraphicsRectItem, public StoredDrawParams
 {
