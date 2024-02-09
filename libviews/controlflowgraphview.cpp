@@ -2890,8 +2890,9 @@ void ControlFlowGraphView::unselectNode()
 {
     if (_selectedNode)
     {
-        if (_selectedNode->canvasNode())
-            _selectedNode->canvasNode()->setSelected(false);
+        CanvasCFGNode* cn = _selectedNode->canvasNode();
+        if (cn)
+            cn->setSelected(false);
 
         _selectedNode = nullptr;
     }
@@ -2901,8 +2902,9 @@ void ControlFlowGraphView::unselectEdge()
 {
     if (_selectedEdge)
     {
-        if (_selectedEdge->canvasEdge())
-            _selectedEdge->canvasEdge()->setSelected(false);
+        CanvasCFGEdge* ce = _selectedEdge->canvasEdge();
+        if (ce)
+            ce->setSelected(false);
 
         _selectedEdge = nullptr;
     }
