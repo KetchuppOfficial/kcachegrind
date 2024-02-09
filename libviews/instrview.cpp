@@ -925,7 +925,6 @@ bool InstrView::fillInstrRange(TraceFunction* function,
                 if (_eventType2 && (*it).hasCost(_eventType2)) break;
                 ++it;
             }
-
             costAddr = nextCostAddr;
             nextCostAddr = (it == itEnd) ? Addr(0) : (*it).addr();
             if (isArm)
