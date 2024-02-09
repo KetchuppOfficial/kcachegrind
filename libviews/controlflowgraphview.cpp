@@ -43,13 +43,13 @@ CFGNode::CFGNode(TraceBasicBlock* bb, uint64 cost) : _bb{bb}, _cost{cost} {}
 void CFGNode::addOutgoingEdge(CFGEdge* edge)
 {
     if (edge)
-        _outgoingEdges.append(edge);
+        _outgoingEdges.push_back(edge);
 }
 
 void CFGNode::addIncomingEdge(CFGEdge* edge)
 {
     if (edge)
-        _incomingEdges.append(edge);
+        _incomingEdges.push_back(edge);
 }
 
 void CFGNode::clearEdges()
