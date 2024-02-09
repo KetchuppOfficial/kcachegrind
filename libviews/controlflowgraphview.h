@@ -205,7 +205,7 @@ public:
 
     CFGExporter() = default;
     CFGExporter(const CFGExporter& otherExporter, TraceFunction* func, EventType* et,
-                ProfileContext::Type gt, const QString& filename = QString{});
+                const QString& filename = QString{});
     ~CFGExporter();
 
     QString filename() const { return _dotName; }
@@ -242,11 +242,9 @@ public:
 
     bool writeDot(QIODevice* device = nullptr);
 
-    void reset(CostItem* i, EventType* et, ProfileContext::Type gt,
-               QString filename = QString{});
+    void reset(CostItem* i, EventType* et, QString filename = QString{});
 
-    static bool savePrompt(QWidget* parent, TraceFunction* func,
-                           EventType* eventType, ProfileContext::Type groupType,
+    static bool savePrompt(QWidget* parent, TraceFunction* func, EventType* eventType,
                            const CFGExporter& origExporter);
 
 private:
@@ -267,7 +265,6 @@ private:
 
     TraceFunction* _func = nullptr;
     EventType* _eventType = nullptr;
-    ProfileContext::Type _groupType = ProfileContext::InvalidType;
 
     QString _errorMessage;
 

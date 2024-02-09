@@ -388,8 +388,8 @@ CFGEdge* CFGEdge::keyboardPrevEdge()
 //
 
 CFGExporter::CFGExporter(const CFGExporter& otherExporter, TraceFunction* func, EventType* et,
-                         ProfileContext::Type gt, const QString& filename)
-    : _func{func}, _eventType{et}, _groupType{gt}, _layout{otherExporter._layout},
+                         const QString& filename)
+    : _func{func}, _eventType{et}, _layout{otherExporter._layout},
       _graphOptions{otherExporter._graphOptions},
       _globalGraphOptions{otherExporter._globalGraphOptions}
 {
@@ -516,12 +516,11 @@ CFGEdge* CFGExporter::findEdge(const TraceBasicBlock* bbFrom, const TraceBasicBl
     return const_cast<CFGEdge*>(static_cast<const CFGExporter*>(this)->findEdge(bbFrom, bbTo));
 }
 
-void CFGExporter::reset(CostItem* i, EventType* et, ProfileContext::Type gt, QString filename)
+void CFGExporter::reset(CostItem* i, EventType* et, QString filename)
 {
     _graphCreated = false;
 
     _eventType = et;
-    _groupType = gt;
 
     _nodeMap.clear();
     _edgeMap.clear();
@@ -1361,8 +1360,7 @@ void CFGExporter::dumpCyclicEdge(QTextStream& ts, const TraceBranch* br)
     dumpNonFalseBranchColor(ts, br);
 }
 
-bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
-                             EventType* eventType, ProfileContext::Type groupType,
+bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func, EventType* eventType,
                              const CFGExporter& origExporter)
 {
     QString filter1 = QStringLiteral("text/vnd.graphviz");
@@ -1392,7 +1390,7 @@ bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func,
             dotName = maybeTemp.fileName();
         }
 
-        CFGExporter ge{origExporter, func, eventType, groupType, dotName};
+        CFGExporter ge{origExporter, func, eventType, dotName};
 
         if (ge.writeDot())
         {
@@ -2444,7 +2442,7 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
         {
             TraceFunction* func = activeFunction();
             if (func)
-                CFGExporter::savePrompt(this, func, eventType(), groupType(), _exporter);
+                CFGExporter::savePrompt(this, func, eventType(), _exporter);
             break;
         }
         case MenuActions::exportAsImage:
@@ -2890,7 +2888,7 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
     }
     else if (changeType & TraceItemView::dataChanged)
     {
-        _exporter.reset(_activeItem, _eventType, _groupType);
+        _exporter.reset(_activeItem, _eventType);
         _selectedNode = nullptr;
         _selectedEdge = nullptr;
         refresh();
@@ -3015,7 +3013,7 @@ void ControlFlowGraphView::refresh(bool reset)
     QProcess* process = _renderProcess;
     process->start(renderProgram, renderArgs);
     if (reset)
-        _exporter.reset(_selectedItem ? _selectedItem : _activeItem, _eventType, _groupType);
+        _exporter.reset(_selectedItem ? _selectedItem : _activeItem, _eventType);
     _exporter.writeDot(process);
     process->closeWriteChannel();
 }
