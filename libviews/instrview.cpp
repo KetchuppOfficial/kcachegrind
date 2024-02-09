@@ -883,6 +883,7 @@ bool InstrView::fillInstrRange(TraceFunction* function,
 
     QList<QTreeWidgetItem*> items;
     while (1) {
+
         if (needObjAddr) {
             needObjAddr = false;
 
