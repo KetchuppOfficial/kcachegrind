@@ -163,8 +163,8 @@ public:
 
     CFGNode* keyboardNextNode();
     CFGNode* keyboardPrevNode();
-    CFGEdge* nextVisibleEdge();
-    CFGEdge* priorVisibleEdge();
+    CFGEdge* keyboardNextEdge();
+    CFGEdge* keyboardPrevEdge();
 
     void setVisitedFrom(NodeType node) { _visitedFrom = node; }
 

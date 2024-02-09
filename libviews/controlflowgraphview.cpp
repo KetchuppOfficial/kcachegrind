@@ -329,7 +329,7 @@ CFGNode* CFGEdge::keyboardPrevNode()
     return _nodeFrom;
 }
 
-CFGEdge* CFGEdge::nextVisibleEdge()
+CFGEdge* CFGEdge::keyboardNextEdge()
 {
     if (_visitedFrom == NodeType::nodeTo_)
     {
@@ -355,7 +355,7 @@ CFGEdge* CFGEdge::nextVisibleEdge()
         return nullptr;
 }
 
-CFGEdge* CFGEdge::priorVisibleEdge()
+CFGEdge* CFGEdge::keyboardPrevEdge()
 {
     if (_visitedFrom == NodeType::nodeTo_)
     {
@@ -2556,9 +2556,9 @@ std::pair<CFGNode*, CFGEdge*> getNodeOrEdgeToSelect(CFGEdge* edge, int key)
         case Qt::Key_Down:
             return std::make_pair(edge->keyboardNextNode(), nullptr);
         case Qt::Key_Left:
-            return std::make_pair(nullptr, edge->priorVisibleEdge());
+            return std::make_pair(nullptr, edge->keyboardPrevEdge());
         case Qt::Key_Right:
-            return std::make_pair(nullptr, edge->nextVisibleEdge());
+            return std::make_pair(nullptr, edge->keyboardNextEdge());
         default:
             return std::make_pair(nullptr, nullptr);
     }
