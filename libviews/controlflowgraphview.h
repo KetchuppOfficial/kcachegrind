@@ -322,8 +322,7 @@ private:
 class CanvasCFGEdgeLabel : public QGraphicsRectItem, public StoredDrawParams
 {
 public:
-    CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* ce,
-                       qreal x, qreal y, qreal w, qreal h);
+    CanvasCFGEdgeLabel(CanvasCFGEdge* ce, qreal x, qreal y, qreal w, qreal h);
     ~CanvasCFGEdgeLabel() override = default;
 
     CanvasCFGEdge* canvasEdge() { return _ce; }
@@ -336,8 +335,6 @@ public:
 
 private:
     CanvasCFGEdge* _ce;
-    ControlFlowGraphView* _view;
-
     double _percentage;
 };
 
@@ -364,13 +361,7 @@ class CanvasCFGEdge : public QGraphicsPathItem
 public:
     explicit CanvasCFGEdge(CFGEdge* e);
 
-    CanvasCFGEdgeLabel* label() { return _label; }
-    const CanvasCFGEdgeLabel* label() const { return _label; }
-    void setLabel(CanvasCFGEdgeLabel* l);
-
-    CanvasCFGEdgeArrow* arrow() { return _arrow; }
-    const CanvasCFGEdgeArrow* arrow() const { return _arrow; }
-    void setArrow(CanvasCFGEdgeArrow* a);
+    void setLabelAndArrow(CanvasCFGEdgeLabel* label, CanvasCFGEdgeArrow* arrow);
 
     const QPolygon& controlPoints() const { return _points; }
     void setControlPoints(const QPolygon& p);
@@ -386,8 +377,6 @@ public:
 
 private:
     CFGEdge* _edge;
-    CanvasCFGEdgeLabel* _label = nullptr;
-    CanvasCFGEdgeArrow* _arrow = nullptr;
     QPolygon _points;
 };
 

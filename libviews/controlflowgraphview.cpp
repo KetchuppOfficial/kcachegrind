@@ -1571,9 +1571,8 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
 // CanvasCFGEdgeLabel
 //
 
-CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(ControlFlowGraphView* v, CanvasCFGEdge* ce,
-                                       qreal x, qreal y, qreal w, qreal h) :
-    QGraphicsRectItem{x, y, w, h}, _ce{ce}, _view{v}
+CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(CanvasCFGEdge* ce, qreal x, qreal y, qreal w, qreal h)
+    : QGraphicsRectItem{x, y, w, h}, _ce{ce}
 {
     CFGEdge* e = _ce->edge();
     if (!e)
@@ -1625,26 +1624,16 @@ CanvasCFGEdge::CanvasCFGEdge(CFGEdge* e) : _edge{e}
     setFlag(QGraphicsItem::ItemIsSelectable);
 }
 
-void CanvasCFGEdge::setLabel(CanvasCFGEdgeLabel* l)
+void CanvasCFGEdge::setLabelAndArrow(CanvasCFGEdgeLabel* label, CanvasCFGEdgeArrow* arrow)
 {
-    _label = l;
-
-    if (_label)
+    if (label)
     {
-        QString tip = QStringLiteral("%1").arg(_label->text(0));
+        QString tip = QStringLiteral("%1").arg(label->text(0));
 
         setToolTip(tip);
-        if (_arrow)
-            _arrow->setToolTip(tip);
+        if (arrow)
+            arrow->setToolTip(tip);
     }
-}
-
-void CanvasCFGEdge::setArrow(CanvasCFGEdgeArrow* a)
-{
-    _arrow = a;
-
-    if (_arrow && _label)
-        a->setToolTip(QStringLiteral("%1").arg(_label->text(0)));
 }
 
 void CanvasCFGEdge::setControlPoints(const QPolygon& p)
@@ -2074,8 +2063,6 @@ CanvasCFGEdgeArrow* createArrow(CanvasCFGEdge* cEdge, const QPolygon& poly, QCol
     cArrow->setZValue(1.5);
     cArrow->show();
 
-    cEdge->setArrow(cArrow);
-
     return cArrow;
 }
 
@@ -2096,9 +2083,10 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
     QColor arrowColor = getArrowColor(edge);
 
     CanvasCFGEdge* cEdge = createEdge(edge, poly, arrowColor);
-
     _scene->addItem(cEdge);
-    _scene->addItem(createArrow(cEdge, poly, arrowColor));
+
+    CanvasCFGEdgeArrow* cArrow = createArrow(cEdge, poly, arrowColor);
+    _scene->addItem(cArrow);
 
     if (edge->branch() == selectedItem())
     {
@@ -2112,15 +2100,16 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
     lineStream >> label; // further ignored
 
     std::pair<int, int> coords = calculateSizes(lineStream);
-    auto cLabel = new CanvasCFGEdgeLabel{this, cEdge,
+    auto cLabel = new CanvasCFGEdgeLabel{cEdge,
                                          static_cast<qreal>(coords.first - 60),
                                          static_cast<qreal>(coords.second - 10),
                                          100.0, 20.0};
-    _scene->addItem(cLabel);
     cLabel->setZValue(1.5);
-    cEdge->setLabel(cLabel);
-
     cLabel->show();
+
+    _scene->addItem(cLabel);
+
+    cEdge->setLabelAndArrow(cLabel, cArrow);
 }
 
 namespace
