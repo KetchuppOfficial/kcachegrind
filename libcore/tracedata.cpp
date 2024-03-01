@@ -2647,7 +2647,10 @@ void TraceFunction::constructBasicBlocks()
         auto& jumps = it->instrJumps();
 
         if (jumps.empty())
-            continue;
+        {
+            if (!it->instrCalls().empty() && it != std::prev(ite))
+                jumpDestinations.insert(std::addressof(*std::next(it)));
+        }
         else if (jumps.size() == 1)
         {
             TraceInstrJump* jmp = jumps.front();
@@ -2675,7 +2678,7 @@ void TraceFunction::constructBasicBlocks()
                 to = it;
                 break;
             }
-            else if (!it->instrJumps().empty())
+            else if (!it->instrJumps().empty() || !it->instrCalls().empty())
             {
                 to = std::next(it);
                 break;
