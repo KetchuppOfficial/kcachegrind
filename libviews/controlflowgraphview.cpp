@@ -1663,10 +1663,10 @@ void CanvasCFGEdge::paint(QPainter* p, const QStyleOptionGraphicsItem* option, Q
     qreal levelOfDetail = option->levelOfDetail;
 #endif
 
-    static const double _thickness = 0.9;
+    static const double thickness = 0.9;
 
     QPen mypen = pen();
-    mypen.setWidthF(isSelected() ? 2.0 : 1.0 / levelOfDetail * _thickness);
+    mypen.setWidthF(isSelected() ? 2.0 : 1.0 / levelOfDetail * thickness);
     p->setPen(mypen);
     p->drawPath(path());
 }
