@@ -2709,6 +2709,7 @@ void TraceFunction::constructBasicBlocks()
     // 4. calculating costs of invalid branches
     auto adder = [](uint64 val, TraceBranch* br){ return val + br->executedCount().v; };
 
+    #if 0 // another solution was developed but we leave this for a while just in case
     for (auto bb: _basicBlocks)
     {
         auto& outgoing = bb->outgoingBranches();
@@ -2729,6 +2730,7 @@ void TraceFunction::constructBasicBlocks()
             }
         }
     }
+    #endif
 
     // 5. turning invalid branches of type 1 into fallthrough branches
     auto refAdder = [](uint64 val, TraceBranch& br){ return val + br.executedCount().v; };
@@ -2742,11 +2744,22 @@ void TraceFunction::constructBasicBlocks()
         auto invBrIt = std::find_if(incoming.begin(), incoming.end(), isInvalid);
         if (invBrIt != incoming.end())
         {
-            auto& outgoing = bb->outgoingBranches();
             auto incomingCount
                 = std::accumulate(incoming.begin(), incoming.end(), uint64{0}, adder);
-            auto outgoingCount
-                = std::accumulate(outgoing.begin(), outgoing.end(), uint64{0}, refAdder);
+
+            auto& outgoing = bb->outgoingBranches();
+            uint64 outgoingCount;
+            if (outgoing.empty())
+            {
+                TraceData* data = this->data();
+                assert(data);
+                EventType* e = data->eventTypes()->realType(0);
+                assert(e);
+                outgoingCount = bb->lastInstr()->subCost(e);
+            }
+            else
+                outgoingCount
+                    = std::accumulate(outgoing.begin(), outgoing.end(), uint64{0}, refAdder);
 
             if (incomingCount == outgoingCount)
                 (*invBrIt)->setType(TraceBranch::Type::fallThrough);
@@ -3908,8 +3921,15 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
     if (nJumps == 0)
     {
         if (last != _func->instrMap()->end())
+        {
             _outgoingBranches.emplace_back(lastInstr(), std::addressof(*last),
                                            TraceBranch::Type::invalid);
+            TraceData* data = _func->data();
+            assert(data);
+            EventType* e = data->eventTypes()->realType(0);
+            assert(e);
+            _outgoingBranches.back().addExecutedCount(lastInstr()->subCost(e));
+        }
     }
     else if (nJumps == 1)
     {
