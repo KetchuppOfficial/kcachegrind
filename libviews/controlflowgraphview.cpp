@@ -1129,8 +1129,10 @@ QString ObjdumpParser::parseOperands()
     _line.skipWhitespaces();
 
     char* operandsPos = _line.relData();
-    auto operandsLen = std::min<std::size_t>(std::strlen(operandsPos),
-                                             std::strchr(operandsPos, '#') - operandsPos);
+    char commentDelimiter = _isArm ? ';' : '#';
+    auto operandsLen
+        = std::min<std::size_t>(std::strlen(operandsPos),
+                                std::strchr(operandsPos, commentDelimiter) - operandsPos);
     if (operandsLen > 0 && _line.elem(operandsLen - 1) == '\n')
         operandsLen--;
 
