@@ -1130,9 +1130,12 @@ QString ObjdumpParser::parseOperands()
 
     char* operandsPos = _line.relData();
     char commentDelimiter = _isArm ? ';' : '#';
-    auto operandsLen
-        = std::min<std::size_t>(std::strlen(operandsPos),
-                                std::strchr(operandsPos, commentDelimiter) - operandsPos);
+    char* commentPos = std::strchr(operandsPos, commentDelimiter);
+
+    std::size_t operandsLen = std::strlen(operandsPos);
+    if (commentPos)
+        operandsLen = std::min<std::size_t>(operandsLen, commentPos - operandsPos);
+
     if (operandsLen > 0 && _line.elem(operandsLen - 1) == '\n')
         operandsLen--;
 
