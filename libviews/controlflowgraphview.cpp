@@ -2994,8 +2994,8 @@ void ControlFlowGraphView::refresh(bool reset)
     connect(_renderProcess, &QProcess::errorOccurred,
             this, &ControlFlowGraphView::dotError);
 
-    auto finishedPtr = static_cast<void (QProcess::*)(int,
-                                                      QProcess::ExitStatus)>(&QProcess::finished);
+    static constexpr auto finishedPtr =
+        static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished);
     connect(_renderProcess, finishedPtr,
             this, &ControlFlowGraphView::dotExited);
 
