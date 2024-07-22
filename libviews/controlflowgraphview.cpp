@@ -2579,12 +2579,14 @@ void ControlFlowGraphView::keyPressEvent(QKeyEvent* e)
         }
         else if (_selectedEdge)
         {
-            std::pair<CFGNode*, CFGEdge*> pair = getNodeOrEdgeToSelect(_selectedEdge, e->key());
+            CFGNode* node;
+            CFGEdge* edge;
+            std::tie(node, edge) = getNodeOrEdgeToSelect(_selectedEdge, e->key());
 
-            if (pair.first && pair.first->basicBlock())
-                selected(pair.first->basicBlock());
-            else if (pair.second && pair.second->branch())
-                selected(pair.second->branch());
+            if (node && node->basicBlock())
+                selected(node->basicBlock());
+            else if (edge && edge->branch())
+                selected(edge->branch());
         }
     }
     else
