@@ -2772,15 +2772,18 @@ void TraceFunction::constructBasicBlocks()
     // 6. removing invalid branches of type 2
     auto isInvalidRef = [](TraceBranch& br){ return br.brType() == TraceBranch::Type::invalid; };
 
-    for (auto bb: _basicBlocks)
+    for (auto bb : _basicBlocks)
+    {
+        auto& incoming = bb->incomingBranches();
+        incoming.erase(std::remove_if(incoming.begin(), incoming.end(), isInvalid),
+                       incoming.end());
+    }
+
+    for (auto bb : _basicBlocks)
     {
         auto& outgoing = bb->outgoingBranches();
         outgoing.erase(std::remove_if(outgoing.begin(), outgoing.end(), isInvalidRef),
                        outgoing.end());
-
-        auto& incoming = bb->incomingBranches();
-        incoming.erase(std::remove_if(incoming.begin(), incoming.end(), isInvalid),
-                       incoming.end());
     }
 
     assert(std::all_of(_basicBlocks.begin(), _basicBlocks.end(),
