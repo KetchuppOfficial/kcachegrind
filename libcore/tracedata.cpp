@@ -2783,8 +2783,8 @@ void TraceFunction::constructBasicBlocks()
                        incoming.end());
     }
 
-    assert (std::all_of(_basicBlocks.begin(), _basicBlocks.end(),
-                        [](TraceBasicBlock* bb){ return bb->instrNumber() > 0; }));
+    assert(std::all_of(_basicBlocks.begin(), _basicBlocks.end(),
+                       [](TraceBasicBlock* bb){ return bb->instrNumber() > 0; }));
 }
 
 //---------------------------------------------------
