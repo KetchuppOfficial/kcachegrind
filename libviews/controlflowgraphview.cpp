@@ -1221,12 +1221,12 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
     int span = 2;
     if (options & Options::showInstrPC)
     {
-        mode &= DumpMode::pc;
+        mode |= DumpMode::pc;
         span++;
     }
     if (options & Options::showInstrCost)
     {
-        mode &= DumpMode::cost;
+        mode |= DumpMode::cost;
         span++;
     }
 
