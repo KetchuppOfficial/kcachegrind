@@ -11,6 +11,7 @@
 
 #include <errno.h>
 #include <stdlib.h>
+#include <numeric>
 
 #include <QFile>
 #include <QDir>
@@ -3934,7 +3935,21 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
             assert(data);
             EventType* e = data->eventTypes()->realType(0);
             assert(e);
-            _outgoingBranches.back().addExecutedCount(lastInstr()->subCost(e));
+
+            auto& calls = lastInstr()->instrCalls();
+
+            if (calls.empty())
+                _outgoingBranches.back().addExecutedCount(lastInstr()->subCost(e));
+            else
+            {
+                auto accumulator = [](uint64 count, TraceInstrCall* call)
+                {
+                    return count + call->callCount();
+                };
+
+                auto nCalls = std::accumulate(calls.begin(), calls.end(), uint64{0}, accumulator);
+                _outgoingBranches.back().addExecutedCount(nCalls);
+            }
         }
     }
     else if (nJumps == 1)
