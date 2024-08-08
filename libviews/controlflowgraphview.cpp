@@ -1719,6 +1719,88 @@ ControlFlowGraphView::~ControlFlowGraphView()
     delete _panningView;
 }
 
+namespace
+{
+
+CFGExporter::Layout strToLayout(const QString& s)
+{
+    if (s == QLatin1String("LeftRight"))
+        return CFGExporter::Layout::LeftRight;
+    return CFGExporter::Layout::TopDown;
+}
+
+QString layoutToStr(CFGExporter::Layout l)
+{
+    if (l == CFGExporter::Layout::LeftRight)
+        return QStringLiteral("LeftRight");
+    return QStringLiteral("TopDown");
+}
+
+ControlFlowGraphView::ZoomPosition strToZoomPos(const QString& s)
+{
+    if (s == QLatin1String("TopLeft"))
+        return ControlFlowGraphView::ZoomPosition::TopLeft;
+    if (s == QLatin1String("TopRight"))
+        return ControlFlowGraphView::ZoomPosition::TopRight;
+    if (s == QLatin1String("BottomLeft"))
+        return ControlFlowGraphView::ZoomPosition::BottomLeft;
+    if (s == QLatin1String("BottomRight"))
+        return ControlFlowGraphView::ZoomPosition::BottomRight;
+    if (s == QLatin1String("Auto"))
+        return ControlFlowGraphView::ZoomPosition::Auto;
+    if (s == QLatin1String("Hide"))
+        return ControlFlowGraphView::ZoomPosition::Hide;
+
+    return ControlFlowGraphView::ZoomPosition::Auto;
+}
+
+QString zoomPosToStr(ControlFlowGraphView::ZoomPosition p)
+{
+    switch (p)
+    {
+        case ControlFlowGraphView::ZoomPosition::TopLeft:
+            return QStringLiteral("TopLeft");
+        case ControlFlowGraphView::ZoomPosition::TopRight:
+            return QStringLiteral("TopRight");
+        case ControlFlowGraphView::ZoomPosition::BottomLeft:
+            return QStringLiteral("BottomLeft");
+        case ControlFlowGraphView::ZoomPosition::BottomRight:
+            return QStringLiteral("BottomRight");
+        case ControlFlowGraphView::ZoomPosition::Auto:
+            return QStringLiteral("Auto");
+        case ControlFlowGraphView::ZoomPosition::Hide:
+            return QStringLiteral("Hide");
+        default:
+            return QString{};
+    }
+}
+
+} // unnamed namespace
+
+void ControlFlowGraphView::restoreOptions(const QString& prefix, const QString& postfix)
+{
+    ConfigGroup* g = ConfigStorage::group(prefix, postfix);
+
+    _exporter.setLayout(strToLayout(g->value(QStringLiteral("Layout"),
+                                             layoutToStr(CFGExporter::Layout::TopDown)).toString()));
+    _zoomPosition = strToZoomPos(g->value(QStringLiteral("ZoomPosition"),
+                                          zoomPosToStr(ZoomPosition::Auto)).toString());
+
+    delete g;
+}
+
+void ControlFlowGraphView::saveOptions(const QString& prefix, const QString& postfix)
+{
+    ConfigGroup* g = ConfigStorage::group(prefix + postfix);
+
+    g->setValue(QStringLiteral("Layout"), layoutToStr(_exporter.layout()),
+                                          layoutToStr(CFGExporter::Layout::TopDown));
+    g->setValue(QStringLiteral("ZoomPosition"), zoomPosToStr(_zoomPosition),
+                                                zoomPosToStr(ZoomPosition::Auto));
+
+    delete g;
+}
+
 QString ControlFlowGraphView::whatsThis() const
 {
     return QObject::tr("This is Control Flow Graph by dWX1268804");
