@@ -405,6 +405,9 @@ public:
     explicit ControlFlowGraphView(TraceItemView* parentView, QWidget* parent, const QString& name);
     ~ControlFlowGraphView() override;
 
+    void restoreOptions(const QString& prefix, const QString& postfix) override;
+    void saveOptions(const QString& prefix, const QString& postfix) override;
+
     QWidget* widget() override { return this; }
     ZoomPosition zoomPos() const { return _zoomPosition; }
 
