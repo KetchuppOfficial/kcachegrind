@@ -90,15 +90,23 @@ public:
     template<typename It,
              typename = typename std::enable_if<std::is_base_of<std::forward_iterator_tag,
                                                                 iterator_category_t<It>>::value>::type>
-    void insertInstructions(It first, It last)
+    void insertInstructions(It strIt, It strEnd)
     {
-        assert(std::distance(first, last) ==
-               static_cast<typename std::iterator_traits<It>::difference_type>(_bb->instrNumber()));
+        _instructions.reserve(_bb->instrNumber());
 
-        _instructions.reserve(std::distance(first, last));
+        for (auto instrIt = _bb->begin(), instrEnd = _bb->end();
+             instrIt != instrEnd && strIt != strEnd; ++instrIt, ++strIt)
+        {
+            while (strIt != strEnd && (*instrIt)->addr() != strIt->first)
+                ++strIt;
 
-        for (; first != last; ++first)
-            _instructions.emplace_back(first->first, first->second);
+            if (strIt == strEnd)
+                break;
+
+            const QString& mnemonic = strIt->second.first;
+            const QString& operands = strIt->second.second;
+            _instructions.emplace_back(mnemonic, operands);
+        }
     }
 
     size_type instrNumber() const

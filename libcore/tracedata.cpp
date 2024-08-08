@@ -2679,7 +2679,8 @@ void TraceFunction::constructBasicBlocks()
                 to = it;
                 break;
             }
-            else if (!it->instrJumps().empty() || !it->instrCalls().empty())
+            else if (!it->instrJumps().empty() || !it->instrCalls().empty() ||
+                     std::next(it)->addr() > it->addr() + 3 * GlobalConfig::context())
             {
                 to = std::next(it);
                 break;
