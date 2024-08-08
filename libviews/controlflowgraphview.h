@@ -26,6 +26,7 @@
 #include "traceitemview.h"
 #include "callgraphview.h"
 #include "tracedata.h"
+#include "config.h"
 
 class CFGEdge;
 class CanvasCFGNode;
