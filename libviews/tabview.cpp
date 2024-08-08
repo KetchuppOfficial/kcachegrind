@@ -44,7 +44,7 @@
 
 #define DEFAULT_TOPTABS \
     "EventTypeView" << "CallerView" << "AllCallerView" \
-    << "CalleeMapView" << "SourceView"
+    << "CalleeMapView" << "SourceView" << "ControlFlowGraphView"
 #define DEFAULT_BOTTOMTABS \
     "PartView" << "CalleeView" << "CallGraphView" \
     << "AllCalleeView" << "CallerMapView" << "InstrView"
