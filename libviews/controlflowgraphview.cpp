@@ -1447,10 +1447,10 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
                                                    GlobalConfig::percentPrecision()));
     else
         setText(paramI, SubCost{_node->cost()}.pretty());
-
+#if 0
     setPixmap(paramI,
               percentagePixmap(25, 10, static_cast<int>(selfPercentage + 0.5), Qt::blue, true));
-
+#endif
     // set tool tip (balloon help) with the name of a basic block and percentage
     setToolTip(QStringLiteral("%1").arg(text(paramI)));
 
@@ -1588,6 +1588,7 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(CanvasCFGEdge* ce, qreal x, qreal y, qrea
     setPosition(paramI, DrawParams::TopCenter);
     setText(paramI, QStringLiteral("%1 x").arg(e->count()));
 
+#if 0
     if (e->nodeFrom() == e->nodeTo())
     {
         QFontMetrics fm{font()};
@@ -1595,6 +1596,7 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(CanvasCFGEdge* ce, qreal x, qreal y, qrea
     }
     else
         setPixmap(paramI, percentagePixmap(25, 10, e->count(), Qt::blue, true));
+#endif
 }
 
 void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
