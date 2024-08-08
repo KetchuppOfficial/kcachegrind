@@ -5,6 +5,7 @@
 #include <cmath>
 #include <array>
 #include <cstring>
+#include <map>
 
 #include <QFile>
 #include <QTextStream>
@@ -807,7 +808,7 @@ QString FileSearcher::getSysRoot()
 class ObjdumpParser final
 {
 public:
-    using instrStringsMap = QMap<Addr, std::pair<QString, QString>>;
+    using instrStringsMap = std::map<Addr, std::pair<QString, QString>>;
 
     ObjdumpParser(TraceFunction* func, EventType* et);
     ~ObjdumpParser() = default;
@@ -995,7 +996,7 @@ const ObjdumpParser::instrStringsMap& ObjdumpParser::getInstrStrings()
             skipLineWritten = false;
 
         if (!mnemonic.isEmpty())
-            _instrStrings.insert(addr, std::make_pair(mnemonic, operands));
+            _instrStrings.emplace(addr, std::make_pair(mnemonic, operands));
     }
 
     if (noAssLines > 1)
