@@ -298,7 +298,7 @@ enum CanvasParts : int
 
 class ControlFlowGraphView;
 
-class CanvasCFGNode : public QGraphicsRectItem, public StoredDrawParams
+class CanvasCFGNode final : public QGraphicsRectItem, public StoredDrawParams
 {
 public:
     CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
@@ -328,7 +328,7 @@ private:
 };
 
 
-class CanvasCFGEdgeLabel : public QGraphicsRectItem, public StoredDrawParams
+class CanvasCFGEdgeLabel final : public QGraphicsRectItem, public StoredDrawParams
 {
 public:
     CanvasCFGEdgeLabel(CanvasCFGEdge* ce, qreal x, qreal y, qreal w, qreal h);
@@ -348,7 +348,7 @@ private:
 };
 
 
-class CanvasCFGEdgeArrow : public QGraphicsPolygonItem
+class CanvasCFGEdgeArrow final : public QGraphicsPolygonItem
 {
 public:
     CanvasCFGEdgeArrow(CanvasCFGEdge* e, const QPolygon& arrow, const QBrush& arrowColor);
@@ -365,7 +365,7 @@ private:
 };
 
 
-class CanvasCFGEdge : public QGraphicsPathItem
+class CanvasCFGEdge final : public QGraphicsPathItem
 {
 public:
     CanvasCFGEdge(CFGEdge* e, const QPolygon &poly, const QColor& arrowColor);
@@ -389,8 +389,8 @@ private:
 };
 
 
-class ControlFlowGraphView : public QGraphicsView, public TraceItemView,
-                             public StorableGraphOptions
+class ControlFlowGraphView final : public QGraphicsView, public TraceItemView,
+                                   public StorableGraphOptions
 {
     Q_OBJECT
 
