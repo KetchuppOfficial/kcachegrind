@@ -1586,7 +1586,7 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(CanvasCFGEdge* ce, qreal x, qreal y, qrea
     if (!e)
         return;
 
-    const int paramI = 0; // we've got the only parameter; so its index is 0
+    constexpr int paramI = 0; // we've got the only parameter; so its index is 0
 
     setPosition(paramI, DrawParams::TopCenter);
     setText(paramI, QStringLiteral("%1 x").arg(e->count()));
