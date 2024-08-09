@@ -368,7 +368,7 @@ private:
 class CanvasCFGEdge : public QGraphicsPathItem
 {
 public:
-    CanvasCFGEdge(CFGEdge* e, const QPolygon &poly);
+    CanvasCFGEdge(CFGEdge* e, const QPolygon &poly, const QColor& arrowColor);
 
     void setLabelAndArrow(CanvasCFGEdgeLabel* label, CanvasCFGEdgeArrow* arrow);
 
