@@ -2183,7 +2183,8 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
         cEdge->setSelected(edge == _selectedEdge);
 
     QString label;
-    lineStream >> label; // further ignored
+    Q_UNUSED(label);
+    lineStream >> label;
 
     std::pair<int, int> coords = calculateSizes(lineStream);
     auto cLabel = new CanvasCFGEdgeLabel{cEdge,
