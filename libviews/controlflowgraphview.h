@@ -368,12 +368,11 @@ private:
 class CanvasCFGEdge : public QGraphicsPathItem
 {
 public:
-    explicit CanvasCFGEdge(CFGEdge* e);
+    CanvasCFGEdge(CFGEdge* e, const QPolygon &poly);
 
     void setLabelAndArrow(CanvasCFGEdgeLabel* label, CanvasCFGEdgeArrow* arrow);
 
     const QPolygon& controlPoints() const { return _points; }
-    void setControlPoints(const QPolygon& p);
 
     CFGEdge* edge() { return _edge; }
     const CFGEdge* edge() const { return _edge; }
