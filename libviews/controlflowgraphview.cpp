@@ -79,7 +79,7 @@ public:
     OutgoingEdgesComparator(CanvasCFGNode* cn)
     {
         assert(cn);
-        QRectF nodeRect = cn->rect();
+        const QRectF nodeRect = cn->rect();
         _center.setX(nodeRect.center().x());
         _center.setY(nodeRect.bottom());
     }
@@ -97,8 +97,8 @@ public:
             return true;
         else
         {
-            QPointF d1 = ce1->controlPoints().back() - _center;
-            QPointF d2 = ce2->controlPoints().back() - _center;
+            const QPointF d1 = ce1->controlPoints().back() - _center;
+            const QPointF d2 = ce2->controlPoints().back() - _center;
 
             return calcAngle(d1.x(), d1.y()) > calcAngle(d2.x(), d2.y());
         }
@@ -114,7 +114,7 @@ public:
     IncomingEdgesComparator(CanvasCFGNode* cn)
     {
         assert(cn);
-        QRectF nodeRect = cn->rect();
+        const QRectF nodeRect = cn->rect();
         _center.setX(nodeRect.center().x());
         _center.setY(nodeRect.top());
     }
@@ -132,8 +132,8 @@ public:
             return true;
         else
         {
-            QPointF d1 = ce1->controlPoints().front() - _center;
-            QPointF d2 = ce2->controlPoints().front() - _center;
+            const QPointF d1 = ce1->controlPoints().front() - _center;
+            const QPointF d2 = ce2->controlPoints().front() - _center;
 
             return calcAngle(d1.x(), d1.y()) < calcAngle(d2.x(), d2.y());
         }
@@ -549,7 +549,7 @@ void CFGExporter::reset(CostItem* i, EventType* et, QString filename)
                 return;
         }
 
-        auto& BBs = _func->basicBlocks();
+        const auto& BBs = _func->basicBlocks();
         if (BBs.empty())
         {
             _errorMessage = QObject::tr("Control-flow graph requires running "
@@ -717,7 +717,6 @@ class FileSearcher final
 {
 public:
     FileSearcher(const TraceData* data, const QString& filename);
-    ~FileSearcher() = default;
 
     bool searchFile(QString& dir);
 
@@ -758,7 +757,7 @@ bool FileSearcher::searchFile(QString& dir)
     }
     else
     {
-        QFileInfo fi(dir, _filename);
+        const QFileInfo fi(dir, _filename);
         if (fi.exists()) {
             dir = fi.absolutePath();
             return true;
@@ -769,9 +768,10 @@ bool FileSearcher::searchFile(QString& dir)
             if (firstPart)
             {
                 QFileInfo partFile{firstPart->name()};
-                if (QFileInfo{partFile.absolutePath(), _filename}.exists())
+                QString absolutePath = partFile.absolutePath();
+                if (QFileInfo{absolutePath, _filename}.exists())
                 {
-                    dir = partFile.absolutePath();
+                    dir = std::move(absolutePath);
                     return true;
                 }
             }
@@ -811,7 +811,6 @@ public:
     using instrStringsMap = std::map<Addr, std::pair<QString, QString>>;
 
     ObjdumpParser(TraceFunction* func, EventType* et);
-    ~ObjdumpParser() = default;
 
     const instrStringsMap& getInstrStrings();
     const QString& errorMessage() const { return _errorMessage; }
@@ -907,7 +906,7 @@ void ObjdumpParser::runObjdump()
         if (objdumpFormat.isEmpty())
             objdumpFormat = searcher.getObjDump();
 
-        int margin = _isArm ? 4 : 20;
+        const int margin = _isArm ? 4 : 20;
 
         QStringList args{"-C", "-d"};
         args << QStringLiteral("--start-address=0x%1").arg(_dumpStartAddr.toString()),
@@ -960,6 +959,7 @@ const ObjdumpParser::instrStringsMap& ObjdumpParser::getInstrStrings()
             assert(addr == _objAddr);
 
             QString encoding = parseEncoding();
+            Q_UNUSED(encoding);
             assert(!encoding.isNull());
 
             mnemonic = parseMnemonic();
@@ -1027,7 +1027,7 @@ void ObjdumpParser::getObjAddr()
     _needObjAddr = false;
     for (; ; _line.setPos(0))
     {
-        qint64 readBytes = _objdump.readLine(_line.data(), _line.capacity());
+        const qint64 readBytes = _objdump.readLine(_line.data(), _line.capacity());
         if (readBytes <= 0)
         {
             _objAddr = Addr{0};
@@ -1086,7 +1086,7 @@ Addr ObjdumpParser::parseAddress()
 QString ObjdumpParser::parseEncoding()
 {
     _line.skipWhitespaces();
-    LineBuffer::pos_type start = _line.getPos();
+    const LineBuffer::pos_type start = _line.getPos();
 
     while (true)
     {
@@ -1117,7 +1117,7 @@ QString ObjdumpParser::parseEncoding()
 QString ObjdumpParser::parseMnemonic()
 {
     _line.skipWhitespaces();
-    LineBuffer::pos_type start = _line.getPos();
+    const LineBuffer::pos_type start = _line.getPos();
 
     while (_line.elem() && _line.elem() != ' ' && _line.elem() != '\t')
         _line.advance(1);
@@ -1130,7 +1130,7 @@ QString ObjdumpParser::parseOperands()
     _line.skipWhitespaces();
 
     char* operandsPos = _line.relData();
-    char commentDelimiter = _isArm ? ';' : '#';
+    const char commentDelimiter = _isArm ? ';' : '#';
     char* commentPos = std::strchr(operandsPos, commentDelimiter);
 
     std::size_t operandsLen = std::strlen(operandsPos);
@@ -1350,7 +1350,7 @@ void CFGExporter::dumpCyclicEdge(QTextStream& ts, const TraceBranch* br)
     assert(br->bbFrom() == br->bbTo());
 
     const TraceBasicBlock* bb = br->bbFrom();
-    auto bbI = reinterpret_cast<qulonglong>(bb);
+    const auto bbI = reinterpret_cast<qulonglong>(bb);
 
     if (getNodeOptions(bb) & Options::reduced)
         ts << QStringLiteral("  bb%1:w -> bb%2:w [constraint=false, ")
@@ -1368,9 +1368,9 @@ void CFGExporter::dumpCyclicEdge(QTextStream& ts, const TraceBranch* br)
 bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func, EventType* eventType,
                              const CFGExporter& origExporter)
 {
-    QString filter1 = QStringLiteral("text/vnd.graphviz");
-    QString filter2 = QStringLiteral("application/pdf");
-    QString filter3 = QStringLiteral("application/postscript");
+    const QString filter1 = QStringLiteral("text/vnd.graphviz");
+    const QString filter2 = QStringLiteral("application/pdf");
+    const QString filter3 = QStringLiteral("application/postscript");
 
     QFileDialog saveDialog{parent, QObject::tr("Export Graph")};
     saveDialog.setMimeTypeFilters(QStringList{filter1, filter2, filter3});
@@ -1379,14 +1379,14 @@ bool CFGExporter::savePrompt(QWidget* parent, TraceFunction* func, EventType* ev
 
     if (saveDialog.exec())
     {
-        QString intendedName = saveDialog.selectedFiles().first();
+        const QString intendedName = saveDialog.selectedFiles().first();
         if (intendedName.isNull() || intendedName.isEmpty())
             return false;
 
         QTemporaryFile maybeTemp;
         QString dotName;
 
-        QString mime = saveDialog.selectedMimeTypeFilter();
+        const QString mime = saveDialog.selectedMimeTypeFilter();
         if (mime == filter1)
             dotName = intendedName;
         else
@@ -1436,9 +1436,9 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
 
     update();
 
-    SubCost total = node->basicBlock()->function()->subCost(view->eventType());
-    double selfPercentage = 100.0 * _node->cost() / total;
-    const int paramI = 0; // we've got the only parameter; so its index is 0
+    const SubCost total = node->basicBlock()->function()->subCost(view->eventType());
+    const double selfPercentage = 100.0 * _node->cost() / total;
+    constexpr int paramI = 0; // we've got the only parameter; so its index is 0
 
     setPosition(paramI, DrawParams::TopCenter);
 
@@ -1454,7 +1454,7 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     // set tool tip (balloon help) with the name of a basic block and percentage
     setToolTip(QStringLiteral("%1").arg(text(paramI)));
 
-    QFontMetrics fm = _view->fontMetrics();
+    const QFontMetrics fm = _view->fontMetrics();
 
     TraceBasicBlock* bb = _node->basicBlock();
     if (_view->showInstrPC(_node))
@@ -1470,7 +1470,7 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     else
         _costLen = 0;
 
-    auto mnemonicComp = [&fm](CFGNode::instrString& pair1, CFGNode::instrString& pair2)
+    auto mnemonicComp = [&fm](const CFGNode::instrString& pair1, const CFGNode::instrString& pair2)
     {
         return fm.size(Qt::TextSingleLine, pair1._mnemonic).width() <
                fm.size(Qt::TextSingleLine, pair2._mnemonic).width();
@@ -1495,16 +1495,16 @@ void CanvasCFGNode::setSelected(bool condition)
 
 void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
-    QRectF rectangle = rect();
+    const QRectF rectangle = rect();
     const qreal x = rectangle.x();
     const qreal y = rectangle.y();
     const qreal w = rectangle.width();
     const qreal h = rectangle.height();
 
-    bool reduced = _view->isReduced(_node);
+    const bool reduced = _view->isReduced(_node);
 
     qreal topLineY = y;
-    qreal step = h / (reduced ? 2 : _node->instrNumber() + 2);
+    const qreal step = h / (reduced ? 2 : _node->instrNumber() + 2);
 
     p->fillRect(x + 1, topLineY + 1, w, step * 2, Qt::gray);
     topLineY += step;
@@ -1543,8 +1543,8 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
             ++instrIt;
         }
 
-        qreal bottomLineY = y + h;
-        qreal firstInstrTopLineY = y + step * 2;
+        const qreal bottomLineY = y + h;
+        const qreal firstInstrTopLineY = y + step * 2;
 
         if (_pcLen != 0)
             p->drawLine(x + _pcLen, firstInstrTopLineY,
@@ -1559,15 +1559,9 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
     }
 
     if (StoredDrawParams::selected())
-    {
-        QPen pen{Qt::darkGreen};
-        pen.setWidth(2);
-        p->setPen(pen);
+        p->setPen(QPen{Qt::darkGreen, 2});
 
-        p->drawRect(rectangle);
-    }
-    else
-        p->drawRect(rectangle);
+    p->drawRect(rectangle);
 
     RectDrawing d{rectangle.toRect()};
     d.drawField(p, 0, this);
@@ -1661,7 +1655,7 @@ void CanvasCFGEdge::setLabelAndArrow(CanvasCFGEdgeLabel* label, CanvasCFGEdgeArr
 {
     if (label)
     {
-        QString tip = QStringLiteral("%1").arg(label->text(0));
+        const QString tip = QStringLiteral("%1").arg(label->text(0));
 
         setToolTip(tip);
         if (arrow)
@@ -1685,7 +1679,7 @@ void CanvasCFGEdge::paint(QPainter* p, const QStyleOptionGraphicsItem* option, Q
     qreal levelOfDetail = option->levelOfDetail;
 #endif
 
-    static const double thickness = 0.9;
+    static constexpr double thickness = 0.9;
 
     QPen mypen = pen();
     mypen.setWidthF(isSelected() ? 2.0 : 1.0 / levelOfDetail * thickness);
@@ -1819,7 +1813,7 @@ void ControlFlowGraphView::saveOptions(const QString& prefix, const QString& pos
 
 QString ControlFlowGraphView::whatsThis() const
 {
-    return QObject::tr("This is Control Flow Graph by dWX1268804");
+    return QObject::tr("This is Control Flow Graph by KetchuppOfficial");
 }
 
 bool ControlFlowGraphView::isReduced(const CFGNode* node) const
@@ -2023,15 +2017,15 @@ void ControlFlowGraphView::setupScreen(QTextStream& lineStream, int lineno)
                  << _exporter.filename() << ":" << lineno << ")";
     else
     {
-        QSize pScreenSize = QApplication::primaryScreen()->size();
+        const QSize pScreenSize = QApplication::primaryScreen()->size();
 
         _xMargin = 50;
-        auto w = static_cast<int>(_scaleX * dotWidth);
+        const auto w = static_cast<int>(_scaleX * dotWidth);
         if (w < pScreenSize.width())
             _xMargin += (pScreenSize.width() - w) / 2;
 
         _yMargin = 50;
-        auto h = static_cast<int>(_scaleY * _dotHeight);
+        const auto h = static_cast<int>(_scaleY * _dotHeight);
         if (h < pScreenSize.height())
             _yMargin += (pScreenSize.height() - h) / 2;
 
@@ -2058,14 +2052,14 @@ void ControlFlowGraphView::parseNode(QTextStream& lineStream)
     assert(node);
     assert(node->instrNumber() > 0);
 
-    std::pair<int, int> coords = calculateSizes(lineStream);
+    const std::pair<int, int> coords = calculateSizes(lineStream);
 
     double nodeWidth, nodeHeight;
     lineStream >> nodeWidth >> nodeHeight;
 
     node->setVisible(true);
-    qreal w = (_scaleX - 4.5) * nodeWidth;
-    qreal h = _scaleY * nodeHeight;
+    const qreal w = (_scaleX - 4.5) * nodeWidth;
+    const qreal h = _scaleY * nodeHeight;
 
     auto rItem = new CanvasCFGNode{this, node, coords.first - w / 2, coords.second - h / 2, w, h};
 
@@ -2105,29 +2099,22 @@ QColor getArrowColor(CFGEdge* edge)
     assert(edge);
     assert(edge->branch());
 
-    QColor arrowColor;
     switch (edge->branch()->brType())
     {
         case TraceBranch::Type::unconditional:
-            arrowColor = Qt::black;
-            break;
+            return Qt::black;
         case TraceBranch::Type::true_:
-            arrowColor = Qt::blue;
-            break;
+            return Qt::blue;
         case TraceBranch::Type::false_:
-            arrowColor = Qt::red;
-            break;
+            return Qt::red;
         case TraceBranch::Type::indirect:
-            arrowColor = Qt::darkGreen;
-            break;
+            return Qt::darkGreen;
         case TraceBranch::Type::fallThrough:
-            arrowColor = Qt::magenta;
-            break;
+            return Qt::magenta;
         default:
             assert(false);
+            return QColor{};
     }
-
-    return arrowColor;
 }
 
 CanvasCFGEdge* createEdge(CFGEdge* edge, const QPolygon& poly, QColor arrowColor)
@@ -2139,12 +2126,12 @@ CanvasCFGEdge* createEdge(CFGEdge* edge, const QPolygon& poly, QColor arrowColor
 
 CanvasCFGEdgeArrow* createArrow(CanvasCFGEdge* cEdge, const QPolygon& poly, QColor arrowColor)
 {
-    QPoint headPoint{poly.point(poly.size() - 1)};
+    const QPoint headPoint{poly.point(poly.size() - 1)};
     QPoint arrowDir{headPoint - poly.point(poly.size() - 2)};
     assert(!arrowDir.isNull());
 
-    auto length = static_cast<qreal>(arrowDir.x() * arrowDir.x() +
-                                     arrowDir.y() * arrowDir.y());
+    const auto length = static_cast<qreal>(arrowDir.x() * arrowDir.x() +
+                                           arrowDir.y() * arrowDir.y());
     arrowDir *= 10.0 / std::sqrt(length);
 
     QPolygon arrow;
@@ -2169,7 +2156,7 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
 
     edge->setVisible(true);
 
-    QColor arrowColor = getArrowColor(edge);
+    const QColor arrowColor = getArrowColor(edge);
 
     CanvasCFGEdge* cEdge = createEdge(edge, poly, arrowColor);
     _scene->addItem(cEdge);
@@ -2189,7 +2176,7 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
     Q_UNUSED(label);
     lineStream >> label;
 
-    std::pair<int, int> coords = calculateSizes(lineStream);
+    const std::pair<int, int> coords = calculateSizes(lineStream);
     auto cLabel = new CanvasCFGEdgeLabel{cEdge,
                                          static_cast<qreal>(coords.first - 60),
                                          static_cast<qreal>(coords.second - 10),
@@ -2208,7 +2195,7 @@ TraceBasicBlock* getEdgeEndpoint(QTextStream& lineStream)
     QString bbStr;
     lineStream >> bbStr;
 
-    qsizetype colonI = bbStr.indexOf(':');
+    const qsizetype colonI = bbStr.indexOf(':');
     assert(colonI != -1);
     bbStr = bbStr.mid(2, colonI - 2);
 
@@ -2255,7 +2242,7 @@ QPolygon ControlFlowGraphView::getEdgePolygon(QTextStream& lineStream, int linen
             return QPolygon{};
         }
 
-        std::pair<int, int> coords = calculateSizes(lineStream);
+        const std::pair<int, int> coords = calculateSizes(lineStream);
         poly.setPoint(i, coords.first, coords.second);
     }
 
@@ -2326,8 +2313,8 @@ void ControlFlowGraphView::layoutTriggered(QAction* a)
 void ControlFlowGraphView::minimizationTriggered(QAction* a)
 {
     TraceFunction* func = getFunction();
-    uint64 totalCost = func->subCost(_eventType).v;
-    double percentage = a->data().toDouble();
+    const uint64 totalCost = func->subCost(_eventType).v;
+    const double percentage = a->data().toDouble();
 
     _exporter.setMinimalCostPercentage(func, percentage);
     _exporter.minimizeBBsWithCostLessThan(totalCost * percentage / 100);
@@ -2404,7 +2391,7 @@ void ControlFlowGraphView::mouseMoveEvent(QMouseEvent* event)
 {
     if (_isMoving)
     {
-        QPoint delta = event->pos() - _lastPos;
+        const QPoint delta = event->pos() - _lastPos;
         zoomRectMoved(-delta.x(), -delta.y());
         _lastPos = event->pos();
     }
@@ -2507,8 +2494,8 @@ void ControlFlowGraphView::contextMenuEvent(QContextMenuEvent* event)
     addZoomPosMenu(popup);
 
     QAction* action = popup.exec(event->globalPos());
-    auto index = std::distance(actions.begin(),
-                               std::find(actions.begin(), actions.end(), action));
+    const auto index = std::distance(actions.begin(),
+                                     std::find(actions.begin(), actions.end(), action));
 
     switch (index)
     {
@@ -2588,13 +2575,13 @@ void ControlFlowGraphView::exportGraphAsImage()
 {
     assert(_scene);
 
-    QString fileName = QFileDialog::getSaveFileName(this,
-                                                    QObject::tr("Export Graph as Image"),
-                                                    QString{},
-                                                    QObject::tr("Images (*.png *.jpg)"));
+    const QString fileName = QFileDialog::getSaveFileName(this,
+                                                          QObject::tr("Export Graph as Image"),
+                                                          QString{},
+                                                          QObject::tr("Images (*.png *.jpg)"));
     if (!fileName.isEmpty())
     {
-        QRect rect = _scene->sceneRect().toRect();
+        const QRect rect = _scene->sceneRect().toRect();
         QPixmap pix{rect.width(), rect.height()};
         QPainter painter{std::addressof(pix)};
         _scene->render(std::addressof(painter));
@@ -2682,7 +2669,7 @@ void ControlFlowGraphView::movePointOfView(QKeyEvent* e)
     auto dx = [this]{ return mapToScene(width(), 0) - mapToScene(0, 0); };
     auto dy = [this]{ return mapToScene(0, height()) - mapToScene(0, 0); };
 
-    QPointF center = mapToScene(viewport()->rect().center());
+    const QPointF center = mapToScene(viewport()->rect().center());
     switch (e->key())
     {
         case Qt::Key_Home:
@@ -2693,37 +2680,37 @@ void ControlFlowGraphView::movePointOfView(QKeyEvent* e)
             break;
         case Qt::Key_PageUp:
         {
-            QPointF delta = dy();
+            const QPointF delta = dy();
             centerOn(center + QPointF(-delta.x() / 2.0, -delta.y() / 2.0));
             break;
         }
         case Qt::Key_PageDown:
         {
-            QPointF delta = dy();
+            const QPointF delta = dy();
             centerOn(center + QPointF(delta.x() / 2.0, delta.y() / 2.0));
             break;
         }
         case Qt::Key_Left:
         {
-            QPointF delta = dx();
+            const QPointF delta = dx();
             centerOn(center + QPointF(-delta.x() / 10.0, -delta.y() / 10.0));
             break;
         }
         case Qt::Key_Right:
         {
-            QPointF delta = dx();
+            const QPointF delta = dx();
             centerOn(center + QPointF(delta.x() / 10.0, delta.y() / 10.0));
             break;
         }
         case Qt::Key_Down:
         {
-            QPointF delta = dy();
+            const QPointF delta = dy();
             centerOn(center + QPointF(delta.x() / 10.0, delta.y() / 10.0));
             break;
         }
         case Qt::Key_Up:
         {
-            QPointF delta = dy();
+            const QPointF delta = dy();
             centerOn(center + QPointF(-delta.x() / 10, -delta.y() / 10));
             break;
         }
@@ -2739,11 +2726,10 @@ void ControlFlowGraphView::scrollContentsBy(int dx, int dy)
     // call QGraphicsView implementation
     QGraphicsView::scrollContentsBy(dx, dy);
 
-    QPointF topLeft = mapToScene(QPoint(0, 0));
-    QPointF bottomRight = mapToScene(QPoint(width(), height()));
+    const QPointF topLeft = mapToScene(QPoint(0, 0));
+    const QPointF bottomRight = mapToScene(QPoint(width(), height()));
 
-    QRectF z{topLeft, bottomRight};
-    _panningView->setZoomRect(z);
+    _panningView->setZoomRect(QRectF{topLeft, bottomRight});
 }
 
 namespace
@@ -2782,8 +2768,8 @@ void ControlFlowGraphView::updateSizes(QSize s)
         s = size();
 
     // the part of the scene that should be visible
-    auto cWidth = static_cast<int>(_scene->width()) - 2*_xMargin + 100;
-    auto cHeight = static_cast<int>(_scene->height()) - 2*_yMargin + 100;
+    const auto cWidth = static_cast<int>(_scene->width()) - 2*_xMargin + 100;
+    const auto cHeight = static_cast<int>(_scene->height()) - 2*_yMargin + 100;
 
     // hide birds eye view if no overview needed
     if (!_data || !_activeItem ||
@@ -2793,7 +2779,7 @@ void ControlFlowGraphView::updateSizes(QSize s)
         return;
     }
 
-    double zoom = calculate_zoom(s, cWidth, cHeight);
+    const double zoom = calculate_zoom(s, cWidth, cHeight);
 
     if (zoom != _panningZoom)
     {
@@ -2812,19 +2798,19 @@ void ControlFlowGraphView::updateSizes(QSize s)
 
     _panningView->centerOn(_scene->width() / 2, _scene->height() / 2);
 
-    int cvW = _panningView->width();
-    int cvH = _panningView->height();
-    int x = width() - cvW - verticalScrollBar()->width() - 2;
-    int y = height() - cvH - horizontalScrollBar()->height() - 2;
+    const int cvW = _panningView->width();
+    const int cvH = _panningView->height();
+    const int x = width() - cvW - verticalScrollBar()->width() - 2;
+    const int y = height() - cvH - horizontalScrollBar()->height() - 2;
 
     ZoomPosition zp = _zoomPosition;
     if (zp == ZoomPosition::Auto)
     {
-        auto tlCols = items(QRect(0, 0, cvW, cvH)).count();
-        auto trCols = items(QRect(x, 0, cvW, cvH)).count();
-        auto blCols = items(QRect(0, y, cvW, cvH)).count();
-        auto brCols = items(QRect(x, y, cvW, cvH)).count();
-        decltype(tlCols) minCols;
+        const auto tlCols = items(QRect(0, 0, cvW, cvH)).count();
+        const auto trCols = items(QRect(x, 0, cvW, cvH)).count();
+        const auto blCols = items(QRect(0, y, cvW, cvH)).count();
+        const auto brCols = items(QRect(x, y, cvW, cvH)).count();
+        qsizetype minCols;
 
         switch (_lastAutoPosition)
         {
@@ -3030,10 +3016,7 @@ void ControlFlowGraphView::refresh(bool reset)
 
     _prevSelectedNode = _selectedNode;
     if (_selectedNode)
-    {
-        QPointF center = _selectedNode->canvasNode()->rect().center();
-        _prevSelectedPos = mapFromScene(center);
-    }
+        _prevSelectedPos = mapFromScene(_selectedNode->canvasNode()->rect().center());
     else
         _prevSelectedPos = QPoint{-1, -1};
 
@@ -3083,7 +3066,7 @@ void ControlFlowGraphView::refresh(bool reset)
     connect(_renderProcess, finishedPtr,
             this, &ControlFlowGraphView::dotExited);
 
-    QString renderProgram = QStringLiteral("dot");
+    const QString renderProgram = QStringLiteral("dot");
     QStringList renderArgs{QStringLiteral("-Tplain-ext")};
 
     _renderProcessCmdLine = renderProgram + QLatin1Char(' ') + renderArgs.join(QLatin1Char(' '));
