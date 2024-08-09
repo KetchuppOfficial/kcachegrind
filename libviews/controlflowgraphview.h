@@ -351,7 +351,7 @@ private:
 class CanvasCFGEdgeArrow : public QGraphicsPolygonItem
 {
 public:
-    explicit CanvasCFGEdgeArrow(CanvasCFGEdge* e);
+    CanvasCFGEdgeArrow(CanvasCFGEdge* e, const QPolygon& arrow, const QBrush& arrowColor);
 
     CanvasCFGEdge* canvasEdge() { return _ce; }
     const CanvasCFGEdge* canvasEdge() const { return _ce; }

@@ -1617,7 +1617,14 @@ void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWi
 // CanvasCFGEdgeArrow
 //
 
-CanvasCFGEdgeArrow::CanvasCFGEdgeArrow(CanvasCFGEdge* ce) : _ce{ce} {}
+CanvasCFGEdgeArrow::CanvasCFGEdgeArrow(CanvasCFGEdge* ce, const QPolygon& arrow,
+                                       const QBrush& arrowColor)
+    : QGraphicsPolygonItem{arrow}, _ce{ce}
+{
+    setBrush(arrowColor);
+    setZValue(1.5);
+    show();
+}
 
 void CanvasCFGEdgeArrow::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
@@ -2146,13 +2153,7 @@ CanvasCFGEdgeArrow* createArrow(CanvasCFGEdge* cEdge, const QPolygon& poly, QCol
     arrow << QPoint{headPoint + QPoint{arrowDir.y() / 2, -arrowDir.x() / 2}};
     arrow << QPoint{headPoint + QPoint{-arrowDir.y() / 2, arrowDir.x() / 2}};
 
-    auto cArrow = new CanvasCFGEdgeArrow{cEdge};
-    cArrow->setPolygon(arrow);
-    cArrow->setBrush(arrowColor);
-    cArrow->setZValue(1.5);
-    cArrow->show();
-
-    return cArrow;
+    return new CanvasCFGEdgeArrow{cEdge, arrow, arrowColor};
 }
 
 } // unnamed namespace
