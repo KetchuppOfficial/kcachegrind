@@ -1482,6 +1482,9 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     _costRightBorder = _pcLen + _costLen;
     _mnemonicRightBorder = _costRightBorder + _mnemonicLen;
     _argsLen = w - _mnemonicRightBorder;
+
+    setZValue(1.0);
+    show();
 }
 
 void CanvasCFGNode::setSelected(bool condition)
@@ -2054,8 +2057,6 @@ void ControlFlowGraphView::parseNode(QTextStream& lineStream)
     qreal h = _scaleY * nodeHeight.toDouble();
 
     auto rItem = new CanvasCFGNode{this, node, coords.first - w / 2, coords.second - h / 2, w, h};
-    rItem->setZValue(1.0);
-    rItem->show();
 
     node->setCanvasNode(rItem);
 
