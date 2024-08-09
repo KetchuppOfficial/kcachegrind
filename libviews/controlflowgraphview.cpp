@@ -2004,10 +2004,10 @@ void ControlFlowGraphView::parseDot()
 
 void ControlFlowGraphView::setupScreen(QTextStream& lineStream, int lineno)
 {
-    QString dotWidthString, dotHeightString;
-    lineStream >> _dotHeight >> dotWidthString >> dotHeightString;
+    double dotWidth, dotHeight;
+    lineStream >> dotWidth >> dotWidth >> dotHeight;
 
-    _dotHeight = dotHeightString.toDouble(); // overrides previous unused value
+    _dotHeight = dotHeight; // overrides previous unused value
 
     if (_scene)
         qDebug() << "Ignoring 2nd \'graph\' from dot ("
@@ -2017,7 +2017,7 @@ void ControlFlowGraphView::setupScreen(QTextStream& lineStream, int lineno)
         QSize pScreenSize = QApplication::primaryScreen()->size();
 
         _xMargin = 50;
-        auto w = static_cast<int>(_scaleX * dotWidthString.toDouble());
+        auto w = static_cast<int>(_scaleX * dotWidth);
         if (w < pScreenSize.width())
             _xMargin += (pScreenSize.width() - w) / 2;
 
@@ -2034,11 +2034,11 @@ void ControlFlowGraphView::setupScreen(QTextStream& lineStream, int lineno)
 
 std::pair<int, int> ControlFlowGraphView::calculateSizes(QTextStream& lineStream)
 {
-    QString xStr, yStr;
+    double xStr, yStr;
     lineStream >> xStr >> yStr;
 
-    auto xx = static_cast<int>(_scaleX * xStr.toDouble() + _xMargin);
-    auto yy = static_cast<int>(_scaleY * (_dotHeight - yStr.toDouble()) + _yMargin);
+    auto xx = static_cast<int>(_scaleX * xStr + _xMargin);
+    auto yy = static_cast<int>(_scaleY * (_dotHeight - yStr) + _yMargin);
 
     return std::make_pair(xx, yy);
 }
@@ -2051,12 +2051,12 @@ void ControlFlowGraphView::parseNode(QTextStream& lineStream)
 
     std::pair<int, int> coords = calculateSizes(lineStream);
 
-    QString nodeWidth, nodeHeight;
+    double nodeWidth, nodeHeight;
     lineStream >> nodeWidth >> nodeHeight;
 
     node->setVisible(true);
-    qreal w = (_scaleX - 4.5) * nodeWidth.toDouble();
-    qreal h = _scaleY * nodeHeight.toDouble();
+    qreal w = (_scaleX - 4.5) * nodeWidth;
+    qreal h = _scaleY * nodeHeight;
 
     auto rItem = new CanvasCFGNode{this, node, coords.first - w / 2, coords.second - h / 2, w, h};
 
