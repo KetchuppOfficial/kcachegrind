@@ -396,6 +396,16 @@ CFGExporter::CFGExporter(const CFGExporter& otherExporter, TraceFunction* func, 
     if (!_func)
         return;
 
+    setDumpFile(filename);
+}
+
+CFGExporter::~CFGExporter()
+{
+    delete _tmpFile;
+}
+
+void CFGExporter::setDumpFile(const QString& filename)
+{
     if (filename.isEmpty())
     {
         _tmpFile = new QTemporaryFile{};
@@ -408,11 +418,6 @@ CFGExporter::CFGExporter(const CFGExporter& otherExporter, TraceFunction* func, 
         _tmpFile = nullptr;
         _dotName = filename;
     }
-}
-
-CFGExporter::~CFGExporter()
-{
-    delete _tmpFile;
 }
 
 CFGExporter::Options CFGExporter::getNodeOptions(const TraceBasicBlock* bb) const
@@ -468,7 +473,7 @@ void CFGExporter::resetGraphOption(TraceFunction* func, Options option)
 
 void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
 {
-    for (auto& node : _nodeMap)
+    for (const auto& node : _nodeMap)
     {
         if (node.cost() <= minimalCost)
             setNodeOption(node.basicBlock(), Options::reduced);
@@ -544,7 +549,7 @@ void CFGExporter::reset(CostItem* i, EventType* et, QString filename)
             case ProfileContext::BasicBlock:
                 _func = static_cast<TraceBasicBlock*>(i)->function();
                 break;
-            default: // we ignore function cycles
+            default:
                 _func = nullptr;
                 return;
         }
@@ -564,18 +569,7 @@ void CFGExporter::reset(CostItem* i, EventType* et, QString filename)
                 _graphOptions.insert(bb, Options::default_);
         }
 
-        if (filename.isEmpty())
-        {
-            _tmpFile = new QTemporaryFile{};
-            _tmpFile->setAutoRemove(false);
-            _tmpFile->open();
-            _dotName = _tmpFile->fileName();
-        }
-        else
-        {
-            _tmpFile = nullptr;
-            _dotName = filename;
-        }
+        setDumpFile(filename);
     }
     else
     {
@@ -1271,8 +1265,8 @@ void CFGExporter::dumpNodeExtended(QTextStream& ts, const CFGNode& node)
     ts << "  </table>>]\n";
 }
 
-void CFGExporter::dumpAlmostEntireInstr(QTextStream& ts, CFGNode::const_iterator strIt, TraceInstr* instr,
-                                        int mode)
+void CFGExporter::dumpAlmostEntireInstr(QTextStream& ts, CFGNode::const_iterator strIt,
+                                        TraceInstr* instr, int mode)
 {
     if (mode & DumpMode::pc)
         ts << QStringLiteral("0x%1</td>\n"
@@ -1353,8 +1347,10 @@ void CFGExporter::dumpCyclicEdge(QTextStream& ts, const TraceBranch* br)
     const auto bbI = reinterpret_cast<qulonglong>(bb);
 
     if (getNodeOptions(bb) & Options::reduced)
+    {
         ts << QStringLiteral("  bb%1:w -> bb%2:w [constraint=false, ")
                             .arg(bbI, 0, 16).arg(bbI, 0, 16);
+    }
     else
     {
         ts << QStringLiteral("  bb%1:IL%2:w -> bb%3:IL%4:w [constraint=false, ")
@@ -1436,24 +1432,6 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
 
     update();
 
-    const SubCost total = node->basicBlock()->function()->subCost(view->eventType());
-    const double selfPercentage = 100.0 * _node->cost() / total;
-    constexpr int paramI = 0; // we've got the only parameter; so its index is 0
-
-    setPosition(paramI, DrawParams::TopCenter);
-
-    if (GlobalConfig::showPercentage())
-        setText(paramI, QStringLiteral("%1 %").arg(selfPercentage, 0, 'f',
-                                                   GlobalConfig::percentPrecision()));
-    else
-        setText(paramI, SubCost{_node->cost()}.pretty());
-#if 0
-    setPixmap(paramI,
-              percentagePixmap(25, 10, static_cast<int>(selfPercentage + 0.5), Qt::blue, true));
-#endif
-    // set tool tip (balloon help) with the name of a basic block and percentage
-    setToolTip(QStringLiteral("%1").arg(text(paramI)));
-
     const QFontMetrics fm = _view->fontMetrics();
 
     TraceBasicBlock* bb = _node->basicBlock();
@@ -1470,15 +1448,16 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     else
         _costLen = 0;
 
-    auto mnemonicComp = [&fm](const CFGNode::instrString& pair1, const CFGNode::instrString& pair2)
+    std::vector<int> instrWidths(_node->instrNumber());
+    std::transform(_node->begin(), _node->end(),
+                   instrWidths.begin(), [&fm](const CFGNode::instrString& instr)
     {
-        return fm.size(Qt::TextSingleLine, pair1._mnemonic).width() <
-               fm.size(Qt::TextSingleLine, pair2._mnemonic).width();
-    };
+        return fm.size(Qt::TextSingleLine, instr._mnemonic).width();
+    });
 
-    auto maxLenIt = std::max_element(_node->begin(), _node->end(), mnemonicComp);
+    auto maxLenIt = std::max_element(instrWidths.begin(), instrWidths.end());
 
-    _mnemonicLen = fm.size(Qt::TextSingleLine, maxLenIt->_mnemonic).width() + _margin;
+    _mnemonicLen = *maxLenIt + _margin;
     _costRightBorder = _pcLen + _costLen;
     _mnemonicRightBorder = _costRightBorder + _mnemonicLen;
     _argsLen = w - _mnemonicRightBorder;
@@ -1489,7 +1468,7 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
 
 void CanvasCFGNode::setSelected(bool condition)
 {
-    StoredDrawParams::setSelected(condition);
+    _isSelected = condition;
     update();
 }
 
@@ -1503,13 +1482,28 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
 
     const bool reduced = _view->isReduced(_node);
 
-    qreal topLineY = y;
     const qreal step = h / (reduced ? 2 : _node->instrNumber() + 2);
-
-    p->fillRect(x + 1, topLineY + 1, w, step * 2, Qt::gray);
-    topLineY += step;
+    qreal topLineY = y;
 
     TraceBasicBlock* bb = _node->basicBlock();
+
+    p->fillRect(x + 1, topLineY + 1, w, step * 2, Qt::gray);
+
+    QString cost;
+    if (GlobalConfig::showPercentage())
+    {
+        const SubCost total = bb->function()->subCost(_view->eventType());
+        const double selfPercentage = 100.0 * _node->cost() / total;
+        cost = QStringLiteral("%1 %").arg(selfPercentage, 0, 'f',
+                                          GlobalConfig::percentPrecision());
+    }
+    else
+        cost = SubCost{_node->cost()}.pretty();
+
+    p->drawText(x, topLineY, w, step,
+                Qt::AlignCenter, cost);
+    topLineY += step;
+
     p->drawText(x, topLineY, w, step,
                 Qt::AlignCenter, "0x" + bb->firstAddr().toString());
     p->drawLine(x,     topLineY,
@@ -1558,13 +1552,10 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
                     x + _mnemonicRightBorder, bottomLineY);
     }
 
-    if (StoredDrawParams::selected())
+    if (_isSelected)
         p->setPen(QPen{Qt::darkGreen, 2});
 
     p->drawRect(rectangle);
-
-    RectDrawing d{rectangle.toRect()};
-    d.drawField(p, 0, this);
 }
 
 // ======================================================================================

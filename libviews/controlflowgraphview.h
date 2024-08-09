@@ -257,6 +257,9 @@ public:
                            const CFGExporter& origExporter);
 
 private:
+
+    void setDumpFile(const QString& filename);
+
     bool createGraph();
     bool fillInstrStrings(TraceFunction* func);
 
@@ -298,7 +301,7 @@ enum CanvasParts : int
 
 class ControlFlowGraphView;
 
-class CanvasCFGNode final : public QGraphicsRectItem, public StoredDrawParams
+class CanvasCFGNode final : public QGraphicsRectItem
 {
 public:
     CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
@@ -324,7 +327,9 @@ private:
     int _mnemonicRightBorder;
     int _argsLen;
 
-    static const int _margin = 4;
+    bool _isSelected = false;
+
+    static constexpr int _margin = 4;
 };
 
 
