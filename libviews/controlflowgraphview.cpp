@@ -1639,7 +1639,8 @@ void CanvasCFGEdgeArrow::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWi
 // CanvasCFGEdge
 //
 
-CanvasCFGEdge::CanvasCFGEdge(CFGEdge* e, const QPolygon& poly) : _edge{e}, _points{poly}
+CanvasCFGEdge::CanvasCFGEdge(CFGEdge* e, const QPolygon& poly, const QColor& arrowColor)
+    : _edge{e}, _points{poly}
 {
     setFlag(QGraphicsItem::ItemIsSelectable);
     setZValue(0.5);
@@ -1653,6 +1654,7 @@ CanvasCFGEdge::CanvasCFGEdge(CFGEdge* e, const QPolygon& poly) : _edge{e}, _poin
         path.cubicTo(_points[i], _points[(i + 1) % nPoints], _points[(i + 2) % nPoints]);
 
     setPath(path);
+    setPen(QPen{arrowColor});
 }
 
 void CanvasCFGEdge::setLabelAndArrow(CanvasCFGEdgeLabel* label, CanvasCFGEdgeArrow* arrow)
@@ -2130,11 +2132,8 @@ QColor getArrowColor(CFGEdge* edge)
 
 CanvasCFGEdge* createEdge(CFGEdge* edge, const QPolygon& poly, QColor arrowColor)
 {
-    auto cEdge = new CanvasCFGEdge{edge, poly};
-    cEdge->setPen(QPen{arrowColor});
-
+    auto cEdge = new CanvasCFGEdge{edge, poly, arrowColor};
     edge->setCanvasEdge(cEdge);
-
     return cEdge;
 }
 
