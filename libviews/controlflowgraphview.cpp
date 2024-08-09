@@ -1600,6 +1600,9 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(CanvasCFGEdge* ce, qreal x, qreal y, qrea
     else
         setPixmap(paramI, percentagePixmap(25, 10, e->count(), Qt::blue, true));
 #endif
+
+    setZValue(1.5);
+    show();
 }
 
 void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
@@ -2191,8 +2194,6 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
                                          static_cast<qreal>(coords.first - 60),
                                          static_cast<qreal>(coords.second - 10),
                                          100.0, 20.0};
-    cLabel->setZValue(1.5);
-    cLabel->show();
 
     _scene->addItem(cLabel);
 
