@@ -235,7 +235,7 @@ CFGEdge* CFGNode::nextVisibleOutgoingEdge(CFGEdge* edge)
     auto begin = std::next(_outgoingEdges.begin(), _outgoingEdges.indexOf(edge) + 1);
     auto end = _outgoingEdges.end();
 
-    auto it = std::find_if(begin, end, [](CFGEdge* e){ return e->isVisible(); });
+    auto it = std::find_if(begin, end, [](const CFGEdge* e){ return e->isVisible(); });
 
     if (it == end)
         return nullptr;
@@ -253,7 +253,7 @@ CFGEdge* CFGNode::nextVisibleIncomingEdge(CFGEdge* edge)
     auto begin = std::next(_incomingEdges.begin(), _incomingEdges.indexOf(edge) + 1);
     auto end = _incomingEdges.end();
 
-    auto it = std::find_if(begin, end, [](CFGEdge* e){ return e->isVisible(); });
+    auto it = std::find_if(begin, end, [](const CFGEdge* e){ return e->isVisible(); });
 
     if (it == end)
         return nullptr;
