@@ -1629,9 +1629,20 @@ void CanvasCFGEdgeArrow::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWi
 // CanvasCFGEdge
 //
 
-CanvasCFGEdge::CanvasCFGEdge(CFGEdge* e) : _edge{e}
+CanvasCFGEdge::CanvasCFGEdge(CFGEdge* e, const QPolygon& poly) : _edge{e}, _points{poly}
 {
     setFlag(QGraphicsItem::ItemIsSelectable);
+    setZValue(0.5);
+    show();
+
+    const int nPoints = _points.size();
+
+    QPainterPath path;
+    path.moveTo(_points[0]);
+    for (int i = 1; i < nPoints; i += 3)
+        path.cubicTo(_points[i], _points[(i + 1) % nPoints], _points[(i + 2) % nPoints]);
+
+    setPath(path);
 }
 
 void CanvasCFGEdge::setLabelAndArrow(CanvasCFGEdgeLabel* label, CanvasCFGEdgeArrow* arrow)
@@ -1644,18 +1655,6 @@ void CanvasCFGEdge::setLabelAndArrow(CanvasCFGEdgeLabel* label, CanvasCFGEdgeArr
         if (arrow)
             arrow->setToolTip(tip);
     }
-}
-
-void CanvasCFGEdge::setControlPoints(const QPolygon& p)
-{
-    _points = p;
-
-    QPainterPath path;
-    path.moveTo(p[0]);
-    for (decltype(p.size()) i = 1; i < p.size(); i += 3)
-        path.cubicTo(p[i], p[(i + 1) % p.size()], p[(i + 2) % p.size()]);
-
-    setPath(path);
 }
 
 void CanvasCFGEdge::setSelected(bool s)
@@ -2121,11 +2120,8 @@ QColor getArrowColor(CFGEdge* edge)
 
 CanvasCFGEdge* createEdge(CFGEdge* edge, const QPolygon& poly, QColor arrowColor)
 {
-    auto cEdge = new CanvasCFGEdge{edge};
-    cEdge->setControlPoints(poly);
+    auto cEdge = new CanvasCFGEdge{edge, poly};
     cEdge->setPen(QPen{arrowColor});
-    cEdge->setZValue(0.5);
-    cEdge->show();
 
     edge->setCanvasEdge(cEdge);
 
