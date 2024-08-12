@@ -330,54 +330,64 @@ CFGNode* CFGEdge::keyboardPrevNode()
 
 CFGEdge* CFGEdge::keyboardNextEdge()
 {
-    if (_visitedFrom == NodeType::nodeTo)
+    switch (_visitedFrom)
     {
-        assert(_nodeTo);
+        case NodeType::nodeTo:
+        {
+            assert(_nodeTo);
 
-        CFGEdge* edge = _nodeTo->nextVisibleIncomingEdge(this);
-        if (edge)
-            edge->setVisitedFrom(NodeType::nodeTo);
+            CFGEdge* edge = _nodeTo->nextVisibleIncomingEdge(this);
+            if (edge)
+                edge->setVisitedFrom(NodeType::nodeTo);
 
-        return edge;
+            return edge;
+        }
+
+        case NodeType::nodeFrom:
+        {
+            assert(_nodeFrom);
+
+            CFGEdge* edge = _nodeFrom->nextVisibleOutgoingEdge(this);
+            if (edge)
+                edge->setVisitedFrom(NodeType::nodeFrom);
+
+            return edge;
+        }
+
+        default:
+            return nullptr;
     }
-    else if (_visitedFrom == NodeType::nodeFrom)
-    {
-        assert(_nodeFrom);
-
-        CFGEdge* edge = _nodeFrom->nextVisibleOutgoingEdge(this);
-        if (edge)
-            edge->setVisitedFrom(NodeType::nodeFrom);
-
-        return edge;
-    }
-    else
-        return nullptr;
 }
 
 CFGEdge* CFGEdge::keyboardPrevEdge()
 {
-    if (_visitedFrom == NodeType::nodeTo)
+    switch (_visitedFrom)
     {
-        assert(_nodeTo);
+        case NodeType::nodeTo:
+        {
+            assert(_nodeTo);
 
-        CFGEdge* edge = _nodeTo->priorVisibleIncomingEdge(this);
-        if (edge)
-            edge->setVisitedFrom(NodeType::nodeTo);
+            CFGEdge* edge = _nodeTo->priorVisibleIncomingEdge(this);
+            if (edge)
+                edge->setVisitedFrom(NodeType::nodeTo);
 
-        return edge;
+            return edge;
+        }
+
+        case NodeType::nodeFrom:
+        {
+            assert(_nodeFrom);
+
+            CFGEdge* edge = _nodeFrom->priorVisibleOutgoingEdge(this);
+            if (edge)
+                edge->setVisitedFrom(NodeType::nodeFrom);
+
+            return edge;
+        }
+
+        default:
+            return nullptr;
     }
-    else if (_visitedFrom == NodeType::nodeFrom)
-    {
-        assert(_nodeFrom);
-
-        CFGEdge* edge = _nodeFrom->priorVisibleOutgoingEdge(this);
-        if (edge)
-            edge->setVisitedFrom(NodeType::nodeFrom);
-
-        return edge;
-    }
-    else
-        return nullptr;
 }
 
 // ======================================================================================
