@@ -2714,33 +2714,8 @@ void TraceFunction::constructBasicBlocks()
      *   Type 2: branches from ret (truly invalid)
      */
 
-    // 4. calculating costs of invalid branches
+    // 4. turning invalid branches of type 1 into fallthrough branches
     auto adder = [](uint64 val, TraceBranch* br){ return val + br->executedCount().v; };
-
-    #if 0 // another solution was developed but we leave this for a while just in case
-    for (auto bb: _basicBlocks)
-    {
-        auto& outgoing = bb->outgoingBranches();
-        if (outgoing.size() == 1)
-        {
-            auto& br = outgoing.back();
-            if (br.brType() == TraceBranch::Type::invalid)
-            {
-                auto& incoming = bb->incomingBranches();
-
-                uint64 execCount;
-                if (incoming.empty())
-                    execCount = calledCount();
-                else
-                    execCount = std::accumulate(incoming.begin(), incoming.end(), uint64{0}, adder);
-
-                br.addExecutedCount(execCount);
-            }
-        }
-    }
-    #endif
-
-    // 5. turning invalid branches of type 1 into fallthrough branches
     auto refAdder = [](uint64 val, TraceBranch& br){ return val + br.executedCount().v; };
     auto isInvalid = [](TraceBranch* br) { return br->brType() == TraceBranch::Type::invalid; };
 
@@ -2774,7 +2749,7 @@ void TraceFunction::constructBasicBlocks()
         }
     }
 
-    // 6. removing invalid branches of type 2
+    // 5. removing invalid branches of type 2
     auto isInvalidRef = [](TraceBranch& br){ return br.brType() == TraceBranch::Type::invalid; };
 
     for (auto bb : _basicBlocks)
