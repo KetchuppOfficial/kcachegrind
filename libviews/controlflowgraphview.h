@@ -316,14 +316,15 @@ public:
     void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 private:
+    int costRightBorder() const { return _pcLen + _costLen; }
+    int mnemonicRightBorder() const { return costRightBorder() + _mnemonicLen; }
+
     CFGNode* _node;
     ControlFlowGraphView* _view;
 
     int _pcLen;
     int _costLen;
     int _mnemonicLen;
-    int _costRightBorder;
-    int _mnemonicRightBorder;
     int _argsLen;
 
     static constexpr int _margin = 4;

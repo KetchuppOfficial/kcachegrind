@@ -1455,9 +1455,7 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     auto maxLenIt = std::max_element(instrWidths.begin(), instrWidths.end());
 
     _mnemonicLen = *maxLenIt + _margin;
-    _costRightBorder = _pcLen + _costLen;
-    _mnemonicRightBorder = _costRightBorder + _mnemonicLen;
-    _argsLen = w - _mnemonicRightBorder;
+    _argsLen = w - mnemonicRightBorder();
 
     setFlag(QGraphicsItem::ItemIsSelectable);
     setZValue(1.0);
@@ -1511,9 +1509,9 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
                 p->drawText(r.x() + _pcLen + 2, topLineY, _costLen, step,
                             Qt::AlignLeft, instr->subCost(_view->eventType()).pretty());
 
-            p->drawText(r.x() + _costRightBorder + 2, topLineY, _mnemonicLen, step,
+            p->drawText(r.x() + costRightBorder() + 2, topLineY, _mnemonicLen, step,
                         Qt::AlignLeft, str._mnemonic);
-            p->drawText(r.x() + _mnemonicRightBorder + 2, topLineY, _argsLen, step,
+            p->drawText(r.x() + mnemonicRightBorder() + 2, topLineY, _argsLen, step,
                         Qt::AlignLeft, str._operands);
             p->drawLine(r.x(),             topLineY,
                         r.x() + r.width(), topLineY);
@@ -1530,11 +1528,11 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
                         r.x() + _pcLen, bottomLineY);
 
         if (_costLen != 0)
-            p->drawLine(r.x() + _costRightBorder, firstInstrTopLineY,
-                        r.x() + _costRightBorder, bottomLineY);
+            p->drawLine(r.x() + costRightBorder(), firstInstrTopLineY,
+                        r.x() + costRightBorder(), bottomLineY);
 
-        p->drawLine(r.x() + _mnemonicRightBorder, firstInstrTopLineY,
-                    r.x() + _mnemonicRightBorder, bottomLineY);
+        p->drawLine(r.x() + mnemonicRightBorder(), firstInstrTopLineY,
+                    r.x() + mnemonicRightBorder(), bottomLineY);
     }
 
     if (isSelected())
