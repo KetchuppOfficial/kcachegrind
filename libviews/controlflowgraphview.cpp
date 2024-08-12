@@ -1940,7 +1940,7 @@ void ControlFlowGraphView::setupScreen(QTextStream& lineStream, int lineno)
     double dotWidth, dotHeight;
     lineStream >> dotWidth >> dotWidth >> dotHeight;
 
-    _dotHeight = dotHeight; // overrides previous unused value
+    _dotHeight = dotHeight;
 
     if (_scene)
         qDebug() << "Ignoring 2nd \'graph\' from dot ("
