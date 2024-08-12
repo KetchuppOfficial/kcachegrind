@@ -737,23 +737,19 @@ class FileSearcher final
 public:
     FileSearcher(const TraceData* data, const QString& filename);
 
-    bool searchFile(QString& dir);
-
-    QString getObjDump();
-    QString getObjDumpFormat();
+    bool searchFile(QString& dir) const;
+    QString getObjDump() const;
 
 private:
-    QString getSysRoot();
-
     QProcessEnvironment _env;
     const TraceData* _data;
     QString _filename;
 };
 
 FileSearcher::FileSearcher(const TraceData* data, const QString& filename)
-    : _data{data}, _filename{filename} {}
+    : _env{QProcessEnvironment::systemEnvironment()}, _data{data}, _filename{filename} {}
 
-bool FileSearcher::searchFile(QString& dir)
+bool FileSearcher::searchFile(QString& dir) const
 {
     if (QDir::isAbsolutePath(dir))
     {
@@ -761,8 +757,7 @@ bool FileSearcher::searchFile(QString& dir)
             return true;
         else
         {
-            QString sysRoot = getSysRoot();
-
+            QString sysRoot = _env.value(QStringLiteral("SYSROOT"));
             if (!sysRoot.isEmpty())
             {
                 if (!dir.startsWith('/') && !sysRoot.endsWith('/'))
@@ -800,28 +795,12 @@ bool FileSearcher::searchFile(QString& dir)
     return false;
 }
 
-QString FileSearcher::getObjDump()
+QString FileSearcher::getObjDump() const
 {
-    if (_env.isEmpty())
-        _env = QProcessEnvironment::systemEnvironment();
-
-    return _env.value(QStringLiteral("OBJDUMP"), QStringLiteral("objdump"));
-}
-
-QString FileSearcher::getObjDumpFormat()
-{
-    if (_env.isEmpty())
-        _env = QProcessEnvironment::systemEnvironment();
-
-    return _env.value(QStringLiteral("OBJDUMP_FORMAT"));
-}
-
-QString FileSearcher::getSysRoot()
-{
-    if (_env.isEmpty())
-        _env = QProcessEnvironment::systemEnvironment();
-
-    return _env.value(QStringLiteral("SYSROOT"));
+    QString objdump = _env.value(QStringLiteral("OBJDUMP_FORMAT"));
+    if (objdump.isEmpty())
+        return _env.value(QStringLiteral("OBJDUMP"), QStringLiteral("objdump"));
+    return objdump;
 }
 
 class ObjdumpParser final
@@ -918,12 +897,7 @@ void ObjdumpParser::runObjdump()
     else
     {
         objectFile->setDirectory(dir);
-
         _objFile = dir + '/' + objectFile->shortName();
-
-        QString objdumpFormat = searcher.getObjDumpFormat();
-        if (objdumpFormat.isEmpty())
-            objdumpFormat = searcher.getObjDump();
 
         const int margin = _isArm ? 4 : 20;
 
@@ -932,11 +906,11 @@ void ObjdumpParser::runObjdump()
         args << QStringLiteral("--stop-address=0x%1").arg((_dumpEndAddr + margin).toString()),
         args << _objFile;
 
-        _objdumpCmd = objdumpFormat + ' ' + args.join(' ');
+        QString objdump = searcher.getObjDump();
+        _objdumpCmd = objdump + ' ' + args.join(' ');
 
         qDebug("Running \'%s\'...", qPrintable(_objdumpCmd));
-
-        _objdump.start(objdumpFormat, args);
+        _objdump.start(objdump, args);
         if (!_objdump.waitForStarted() || !_objdump.waitForFinished())
         {
             _errorMessage = QObject::tr("There is an error trying to execute the command\n"
