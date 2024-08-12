@@ -31,7 +31,6 @@
 #include "controlflowgraphview.h"
 #include "globalconfig.h"
 #include "globalguiconfig.h"
-#include "listutils.h"
 
 // ======================================================================================
 
