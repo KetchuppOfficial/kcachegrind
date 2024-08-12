@@ -335,7 +335,6 @@ EventTypeSet::EventTypeSet()
 {
     _realCount = 0;
     _derivedCount = 0;
-
     for (int i=0;i<ProfileCostArray::MaxRealIndex;i++) _real[i] = nullptr;
     for (int i=0;i<ProfileCostArray::MaxRealIndex;i++) _derived[i] = nullptr;
 }

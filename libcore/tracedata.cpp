@@ -1812,7 +1812,6 @@ TraceFunction::~TraceFunction()
     qDeleteAll(_deps);
     qDeleteAll(_callings);
     qDeleteAll(_sourceFiles);
-
     qDeleteAll(_basicBlocks);
 
     delete _instrMap;
@@ -3305,7 +3304,6 @@ int TraceData::load(QStringList files)
         }
 
         files = dir.entryList(QStringList() << prefix + '*', QDir::Files);
-
         QStringList::Iterator it = files.begin();
         for (; it != files.end(); ++it ) {
             *it = dir.path() + '/' + *it;
