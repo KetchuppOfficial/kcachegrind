@@ -1305,6 +1305,8 @@ private:
     bool isUniquePrefix(const QString&) const;
     //TraceFunctionMap::Iterator _myMapIterator;
     void constructBasicBlocks();
+    void divideInstructionsIntoBasicBlocks(TraceInstrMap *instructions);
+    void handleInvalidBranches();
 
     TraceClass* _cls;
     TraceObject* _object;
