@@ -113,7 +113,6 @@ void StoredDrawParams::ensureField(int f)
     if ((int)_field.size() < f+1) {
         int oldSize = _field.size();
         _field.resize(f+1);
-        // We can avoid this loop by adding default parameters to constructor of Field
         while(oldSize < f+1) {
             _field[oldSize].pos = Default;
             _field[oldSize].maxLines = 0;
@@ -195,12 +194,7 @@ DrawParams* RectDrawing::drawParams()
     return _dp;
 }
 
-// ACHTUNG!!! What if I do this:
-// StoredDrawParams params{};
-// QRect r{0, 0, 1, 1};
-// RectDrawing dr{r};
-// dr.setDrawParams(&params);
-// dr.setDrawParams(&params);
+
 void RectDrawing::setDrawParams(DrawParams* dp)
 {
     delete _dp;
@@ -245,7 +239,7 @@ QRect RectDrawing::remainingRect(DrawParams* dp)
     return _rect;
 }
 
-// Useless for CFG
+
 void RectDrawing::drawBack(QPainter* p, DrawParams* dp)
 {
     if (!dp) dp = drawParams();
