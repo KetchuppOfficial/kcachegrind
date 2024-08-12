@@ -224,6 +224,8 @@ public:
 
     Layout layout() const { return _layout; }
     void setLayout(Layout layout) { _layout = layout; }
+    static Layout strToLayout(const QString& s);
+    static QString layoutToStr(Layout l);
 
     typename edgeMapType::size_type edgeCount() const { return _edgeMap.count(); }
     typename nodeMapType::size_type nodeCount() const { return _nodeMap.count(); }
@@ -414,6 +416,9 @@ public:
     bool showInstrPC(const CFGNode* node) const;
     bool showInstrCost(const CFGNode* node) const;
     TraceFunction* getFunction();
+
+    static QString zoomPosToStr(ZoomPosition p);
+    static ZoomPosition strToZoomPos(const QString& s);
 
 public Q_SLOTS:
     void zoomRectMoved(qreal, qreal);
