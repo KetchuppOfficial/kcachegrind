@@ -11,6 +11,10 @@
 
 #include <errno.h>
 #include <stdlib.h>
+#include <vector>
+#include <iterator>
+#include <memory>
+#include <algorithm>
 #include <numeric>
 
 #include <QFile>
