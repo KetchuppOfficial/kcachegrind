@@ -379,6 +379,7 @@ TabView::TabView(TraceItemView* parentView, QWidget* parent)
     addTop( addTab( tr("Source Code"), sourceView) );
     addTop( addTab( tr("Control Flow Graph"),
                     new ControlFlowGraphView(this, nullptr, "ControlFlowGraphView") ) );
+
     addBottom( addTab( tr("Parts"), partView ) );
     addBottom( addTab( tr("Callees"), calleeView) );
     addBottom( addTab( tr("Call Graph"),
