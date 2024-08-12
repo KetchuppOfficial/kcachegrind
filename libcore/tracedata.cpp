@@ -4054,8 +4054,6 @@ void TraceBasicBlock::addIncomingBranch(TraceBranch& br)
 // TraceBranch
 //
 
-TraceBranch::TraceBranch() : TraceJumpCost{ProfileContext::context(ProfileContext::Branch)} {}
-
 TraceBranch::TraceBranch(TraceInstr* from, TraceInstr* to, Type type)
     : TraceJumpCost{ProfileContext::context(ProfileContext::Branch)},
       _from{from}, _to{to}, _type{type} {}
