@@ -150,7 +150,7 @@ class CanvasCFGEdge;
 class CFGEdge final
 {
 public:
-    enum class NodeType { none, nodeTo_, nodeFrom_ };
+    enum class NodeType { none, nodeTo, nodeFrom };
 
     CFGEdge(TraceBranch* branch, CFGNode* nodeFrom, CFGNode* nodeTo);
 

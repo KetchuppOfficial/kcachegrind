@@ -169,7 +169,7 @@ CFGEdge* CFGNode::keyboardNextEdge()
         edge = nullptr;
 
     if (edge)
-        edge->setVisitedFrom(CFGEdge::NodeType::nodeFrom_);
+        edge->setVisitedFrom(CFGEdge::NodeType::nodeFrom);
     else if (!_outgoingEdges.isEmpty())
     {
         CFGEdge* maxEdge = _outgoingEdges[0];
@@ -188,7 +188,7 @@ CFGEdge* CFGNode::keyboardNextEdge()
         }
 
         edge = maxEdge;
-        edge->setVisitedFrom(CFGEdge::NodeType::nodeFrom_);
+        edge->setVisitedFrom(CFGEdge::NodeType::nodeFrom);
     }
 
     return edge;
@@ -202,7 +202,7 @@ CFGEdge* CFGNode::keyboardPrevEdge()
         edge = nullptr;
 
     if (edge)
-        edge->setVisitedFrom(CFGEdge::NodeType::nodeTo_);
+        edge->setVisitedFrom(CFGEdge::NodeType::nodeTo);
     else if (!_incomingEdges.isEmpty())
     {
         CFGEdge* maxEdge = _incomingEdges[0];
@@ -221,7 +221,7 @@ CFGEdge* CFGNode::keyboardPrevEdge()
         }
 
         edge = maxEdge;
-        edge->setVisitedFrom(CFGEdge::NodeType::nodeTo_);
+        edge->setVisitedFrom(CFGEdge::NodeType::nodeTo);
     }
 
     return edge;
@@ -330,23 +330,23 @@ CFGNode* CFGEdge::keyboardPrevNode()
 
 CFGEdge* CFGEdge::keyboardNextEdge()
 {
-    if (_visitedFrom == NodeType::nodeTo_)
+    if (_visitedFrom == NodeType::nodeTo)
     {
         assert(_nodeTo);
 
         CFGEdge* edge = _nodeTo->nextVisibleIncomingEdge(this);
         if (edge)
-            edge->setVisitedFrom(NodeType::nodeTo_);
+            edge->setVisitedFrom(NodeType::nodeTo);
 
         return edge;
     }
-    else if (_visitedFrom == NodeType::nodeFrom_)
+    else if (_visitedFrom == NodeType::nodeFrom)
     {
         assert(_nodeFrom);
 
         CFGEdge* edge = _nodeFrom->nextVisibleOutgoingEdge(this);
         if (edge)
-            edge->setVisitedFrom(NodeType::nodeFrom_);
+            edge->setVisitedFrom(NodeType::nodeFrom);
 
         return edge;
     }
@@ -356,23 +356,23 @@ CFGEdge* CFGEdge::keyboardNextEdge()
 
 CFGEdge* CFGEdge::keyboardPrevEdge()
 {
-    if (_visitedFrom == NodeType::nodeTo_)
+    if (_visitedFrom == NodeType::nodeTo)
     {
         assert(_nodeTo);
 
         CFGEdge* edge = _nodeTo->priorVisibleIncomingEdge(this);
         if (edge)
-            edge->setVisitedFrom(NodeType::nodeTo_);
+            edge->setVisitedFrom(NodeType::nodeTo);
 
         return edge;
     }
-    else if (_visitedFrom == NodeType::nodeFrom_)
+    else if (_visitedFrom == NodeType::nodeFrom)
     {
         assert(_nodeFrom);
 
         CFGEdge* edge = _nodeFrom->priorVisibleOutgoingEdge(this);
         if (edge)
-            edge->setVisitedFrom(NodeType::nodeFrom_);
+            edge->setVisitedFrom(NodeType::nodeFrom);
 
         return edge;
     }
