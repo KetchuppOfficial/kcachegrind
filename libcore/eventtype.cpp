@@ -243,7 +243,7 @@ bool EventType::hasKnownDerivedType(const QString& n)
 }
 
 EventType* EventType::cloneKnownRealType(const QString& n)
-{   
+{
     if (!_knownTypes) return nullptr;
 
     foreach (EventType* t, *_knownTypes)
