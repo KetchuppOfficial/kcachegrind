@@ -1607,8 +1607,6 @@ CanvasCFGEdge::CanvasCFGEdge(CFGEdge* e, const QPolygon& poly, const QColor& edg
     setZValue(0.5);
 }
 
-// void CanvasCFGEdge::setSelected(bool s) { QGraphicsItem::setSelected(s); }
-
 void CanvasCFGEdge::paint(QPainter* p, const QStyleOptionGraphicsItem* option, QWidget*)
 {
 #if QT_VERSION >= 0x040600
