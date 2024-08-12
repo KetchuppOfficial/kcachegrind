@@ -3932,8 +3932,6 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
     {
         if (last != _func->instrMap()->end())
         {
-            _outgoingBranches.emplace_back(lastInstr(), std::addressof(*last),
-                                           TraceBranch::Type::invalid);
             TraceData* data = _func->data();
             assert(data);
             EventType* e = data->eventTypes()->realType(0);
@@ -3941,8 +3939,9 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
 
             auto& calls = lastInstr()->instrCalls();
 
+            SubCost execCount;
             if (calls.empty())
-                _outgoingBranches.back().addExecutedCount(lastInstr()->subCost(e));
+                execCount = lastInstr()->subCost(e);
             else
             {
                 auto accumulator = [](uint64 count, TraceInstrCall* call)
@@ -3950,9 +3949,11 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
                     return count + call->callCount();
                 };
 
-                auto nCalls = std::accumulate(calls.begin(), calls.end(), uint64{0}, accumulator);
-                _outgoingBranches.back().addExecutedCount(nCalls);
+                execCount = std::accumulate(calls.begin(), calls.end(), uint64{0}, accumulator);
             }
+
+            _outgoingBranches.emplace_back(lastInstr(), std::addressof(*last),
+                                           TraceBranch::Type::invalid, execCount);
         }
     }
     else if (nJumps == 1)
@@ -3971,21 +3972,16 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
 
         if (jump->isCondJump())
         {
-            _outgoingBranches.emplace_back(from, to, TraceBranch::Type::true_);
-            _outgoingBranches.back().addExecutedCount(followed);
+            _outgoingBranches.emplace_back(from, to, TraceBranch::Type::true_, followed);
 
             if (exec.v != followed.v && last != _func->instrMap()->end())
             {
                 _outgoingBranches.emplace_back(from, std::addressof(*last),
-                                               TraceBranch::Type::false_);
-                _outgoingBranches.back().addExecutedCount(exec - followed);
+                                               TraceBranch::Type::false_, exec - followed);
             }
         }
         else
-        {
-            _outgoingBranches.emplace_back(from, to, TraceBranch::Type::unconditional);
-            _outgoingBranches.back().addExecutedCount(exec);
-        }
+            _outgoingBranches.emplace_back(from, to, TraceBranch::Type::unconditional, exec);
     }
     else
     {
@@ -3994,8 +3990,7 @@ TraceBasicBlock::TraceBasicBlock(typename TraceInstrMap::iterator first,
         {
             assert(jump);
             _outgoingBranches.emplace_back(jump->instrFrom(), jump->instrTo(),
-                                           TraceBranch::Type::indirect);
-            _outgoingBranches.back().addExecutedCount(jump->executedCount());
+                                           TraceBranch::Type::indirect, jump->executedCount());
         }
     }
 
@@ -4054,9 +4049,12 @@ void TraceBasicBlock::addIncomingBranch(TraceBranch& br)
 // TraceBranch
 //
 
-TraceBranch::TraceBranch(TraceInstr* from, TraceInstr* to, Type type)
+TraceBranch::TraceBranch(TraceInstr* from, TraceInstr* to, Type type, SubCost execCount)
     : TraceJumpCost{ProfileContext::context(ProfileContext::Branch)},
-      _from{from}, _to{to}, _type{type} {}
+      _from{from}, _to{to}, _type{type}
+{
+    addExecutedCount(execCount);
+}
 
 TraceBasicBlock* TraceBranch::bbFrom()
 {

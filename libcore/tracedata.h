@@ -1117,7 +1117,7 @@ class TraceBranch : public TraceJumpCost
 public:
     enum class Type { invalid, unconditional, indirect, fallThrough, true_, false_ };
 
-    TraceBranch(TraceInstr* from, TraceInstr* to, Type type);
+    TraceBranch(TraceInstr* from, TraceInstr* to, Type type, SubCost execCount);
     ~TraceBranch() override = default;
 
     Type brType() const { return _type; }
@@ -1141,10 +1141,10 @@ public:
 
 private:
 
-    TraceInstr* _from = nullptr;
-    TraceInstr* _to = nullptr;
+    TraceInstr* _from;
+    TraceInstr* _to;
 
-    Type _type = Type::invalid;
+    Type _type;
 };
 
 class TraceBasicBlock : public TraceListCost
