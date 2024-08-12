@@ -440,17 +440,23 @@ CFGExporter::Options CFGExporter::getNodeOptions(const TraceBasicBlock* bb) cons
 
 void CFGExporter::setNodeOption(const TraceBasicBlock* bb, Options option)
 {
-    _graphOptions[bb] |= option;
+    auto it = _graphOptions.find(bb);
+    if (it != _graphOptions.end())
+        *it |= option;
 }
 
 void CFGExporter::resetNodeOption(const TraceBasicBlock* bb, Options option)
 {
-    _graphOptions[bb] &= ~option;
+    auto it = _graphOptions.find(bb);
+    if (it != _graphOptions.end())
+        *it &= ~option;
 }
 
 void CFGExporter::switchNodeOption(const TraceBasicBlock* bb, Options option)
 {
-    _graphOptions[bb] ^= option;
+    auto it = _graphOptions.find(bb);
+    if (it != _graphOptions.end())
+        *it ^= option;
 }
 
 CFGExporter::Options CFGExporter::getGraphOptions(TraceFunction* func) const
@@ -465,19 +471,27 @@ CFGExporter::Options CFGExporter::getGraphOptions(TraceFunction* func) const
 void CFGExporter::setGraphOption(TraceFunction* func, Options option)
 {
     assert(func);
-    for (auto bb : func->basicBlocks())
-        setNodeOption(bb, option);
 
-    _globalGraphOptions[func].first |= option;
+    auto it = _globalGraphOptions.find(func);
+    if (it != _globalGraphOptions.end())
+    {
+        it->first |= option;
+        for (auto bb : func->basicBlocks())
+            setNodeOption(bb, option);
+    }
 }
 
 void CFGExporter::resetGraphOption(TraceFunction* func, Options option)
 {
     assert(func);
-    for (auto bb : func->basicBlocks())
-        resetNodeOption(bb, option);
 
-    _globalGraphOptions[func].first &= ~option;
+    auto it = _globalGraphOptions.find(func);
+    if (it != _globalGraphOptions.end())
+    {
+        it->first &= ~option;
+        for (auto bb : func->basicBlocks())
+            resetNodeOption(bb, option);
+    }
 }
 
 void CFGExporter::minimizeBBsWithCostLessThan(uint64 minimalCost)
@@ -502,7 +516,9 @@ double CFGExporter::minimalCostPercentage(TraceFunction* func) const
 
 void CFGExporter::setMinimalCostPercentage(TraceFunction* func, double percentage)
 {
-    _globalGraphOptions[func].second = percentage;
+    auto it = _globalGraphOptions.find(func);
+    if (it != _globalGraphOptions.end())
+        it->second = percentage;
 }
 
 const CFGNode* CFGExporter::findNode(const TraceBasicBlock* bb) const
