@@ -155,7 +155,6 @@ QString EventType::parsedFormula()
     return _parsedFormula;
 }
 
-// HINT: never used
 QString EventType::parsedRealFormula()
 {
     QString res;
