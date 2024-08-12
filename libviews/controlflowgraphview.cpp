@@ -1965,7 +1965,7 @@ void ControlFlowGraphView::setupScreen(QTextStream& lineStream, int lineno)
     }
 }
 
-std::pair<int, int> ControlFlowGraphView::calculateSizes(QTextStream& lineStream)
+std::pair<int, int> ControlFlowGraphView::calculateCoords(QTextStream& lineStream)
 {
     double xStr, yStr;
     lineStream >> xStr >> yStr;
@@ -1982,7 +1982,7 @@ void ControlFlowGraphView::parseNode(QTextStream& lineStream)
     assert(node);
     assert(node->instrNumber() > 0);
 
-    const std::pair<int, int> coords = calculateSizes(lineStream);
+    const std::pair<int, int> coords = calculateCoords(lineStream);
 
     double nodeWidth, nodeHeight;
     lineStream >> nodeWidth >> nodeHeight;
@@ -2102,7 +2102,7 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
     Q_UNUSED(label);
     lineStream >> label;
 
-    const std::pair<int, int> coords = calculateSizes(lineStream);
+    const std::pair<int, int> coords = calculateCoords(lineStream);
     auto cLabel = new CanvasCFGEdgeLabel{cEdge,
                                          static_cast<qreal>(coords.first - 60),
                                          static_cast<qreal>(coords.second - 10),
@@ -2166,7 +2166,7 @@ QPolygon ControlFlowGraphView::getEdgePolygon(QTextStream& lineStream, int linen
             return QPolygon{};
         }
 
-        const std::pair<int, int> coords = calculateSizes(lineStream);
+        const std::pair<int, int> coords = calculateCoords(lineStream);
         poly.setPoint(i, coords.first, coords.second);
     }
 

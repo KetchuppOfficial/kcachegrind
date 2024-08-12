@@ -461,7 +461,7 @@ private:
     // called from dotExited
     void parseDot();
     void setupScreen(QTextStream& lineStream, int lineno);
-    std::pair<int, int> calculateSizes(QTextStream& lineStream);
+    std::pair<int, int> calculateCoords(QTextStream& lineStream);
     void parseNode(QTextStream& lineStream);
     CFGNode* getNodeFromDot(QTextStream& lineStream);
     void parseEdge(QTextStream& lineStream, int lineno);
