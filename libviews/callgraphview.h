@@ -622,8 +622,8 @@ protected:
     void mouseDoubleClickEvent(QMouseEvent*) override;
     void contextMenuEvent(QContextMenuEvent*) override;
     void keyPressEvent(QKeyEvent*) override;
-    void focusInEvent(QFocusEvent*) override; // useless
-    void focusOutEvent(QFocusEvent*) override; // useless
+    void focusInEvent(QFocusEvent*) override;
+    void focusOutEvent(QFocusEvent*) override;
     void scrollContentsBy(int dx, int dy) override;
 	void wheelEvent(QWheelEvent*) override;
 
@@ -632,7 +632,7 @@ private:
     CostItem* canShow(CostItem*) override;
     void doUpdate(int, bool) override;
     void refresh();
-    void makeFrame(CanvasNode*, bool active); // never implemented
+    void makeFrame(CanvasNode*, bool active);
     void clear();
     void showText(QString);
 
@@ -655,7 +655,7 @@ private:
     PanningView *_panningView;
     double _panningZoom;
 
-    CallGraphTip* _tip; // useless
+    CallGraphTip* _tip;
 
     bool _isMoving;
     QPoint _lastPos;

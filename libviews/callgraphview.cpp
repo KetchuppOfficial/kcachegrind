@@ -102,8 +102,6 @@ public:
         const CanvasEdge* ce1 = ge1->canvasEdge();
         const CanvasEdge* ce2 = ge2->canvasEdge();
 
-        // UB case: if ge1 == ge2, then ce1 == ce2; if also ce1 == nullptr,
-        // then return value if true, although it must be false.
         // sort invisible edges (ie. without matching CanvasEdge) in front
         if (!ce1) return true;
         if (!ce2) return false;
@@ -1512,7 +1510,7 @@ CanvasFrame::CanvasFrame(CanvasNode* n)
         p.setPen(Qt::NoPen);
 
         r.translate(-r.x(), -r.y());
-#if 1
+
         while (v<v1) {
             v *= f;
             p.setBrush(QColor(265-(int)v, 265-(int)v, 265-(int)v));
@@ -1524,7 +1522,7 @@ CanvasFrame::CanvasFrame(CanvasNode* n)
 
             r.setRect(r.x()+d, r.y()+d, r.width()-2*d, r.height()-2*d);
         }
-#endif
+
     }
 
     setRect(QRectF(n->rect().center().x() - _p->width()/2,
@@ -1646,14 +1644,10 @@ void CallGraphView::updateSizes(QSize s)
     }
 
     // first, assume use of 1/3 of width/height (possible larger)
-    #if 1
+
     double zoom = .33 * s.width() / cWidth;
     if (zoom * cHeight < .33 * s.height())
         zoom = .33 * s.height() / cHeight;
-    #else /* this implementation lessens the number of multiplications and divisions */
-    auto zoom = (s.width() * cHeight < s.height() * cWidth) ? .33 * s.height() / cHeight :
-                                                              .33 * s.width()  / cWidth;
-    #endif
 
     // fit to widget size
     if (cWidth * zoom > s.width())
@@ -1662,17 +1656,12 @@ void CallGraphView::updateSizes(QSize s)
         zoom = s.height() / (double)cHeight;
 
     // scale to never use full height/width
-    #if 1
     zoom = zoom * 3/4;
-    #else /* minus one division */
-    zoom *= 0.75
-    #endif
 
     // at most a zoom of 1/3
     if (zoom > .33)
         zoom = .33;
 
-    /* Comparing floating point values??? WTF??? */
     if (zoom != _panningZoom) {
         _panningZoom = zoom;
         if (0)
