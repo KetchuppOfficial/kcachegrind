@@ -2914,17 +2914,6 @@ void ControlFlowGraphView::doUpdate(int changeType, bool)
 
         _scene->update();
     }
-    else if (changeType == TraceItemView::groupTypeChanged)
-    {
-        if (_scene && !_clusterGroups)
-        {
-            for (auto item : _scene->items())
-                if (item->type() == CanvasParts::Node)
-                    static_cast<CanvasCFGNode*>(item)->update();
-
-            _scene->update();
-        }
-    }
     else if (changeType & TraceItemView::dataChanged)
     {
         _exporter.reset(_activeItem, _eventType);

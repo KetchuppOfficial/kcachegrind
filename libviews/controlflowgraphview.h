@@ -394,8 +394,7 @@ private:
 };
 
 
-class ControlFlowGraphView final : public QGraphicsView, public TraceItemView,
-                                   public StorableGraphOptions
+class ControlFlowGraphView final : public QGraphicsView, public TraceItemView
 {
     Q_OBJECT
 
