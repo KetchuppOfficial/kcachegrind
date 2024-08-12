@@ -313,7 +313,6 @@ public:
 
     int type() const override { return CanvasParts::Node; }
 
-    void setSelected(bool condition);
     void paint(QPainter*, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 private:
@@ -326,8 +325,6 @@ private:
     int _costRightBorder;
     int _mnemonicRightBorder;
     int _argsLen;
-
-    bool _isSelected = false;
 
     static constexpr int _margin = 4;
 };
@@ -356,7 +353,7 @@ private:
 class CanvasCFGEdgeArrow final : public QGraphicsPolygonItem
 {
 public:
-    CanvasCFGEdgeArrow(CanvasCFGEdge* e, const QPolygon& arrow, const QBrush& arrowColor);
+    CanvasCFGEdgeArrow(CanvasCFGEdge* e, const QPolygon& arrow);
 
     CanvasCFGEdge* canvasEdge() { return _ce; }
     const CanvasCFGEdge* canvasEdge() const { return _ce; }
@@ -364,7 +361,6 @@ public:
     int type() const override { return CanvasParts::EdgeArrow; }
 
     void paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*) override;
-
 private:
     CanvasCFGEdge* _ce;
 };
@@ -375,16 +371,12 @@ class CanvasCFGEdge final : public QGraphicsPathItem
 public:
     CanvasCFGEdge(CFGEdge* e, const QPolygon &poly, const QColor& arrowColor);
 
-    void setLabelAndArrow(CanvasCFGEdgeLabel* label, CanvasCFGEdgeArrow* arrow);
-
     const QPolygon& controlPoints() const { return _points; }
 
     CFGEdge* edge() { return _edge; }
     const CFGEdge* edge() const { return _edge; }
 
     int type() const override { return CanvasParts::Edge; }
-
-    void setSelected(bool s);
 
     void paint(QPainter* p, const QStyleOptionGraphicsItem* option, QWidget*) override;
 

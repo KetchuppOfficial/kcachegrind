@@ -1429,8 +1429,6 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     if (!_node || !_view)
         return;
 
-    update();
-
     const QFontMetrics fm = _view->fontMetrics();
 
     TraceBasicBlock* bb = _node->basicBlock();
@@ -1461,32 +1459,20 @@ CanvasCFGNode::CanvasCFGNode(ControlFlowGraphView* view, CFGNode* node,
     _mnemonicRightBorder = _costRightBorder + _mnemonicLen;
     _argsLen = w - _mnemonicRightBorder;
 
+    setFlag(QGraphicsItem::ItemIsSelectable);
     setZValue(1.0);
-    show();
-}
-
-void CanvasCFGNode::setSelected(bool condition)
-{
-    _isSelected = condition;
-    update();
 }
 
 void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
-    const QRectF rectangle = rect();
-    const qreal x = rectangle.x();
-    const qreal y = rectangle.y();
-    const qreal w = rectangle.width();
-    const qreal h = rectangle.height();
-
+    const QRectF r = rect();
     const bool reduced = _view->isReduced(_node);
-
-    const qreal step = h / (reduced ? 2 : _node->instrNumber() + 2);
-    qreal topLineY = y;
+    const qreal step = r.height() / (reduced ? 2 : _node->instrNumber() + 2);
 
     TraceBasicBlock* bb = _node->basicBlock();
 
-    p->fillRect(x + 1, topLineY + 1, w, step * 2, Qt::gray);
+    qreal topLineY = r.y();
+    p->fillRect(r.x() + 1, topLineY + 1, r.width(), step * 2, Qt::gray);
 
     QString cost;
     if (GlobalConfig::showPercentage())
@@ -1499,14 +1485,14 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
     else
         cost = SubCost{_node->cost()}.pretty();
 
-    p->drawText(x, topLineY, w, step,
+    p->drawText(r.x(), topLineY, r.width(), step,
                 Qt::AlignCenter, cost);
     topLineY += step;
 
-    p->drawText(x, topLineY, w, step,
+    p->drawText(r.x(), topLineY, r.width(), step,
                 Qt::AlignCenter, "0x" + bb->firstAddr().toString());
-    p->drawLine(x,     topLineY,
-                x + w, topLineY);
+    p->drawLine(r.x(),             topLineY,
+                r.x() + r.width(), topLineY);
 
     if (!reduced)
     {
@@ -1518,43 +1504,43 @@ void CanvasCFGNode::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*
             TraceInstr* instr = *instrIt;
 
             if (_pcLen != 0)
-                p->drawText(x + 2, topLineY, _pcLen, step,
+                p->drawText(r.x() + 2, topLineY, _pcLen, step,
                             Qt::AlignLeft, "0x" + instr->addr().toString());
 
             if (_costLen != 0)
-                p->drawText(x + _pcLen + 2, topLineY, _costLen, step,
+                p->drawText(r.x() + _pcLen + 2, topLineY, _costLen, step,
                             Qt::AlignLeft, instr->subCost(_view->eventType()).pretty());
 
-            p->drawText(x + _costRightBorder + 2, topLineY, _mnemonicLen, step,
+            p->drawText(r.x() + _costRightBorder + 2, topLineY, _mnemonicLen, step,
                         Qt::AlignLeft, str._mnemonic);
-            p->drawText(x + _mnemonicRightBorder + 2, topLineY, _argsLen, step,
+            p->drawText(r.x() + _mnemonicRightBorder + 2, topLineY, _argsLen, step,
                         Qt::AlignLeft, str._operands);
-            p->drawLine(x,     topLineY,
-                        x + w, topLineY);
+            p->drawLine(r.x(),             topLineY,
+                        r.x() + r.width(), topLineY);
 
             topLineY += step;
             ++instrIt;
         }
 
-        const qreal bottomLineY = y + h;
-        const qreal firstInstrTopLineY = y + step * 2;
+        const qreal bottomLineY = r.y() + r.height();
+        const qreal firstInstrTopLineY = r.y() + step * 2;
 
         if (_pcLen != 0)
-            p->drawLine(x + _pcLen, firstInstrTopLineY,
-                        x + _pcLen, bottomLineY);
+            p->drawLine(r.x() + _pcLen, firstInstrTopLineY,
+                        r.x() + _pcLen, bottomLineY);
 
         if (_costLen != 0)
-            p->drawLine(x + _costRightBorder, firstInstrTopLineY,
-                        x + _costRightBorder, bottomLineY);
+            p->drawLine(r.x() + _costRightBorder, firstInstrTopLineY,
+                        r.x() + _costRightBorder, bottomLineY);
 
-        p->drawLine(x + _mnemonicRightBorder, firstInstrTopLineY,
-                    x + _mnemonicRightBorder, bottomLineY);
+        p->drawLine(r.x() + _mnemonicRightBorder, firstInstrTopLineY,
+                    r.x() + _mnemonicRightBorder, bottomLineY);
     }
 
-    if (_isSelected)
+    if (isSelected())
         p->setPen(QPen{Qt::darkGreen, 2});
 
-    p->drawRect(rectangle);
+    p->drawRect(r);
 }
 
 // ======================================================================================
@@ -1573,7 +1559,6 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(CanvasCFGEdge* ce, qreal x, qreal y, qrea
     _label = QStringLiteral("%1 x").arg(e->count());
 
     setZValue(1.5);
-    show();
 }
 
 void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
@@ -1587,13 +1572,10 @@ void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWi
 // CanvasCFGEdgeArrow
 //
 
-CanvasCFGEdgeArrow::CanvasCFGEdgeArrow(CanvasCFGEdge* ce, const QPolygon& arrow,
-                                       const QBrush& arrowColor)
+CanvasCFGEdgeArrow::CanvasCFGEdgeArrow(CanvasCFGEdge* ce, const QPolygon& arrow)
     : QGraphicsPolygonItem{arrow}, _ce{ce}
 {
-    setBrush(arrowColor);
     setZValue(1.5);
-    show();
 }
 
 void CanvasCFGEdgeArrow::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
@@ -1609,13 +1591,9 @@ void CanvasCFGEdgeArrow::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWi
 // CanvasCFGEdge
 //
 
-CanvasCFGEdge::CanvasCFGEdge(CFGEdge* e, const QPolygon& poly, const QColor& arrowColor)
+CanvasCFGEdge::CanvasCFGEdge(CFGEdge* e, const QPolygon& poly, const QColor& edgeColor)
     : _edge{e}, _points{poly}
 {
-    setFlag(QGraphicsItem::ItemIsSelectable);
-    setZValue(0.5);
-    show();
-
     const int nPoints = _points.size();
 
     QPainterPath path;
@@ -1624,29 +1602,15 @@ CanvasCFGEdge::CanvasCFGEdge(CFGEdge* e, const QPolygon& poly, const QColor& arr
         path.cubicTo(_points[i], _points[(i + 1) % nPoints], _points[(i + 2) % nPoints]);
 
     setPath(path);
-    setPen(QPen{arrowColor});
+    setPen(QPen{edgeColor});
+    setFlag(QGraphicsItem::ItemIsSelectable);
+    setZValue(0.5);
 }
 
-void CanvasCFGEdge::setLabelAndArrow(CanvasCFGEdgeLabel* label, CanvasCFGEdgeArrow* arrow)
-{
-    if (label)
-    {
-        setToolTip(label->label());
-        if (arrow)
-            arrow->setToolTip(label->label());
-    }
-}
-
-void CanvasCFGEdge::setSelected(bool s)
-{
-    QGraphicsItem::setSelected(s);
-    update();
-}
+// void CanvasCFGEdge::setSelected(bool s) { QGraphicsItem::setSelected(s); }
 
 void CanvasCFGEdge::paint(QPainter* p, const QStyleOptionGraphicsItem* option, QWidget*)
 {
-    p->setRenderHint(QPainter::Antialiasing);
-
 #if QT_VERSION >= 0x040600
     qreal levelOfDetail = option->levelOfDetailFromTransform(p->transform());
 #else
@@ -1656,7 +1620,8 @@ void CanvasCFGEdge::paint(QPainter* p, const QStyleOptionGraphicsItem* option, Q
     static constexpr double thickness = 0.9;
 
     QPen mypen = pen();
-    mypen.setWidthF(isSelected() ? 2.0 : 1.0 / levelOfDetail * thickness);
+    mypen.setWidthF(isSelected() ? 2.0 : thickness / levelOfDetail);
+    p->setRenderHint(QPainter::Antialiasing);
     p->setPen(mypen);
     p->drawPath(path());
 }
@@ -2068,7 +2033,7 @@ CFGNode* ControlFlowGraphView::getNodeFromDot(QTextStream& lineStream)
 namespace
 {
 
-QColor getArrowColor(CFGEdge* edge)
+QColor getEdgeColor(CFGEdge* edge)
 {
     assert(edge);
     assert(edge->branch());
@@ -2098,7 +2063,7 @@ CanvasCFGEdge* createEdge(CFGEdge* edge, const QPolygon& poly, QColor arrowColor
     return cEdge;
 }
 
-CanvasCFGEdgeArrow* createArrow(CanvasCFGEdge* cEdge, const QPolygon& poly, QColor arrowColor)
+CanvasCFGEdgeArrow* createArrow(CanvasCFGEdge* cEdge, const QPolygon& poly)
 {
     const QPoint headPoint{poly.point(poly.size() - 1)};
     QPoint arrowDir{headPoint - poly.point(poly.size() - 2)};
@@ -2113,7 +2078,7 @@ CanvasCFGEdgeArrow* createArrow(CanvasCFGEdge* cEdge, const QPolygon& poly, QCol
     arrow << QPoint{headPoint + QPoint{arrowDir.y() / 2, -arrowDir.x() / 2}};
     arrow << QPoint{headPoint + QPoint{-arrowDir.y() / 2, arrowDir.x() / 2}};
 
-    return new CanvasCFGEdgeArrow{cEdge, arrow, arrowColor};
+    return new CanvasCFGEdgeArrow{cEdge, arrow};
 }
 
 } // unnamed namespace
@@ -2130,14 +2095,7 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
 
     edge->setVisible(true);
 
-    const QColor arrowColor = getArrowColor(edge);
-
-    CanvasCFGEdge* cEdge = createEdge(edge, poly, arrowColor);
-    _scene->addItem(cEdge);
-
-    CanvasCFGEdgeArrow* cArrow = createArrow(cEdge, poly, arrowColor);
-    _scene->addItem(cArrow);
-
+    CanvasCFGEdge* cEdge = createEdge(edge, poly, getEdgeColor(edge));
     if (edge->branch() == selectedItem())
     {
         _selectedEdge = edge;
@@ -2145,6 +2103,9 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
     }
     else
         cEdge->setSelected(edge == _selectedEdge);
+
+    _scene->addItem(cEdge);
+    _scene->addItem(createArrow(cEdge, poly));
 
     QString label;
     Q_UNUSED(label);
@@ -2157,8 +2118,6 @@ void ControlFlowGraphView::parseEdge(QTextStream& lineStream, int lineno)
                                          100.0, 20.0};
 
     _scene->addItem(cLabel);
-
-    cEdge->setLabelAndArrow(cLabel, cArrow);
 }
 
 namespace
