@@ -1570,20 +1570,7 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(CanvasCFGEdge* ce, qreal x, qreal y, qrea
     if (!e)
         return;
 
-    constexpr int paramI = 0; // we've got the only parameter; so its index is 0
-
-    setPosition(paramI, DrawParams::TopCenter);
-    setText(paramI, QStringLiteral("%1 x").arg(e->count()));
-
-#if 0
-    if (e->nodeFrom() == e->nodeTo())
-    {
-        QFontMetrics fm{font()};
-        setPixmap(paramI, QIcon::fromTheme(QStringLiteral("edit-undo")).pixmap(fm.height()));
-    }
-    else
-        setPixmap(paramI, percentagePixmap(25, 10, e->count(), Qt::blue, true));
-#endif
+    _label = QStringLiteral("%1 x").arg(e->count());
 
     setZValue(1.5);
     show();
@@ -1591,8 +1578,7 @@ CanvasCFGEdgeLabel::CanvasCFGEdgeLabel(CanvasCFGEdge* ce, qreal x, qreal y, qrea
 
 void CanvasCFGEdgeLabel::paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*)
 {
-    RectDrawing drawer{rect().toRect()};
-    drawer.drawField(p, 0, this);
+    p->drawText(rect(), Qt::AlignCenter, _label);
 }
 
 // ======================================================================================
@@ -1645,11 +1631,9 @@ void CanvasCFGEdge::setLabelAndArrow(CanvasCFGEdgeLabel* label, CanvasCFGEdgeArr
 {
     if (label)
     {
-        const QString tip = QStringLiteral("%1").arg(label->text(0));
-
-        setToolTip(tip);
+        setToolTip(label->label());
         if (arrow)
-            arrow->setToolTip(tip);
+            arrow->setToolTip(label->label());
     }
 }
 

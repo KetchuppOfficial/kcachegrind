@@ -333,7 +333,7 @@ private:
 };
 
 
-class CanvasCFGEdgeLabel final : public QGraphicsRectItem, public StoredDrawParams
+class CanvasCFGEdgeLabel final : public QGraphicsRectItem
 {
 public:
     CanvasCFGEdgeLabel(CanvasCFGEdge* ce, qreal x, qreal y, qreal w, qreal h);
@@ -343,13 +343,13 @@ public:
     const CanvasCFGEdge* canvasEdge() const { return _ce; }
 
     int type() const override { return CanvasParts::EdgeLabel; }
-    double percentage() const { return _percentage; }
+    const QString& label() const { return _label; }
 
     void paint(QPainter* p, const QStyleOptionGraphicsItem*, QWidget*) override;
 
 private:
     CanvasCFGEdge* _ce;
-    double _percentage;
+    QString _label;
 };
 
 
