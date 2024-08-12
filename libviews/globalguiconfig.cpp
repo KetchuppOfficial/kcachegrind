@@ -229,3 +229,4 @@ ConfigColorSetting* GlobalGUIConfig::colorSetting(const QString& n,
 
     return cs;
 }
+
