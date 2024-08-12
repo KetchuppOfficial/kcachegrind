@@ -1522,7 +1522,6 @@ CanvasFrame::CanvasFrame(CanvasNode* n)
 
             r.setRect(r.x()+d, r.y()+d, r.width()-2*d, r.height()-2*d);
         }
-
     }
 
     setRect(QRectF(n->rect().center().x() - _p->width()/2,
@@ -1644,7 +1643,6 @@ void CallGraphView::updateSizes(QSize s)
     }
 
     // first, assume use of 1/3 of width/height (possible larger)
-
     double zoom = .33 * s.width() / cWidth;
     if (zoom * cHeight < .33 * s.height())
         zoom = .33 * s.height() / cHeight;
